@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.card {
+margin-top: 100px;
+margin-left: 60px;
+  width: 300px;
+  border-radius: 30px;
+  background-color: rgb(30, 144, 106);
+  height: 300px;
+  padding: 20px;
+  gap:10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
+}
+img{
+padding: 10px;
+height: 100%;
+width: 25%;
+border-radius: 45%;
+object-fit: cover;
+
+
+
+}
+.top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+
+.btn{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px; /* space between text and icon */
+  background: rgb(247, 244, 245);
+  color: rgb(4, 4, 4);
+  border: none;
+  border-radius: 8px;
+  cursor:pointer;
+  padding :5px 10px;
+  margin-right: 15px;
+
+}
+
+.btn:hover {
+  background: darkred;
+}
+.btn2{
+    display: inline;
+    align-items: center;
+    gap: 3px; /* space between text and icon */
+  background: rgb(247, 244, 245);
+  color: rgb(11, 6, 6);
+  border: none;
+  border-radius: 8px;
+  cursor:pointer;
+  padding :1px 8px;
+ margin-right:6px;
+ margin-top: 3px;
+}
+
+.center{
+margin-left: 15px;
+
+
+
+}
+
+.bottom{
+display: flex;
+justify-content: space-between;
+
+padding: 10px;
+color:black;
+border-top:1px solid black;
+
+
+}
+.btn3{
+
+display: flex;
+border-radius: 8px;
+align-items: center;
+border: 1px solid black;
+padding: 8px 8px;
+background-color: black;
+color: aliceblue;
+
+
+
+
+
+}
