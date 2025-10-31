@@ -1,6 +1,5 @@
 import { NavLink } from "react-router-dom";
 import Logo from "../assets/logo.png";
-// Import all the new icons we need
 import { 
   FaSearch, 
   FaHome, 
@@ -11,29 +10,32 @@ import {
 } from "react-icons/fa"; 
 
 function Navbar() {
-  
-  // This function provides the styling for the icon-based links
   const linkClass = ({ isActive }) =>
     `flex flex-col items-center w-20 pt-1 transition-colors duration-200 relative ${
       isActive
-        ? "text-gray-900" // Active link color
-        : "text-gray-500 hover:text-gray-900" // Inactive link color
+        ? "text-gray-900"
+        : "text-gray-500 hover:text-gray-900"
     }`;
 
   return (
     <nav className="bg-white shadow-md h-16 px-6 flex items-center justify-between fixed top-0 left-0 w-full z-50">
       
-      {/* 1. Left Section: Logo + Search */}
-      <div className="flex items-center gap-2">
-        <NavLink to="/">
-          <img
-            src={Logo}
-            alt="Synapse Logo"
-            className="h-10 w-auto object-contain"
-          />
-        </NavLink>
-        
-        {/* New Search Bar */}
+      {/* 1️⃣ Left Section: Logo + Search */}
+      <div className="flex items-center gap-3">
+       
+ <NavLink to="/">
+  <img
+    src={Logo}
+    alt="Synapse Logo"
+    className="h-16 w-auto object-contain rounded-none bg-transparent p-0"
+  />
+
+
+
+</NavLink>
+
+
+        {/* Search Bar */}
         <div className="relative hidden sm:block">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <FaSearch />
@@ -46,9 +48,8 @@ function Navbar() {
         </div>
       </div>
 
-      {/* 2. Right Section: Nav Links + Profile */}
+      {/* 2️⃣ Right Section: Navigation Links + Profile */}
       <div className="flex items-center">
-        {/* Main Nav Links */}
         <ul className="flex">
           <li>
             <NavLink className={linkClass} to="/">
@@ -61,6 +62,7 @@ function Navbar() {
               )}
             </NavLink>
           </li>
+
           <li>
             <NavLink className={linkClass} to="/teams">
               {({ isActive }) => (
@@ -72,6 +74,7 @@ function Navbar() {
               )}
             </NavLink>
           </li>
+
           <li>
             <NavLink className={linkClass} to="/events">
               {({ isActive }) => (
@@ -83,6 +86,7 @@ function Navbar() {
               )}
             </NavLink>
           </li>
+
           <li>
             <NavLink className={linkClass} to="/chat">
               {({ isActive }) => (
@@ -96,10 +100,10 @@ function Navbar() {
           </li>
         </ul>
 
-        {/* Vertical Divider */}
-        <div className="h-10 w-px bg-gray-200 mx-2"></div> 
+        {/* Divider */}
+        <div className="h-10 w-px bg-gray-200 mx-3"></div> 
 
-        {/* Profile Link */}
+        {/* Profile */}
         <NavLink className={linkClass} to="/profile">
           {({ isActive }) => (
             <>

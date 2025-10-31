@@ -1,14 +1,21 @@
 import React from "react";
-import Section1 from "./Section1";
-import Section2 from "./Section2";
+import ProfileCard from "./ProfileCard";
+import Feed from "./Feed";
+import Recommendations from "./Recommendations";
 
-function Home() {
+export default function Home() {
   return (
-    <>
-      <Section1 />
-      <Section2 />
-    </>
+    <div className="min-h-screen bg-gray-50 text-gray-800">
+      {/* top padding if you have a fixed navbar */}
+      <div className="pt-20 px-6">
+        <div className="max-w-[1300px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-6">
+            <ProfileCard />
+            <Feed />
+            <Recommendations />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
-
-export default Home;
