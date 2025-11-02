@@ -27,7 +27,7 @@ function Navbar() {
           <img
             src={Logo}
             alt="Synapse Logo"
-            className="h-12 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
         </NavLink>
 
