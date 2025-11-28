@@ -1,0 +1,128 @@
+import React, { useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../api/axios";
+
+const Signup = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    username: "",
+    email: "",
+    password: ""
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data } = await api.post("/auth/signup", formData);
+      localStorage.setItem("userInfo", JSON.stringify(data));
+      navigate("/profile");
+    } catch (err) {
+      setError(err.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex flex-col gap-6">
+        <div className="text-center mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Account</h2>
+          <p className="text-gray-600">Join Synapse and connect with your network.</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        <form className="flex flex-col gap-5" onSubmit={handleSignup}>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+            <input
+              type="text"
+              name="name"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Enter your full name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
+            <input
+              type="text"
+              name="username"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Choose a username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+              required
+            />
+          </div>
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Create a password"
+              value={formData.password}
+              onChange={handleChange}
+              autoComplete="new-password"
+              required
+            />
+            <span
+              className="absolute right-3 top-[38px] cursor-pointer text-gray-400 hover:text-blue-600 transition-colors"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+            </span>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Creating Account..." : "Create Account"}
+          </button>
+        </form>
+        <div className="text-center text-sm text-gray-600">
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
+            Login
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Signup;

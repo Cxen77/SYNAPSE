@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
 
-function NavItem({ to, icon: Icon, label }) {
+function NavItem({ to, icon: Icon, label, end }) {
   return (
     <NavLink
       to={to}
+      end={end}
       className={({ isActive }) =>
-        `flex flex-col items-center w-20 pt-1 transition-all duration-200 relative ${
-          isActive ? "text-blue-600" : "text-gray-600 hover:text-blue-600"
+        `flex flex-col items-center w-20 pt-1 transition-all duration-200 relative ${isActive ? "text-blue-600" : "text-gray-600 hover:text-blue-600"
         }`
       }
     >

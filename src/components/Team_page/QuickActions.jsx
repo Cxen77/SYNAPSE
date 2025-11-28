@@ -1,10 +1,13 @@
 import React from "react";
 import { FaUsers, FaUserPlus } from "react-icons/fa";
 
-function QuickActions() {
+function QuickActions({ onCreateClick, onFindMembersClick }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <button className="flex items-center gap-4 p-5 bg-white rounded-xl hover:shadow-md transition border-2 border-blue-100 hover:border-blue-300 group">
+      <button
+        onClick={onFindMembersClick}
+        className="flex items-center gap-4 p-5 bg-white rounded-xl hover:shadow-md transition border-2 border-blue-100 hover:border-blue-300 group"
+      >
         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition">
           <FaUsers className="w-6 h-6 text-blue-600" />
         </div>
@@ -14,7 +17,10 @@ function QuickActions() {
         </div>
       </button>
 
-      <button className="flex items-center gap-4 p-5 bg-white rounded-xl hover:shadow-md transition border-2 border-blue-100 hover:border-blue-300 group">
+      <button
+        onClick={onCreateClick}
+        className="flex items-center gap-4 p-5 bg-white rounded-xl hover:shadow-md transition border-2 border-blue-100 hover:border-blue-300 group"
+      >
         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition">
           <FaUserPlus className="w-6 h-6 text-blue-600" />
         </div>

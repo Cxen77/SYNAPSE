@@ -2,12 +2,13 @@ import Logo from "../../assets/logo.png";
 import SearchBar from "./SearchBar";
 import NavItem from "./NavItem";
 
-import { 
+import {
   FaHome,
   FaUsers,
   FaCalendarAlt,
   FaCommentDots,
-  FaUserCircle
+  FaUserCircle,
+  FaCog
 } from "react-icons/fa";
 
 function Navbar() {
@@ -35,13 +36,14 @@ function Navbar() {
           <NavItem to="/teams" icon={FaUsers} label="Teams" />
           <NavItem to="/events" icon={FaCalendarAlt} label="Events" />
           <NavItem to="/chat" icon={FaCommentDots} label="Chat" />
+          <NavItem to="/settings" icon={FaCog} label="Settings" />
         </ul>
 
         {/* Divider */}
         <div className="h-8 w-px bg-gray-200 mx-2"></div>
 
         {/* Profile */}
-        <NavItem to="/profile" icon={FaUserCircle} label="Me" />
+        <NavItem to="/profile" icon={FaUserCircle} label="Me" end />
       </div>
     </nav>
   );

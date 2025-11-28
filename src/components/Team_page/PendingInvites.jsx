@@ -1,7 +1,7 @@
 import React from "react";
 import { FaCheck, FaTimes } from "react-icons/fa";
 
-function PendingInvites({ invites }) {
+function PendingInvites({ invites, onAccept, onDecline }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="p-5 bg-gradient-to-r from-orange-50 to-white border-b border-gray-200">
@@ -13,8 +13,8 @@ function PendingInvites({ invites }) {
         {invites.map((invite, index) => (
           <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center gap-3 mb-4">
-              <img 
-                src={invite.img}
+              <img
+                src={invite.img || `https://ui-avatars.com/api/?name=${invite.name}&background=random`}
                 alt={invite.name}
                 className="w-14 h-14 rounded-full object-cover ring-2 ring-white"
               />
@@ -25,10 +25,16 @@ function PendingInvites({ invites }) {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button className="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition text-sm font-bold flex items-center justify-center gap-2 shadow-sm">
+              <button
+                onClick={() => onAccept(invite.id)}
+                className="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition text-sm font-bold flex items-center justify-center gap-2 shadow-sm"
+              >
                 <FaCheck /> Accept
               </button>
-              <button className="bg-white text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-100 transition text-sm font-bold flex items-center justify-center gap-2 border border-gray-300">
+              <button
+                onClick={() => onDecline(invite.id)}
+                className="bg-white text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-100 transition text-sm font-bold flex items-center justify-center gap-2 border border-gray-300"
+              >
                 <FaTimes /> Decline
               </button>
             </div>

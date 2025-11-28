@@ -1,7 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import CircularProgress from "./CircularProgress";
 
 function Recommended({ people }) {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
 
@@ -12,9 +15,13 @@ function Recommended({ people }) {
 
       <div className="divide-y divide-gray-200 flex-1 overflow-y-auto">
         {people.map((person, index) => (
-          <div key={index} className="p-4 flex items-center gap-4 hover:bg-gray-50 transition cursor-pointer">
-            <img 
-              src={person.img}
+          <div
+            key={index}
+            className="p-4 flex items-center gap-4 hover:bg-gray-50 transition cursor-pointer"
+            onClick={() => navigate(`/profile/${person.username || 'demo'}`)} // Fallback for demo data
+          >
+            <img
+              src={person.img || `https://ui-avatars.com/api/?name=${person.name}&background=random`}
               alt={person.name}
               className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-100"
             />
