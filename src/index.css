@@ -2,8 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar globally */
+html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
 @layer utilities {
     .custom-scrollbar::-webkit-scrollbar {
+        display: block;
         width: 6px;
     }
 

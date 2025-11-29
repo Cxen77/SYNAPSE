@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Avatar from '../common/Avatar';
 import { FaEdit, FaShare, FaMapMarkerAlt, FaBriefcase, FaEnvelope, FaUserPlus, FaEye, FaUsers, FaProjectDiagram, FaLayerGroup, FaList } from 'react-icons/fa';
 import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
@@ -64,14 +65,15 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
             {/* Profile Info Section */}
             <div className="px-8 pb-8">
                 {/* Profile Picture & Basic Info */}
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-6">
-                    <div className="flex flex-col md:flex-row md:items-end gap-6">
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 gap-4">
+                    <div className="flex flex-col md:flex-row md:items-end gap-6 flex-1 min-w-0">
                         {/* Profile Picture */}
-                        <div className="relative -mt-20">
-                            <img
-                                src={user.profilePic || "https://via.placeholder.com/150"}
-                                alt="Profile"
-                                className="w-40 h-40 rounded-full border-4 border-white shadow-xl object-cover bg-white"
+                        <div className="relative -mt-20 flex-shrink-0">
+                            <Avatar
+                                src={user.profilePic}
+                                alt={user.name}
+                                size="xl"
+                                className="border-4 border-white shadow-xl bg-white"
                             />
                             {/* Edit Profile Picture Button - Only visible to owner in edit mode */}
                             {isOwner && (
@@ -84,34 +86,34 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         </div>
 
                         {/* Name & Basic Info */}
-                        <div className="mb-2">
-                            <div className="flex items-center gap-3 mb-1">
-                                <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                        <div className="mb-2 min-w-0 w-full">
+                            <div className="flex items-center gap-3 mb-1 flex-wrap">
+                                <h1 className="text-3xl font-bold text-gray-900 break-words leading-tight">{user.name}</h1>
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex-shrink-0">
                                     Available
                                 </span>
                             </div>
-                            <p className="text-lg text-gray-600 mb-1">@{user.username}</p>
-                            <p className="text-gray-700 font-medium">{user.course} Student</p>
+                            <p className="text-lg text-gray-600 mb-1 truncate">@{user.username}</p>
+                            <p className="text-gray-700 font-medium truncate">{user.course} Student</p>
                         </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-3 mt-4 md:mt-0 mb-2">
+                    <div className="flex flex-wrap md:flex-nowrap gap-3 mt-4 md:mt-0 mb-2 flex-shrink-0">
                         {isOwnProfile ? (
                             // Owner Controls
                             isOwner ? (
                                 <>
                                     <button
                                         onClick={onToggleView}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold border border-blue-200 shadow-sm"
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold border border-blue-200 shadow-sm whitespace-nowrap"
                                     >
                                         <FaEye className="w-4 h-4" />
                                         View as Public
                                     </button>
                                     <button
                                         onClick={() => setShowEditModal(true)}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm"
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm whitespace-nowrap"
                                     >
                                         <FaEdit className="w-4 h-4" />
                                         Edit Profile
@@ -120,7 +122,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                             ) : (
                                 <button
                                     onClick={onToggleView}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold shadow-sm"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold shadow-sm whitespace-nowrap"
                                 >
                                     <FaEdit className="w-4 h-4" />
                                     View as Owner
@@ -131,9 +133,9 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                             <>
                                 <button
                                     onClick={onFollow}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold shadow-sm ${isFollowing
-                                            ? "bg-white text-blue-600 border border-blue-200 hover:bg-blue-50"
-                                            : "bg-blue-600 text-white hover:bg-blue-700"
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold shadow-sm whitespace-nowrap ${isFollowing
+                                        ? "bg-white text-blue-600 border border-blue-200 hover:bg-blue-50"
+                                        : "bg-blue-600 text-white hover:bg-blue-700"
                                         }`}
                                 >
                                     <FaUserPlus className="w-4 h-4" />
@@ -141,12 +143,12 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                 </button>
                                 <button
                                     onClick={onInvite}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
                                 >
                                     <FaUsers className="w-4 h-4" />
                                     Invite
                                 </button>
-                                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm">
+                                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap">
                                     <FaEnvelope className="w-4 h-4" />
                                     Message
                                 </button>
@@ -154,7 +156,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         )}
                         <button
                             onClick={handleShare}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
                         >
                             <FaShare className="w-4 h-4" />
                             Share

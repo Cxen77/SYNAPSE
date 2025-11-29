@@ -3,11 +3,10 @@ function ChatListItem({ chat, activeChat, setActiveChat }) {
 
   return (
     <div
-      className={`flex p-3 gap-3 cursor-pointer transition ${
-        activeChat?.id === chat.id
-          ? "bg-blue-50 border-l-4 border-blue-600"
-          : "border-l-4 border-transparent hover:bg-gray-50"
-      }`}
+      className={`flex p-3 gap-3 cursor-pointer transition ${activeChat?.id === chat.id
+        ? "bg-gradient-to-r from-blue-50 to-white border-l-4 border-blue-600"
+        : "border-l-4 border-transparent hover:bg-gray-50"
+        }`}
       onClick={() => setActiveChat(chat)}
     >
       {/* Avatar */}

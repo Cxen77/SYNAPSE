@@ -35,6 +35,7 @@ export default function Feed({ user }) {
       const formattedPosts = data.posts.map(post => ({
         id: post._id,
         author: post.user.name,
+        username: post.user.username, // Add username
         role: post.user.course ? `${post.user.course} Student` : "Member",
         time: new Date(post.createdAt).toLocaleDateString(),
         text: post.content,
@@ -101,7 +102,7 @@ export default function Feed({ user }) {
         />
 
         {/* feed label */}
-        <div className="flex items-center justify-between mt-2 mb-4 px-2">
+        <div className="flex items-center justify-between mb-4 px-2">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">{feedType} Feed</h3>
             <span className="w-1 h-1 rounded-full bg-gray-400"></span>

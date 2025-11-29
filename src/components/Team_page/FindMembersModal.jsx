@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaTimes, FaSearch, FaUserPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import Avatar from "../common/Avatar";
 
 export default function FindMembersModal({ isOpen, onClose }) {
     const navigate = useNavigate();
@@ -80,10 +81,11 @@ export default function FindMembersModal({ isOpen, onClose }) {
                                     className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition group cursor-pointer"
                                     onClick={() => handleUserClick(user.username)}
                                 >
-                                    <img
-                                        src={user.profilePic || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                                    <Avatar
+                                        src={user.profilePic}
                                         alt={user.name}
-                                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                                        size="md"
+                                        className="border border-gray-200"
                                     />
                                     <div className="flex-1">
                                         <h4 className="font-bold text-gray-900">{user.name}</h4>

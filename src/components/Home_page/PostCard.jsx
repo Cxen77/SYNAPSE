@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import { FaRegThumbsUp, FaThumbsUp, FaRegCommentDots, FaShare, FaEllipsisH, FaPaperPlane } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import api from "../../api/axios";
+import Avatar from "../common/Avatar";
 
 export default function PostCard({ post }) {
   const [liked, setLiked] = useState(false); // Ideally this should be checked against current user ID
@@ -61,15 +63,20 @@ export default function PostCard({ post }) {
     <article className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
       <div className="p-4">
         <div className="flex gap-4">
-          <img
-            src={post.avatar || `https://ui-avatars.com/api/?name=${post.author}&background=random`}
-            alt="author"
-            className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50"
-          />
+          <Link to={`/profile/${post.username}`}>
+            <Avatar
+              src={post.avatar}
+              alt={post.author}
+              size="md"
+              className="ring-2 ring-gray-50 hover:opacity-90 transition"
+            />
+          </Link>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition">{post.author}</h4>
+                <Link to={`/profile/${post.username}`}>
+                  <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition">{post.author}</h4>
+                </Link>
                 <p className="text-xs text-gray-500">{post.role} • {post.time}</p>
               </div>
               <button className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition">
@@ -132,10 +139,11 @@ export default function PostCard({ post }) {
                 <div className="space-y-4 mb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                   {comments.map((comment, index) => (
                     <div key={index} className="flex gap-2 group">
-                      <img
-                        src={comment.user?.profilePic || `https://ui-avatars.com/api/?name=${comment.user?.name || 'User'}&background=random`}
-                        alt="commenter"
-                        className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
+                      <Avatar
+                        src={comment.user?.profilePic}
+                        alt={comment.user?.name || 'User'}
+                        size="sm"
+                        className="flex-shrink-0 mt-1"
                       />
                       <div className="flex-1">
                         <div className="bg-gray-100 rounded-2xl px-3 py-2 inline-block min-w-[150px]">
@@ -160,10 +168,11 @@ export default function PostCard({ post }) {
                 </div>
 
                 <div className="flex gap-3 items-start pt-2">
-                  <img
-                    src={`https://ui-avatars.com/api/?name=You&background=random`}
-                    alt="current user"
-                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  <Avatar
+                    src={null} // We might not have current user data here easily, defaulting to fallback
+                    alt="You"
+                    size="sm"
+                    className="flex-shrink-0"
                   />
                   <form onSubmit={handleCommentSubmit} className="flex-1 relative">
                     <input

@@ -2,6 +2,7 @@ import Navbar from './components/Navbar_page/Navbar.jsx';
 import Home from './components/Home_page/Home.jsx';
 import Teams from './components/Team_page/Teams.jsx';
 import Events from './components/Event_page/Events.jsx';
+import EventDetails from './components/Event_page/EventDetails.jsx';
 import Chat from './components/Chat_page/Chat.jsx';
 import Profile from './components/Profile_page/Profile.jsx';
 import Login from './components/Login.jsx';
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/teams" element={<Teams />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />

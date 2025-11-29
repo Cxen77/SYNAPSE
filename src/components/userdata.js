@@ -238,6 +238,7 @@ const userData = {
     {
       id: 1,
       name: "Sarah Chen",
+      username: "sarahchen",
       role: "AI Researcher",
       avatar: "https://picsum.photos/seed/sarah/100/100",
       mutual: 12
@@ -245,6 +246,7 @@ const userData = {
     {
       id: 2,
       name: "Mike Johnson",
+      username: "mikejohnson",
       role: "Full Stack Dev",
       avatar: "https://picsum.photos/seed/mike/100/100",
       mutual: 8
@@ -252,6 +254,7 @@ const userData = {
     {
       id: 3,
       name: "Emily Davis",
+      username: "emilydavis",
       role: "Product Designer",
       avatar: "https://picsum.photos/seed/emily/100/100",
       mutual: 5

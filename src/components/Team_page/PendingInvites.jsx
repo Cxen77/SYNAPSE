@@ -1,5 +1,6 @@
 import React from "react";
 import { FaCheck, FaTimes } from "react-icons/fa";
+import Avatar from "../common/Avatar";
 
 function PendingInvites({ invites, onAccept, onDecline }) {
   return (
@@ -13,10 +14,11 @@ function PendingInvites({ invites, onAccept, onDecline }) {
         {invites.map((invite, index) => (
           <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center gap-3 mb-4">
-              <img
-                src={invite.img || `https://ui-avatars.com/api/?name=${invite.name}&background=random`}
+              <Avatar
+                src={invite.img}
                 alt={invite.name}
-                className="w-14 h-14 rounded-full object-cover ring-2 ring-white"
+                size="custom"
+                className="w-14 h-14 ring-2 ring-white"
               />
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-gray-900 truncate">{invite.name}</h3>

@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaCalendarAlt } from "react-icons/fa";
 
-const Slider = ({ onSearch, onCategory, onToggle }) => {
+const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
-  const [isOngoing, setIsOngoing] = useState(true);
+  const [isOngoing, setIsOngoing] = useState(true); // true means "All", false means "Upcoming"
   const [selectedDate, setSelectedDate] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -15,7 +15,7 @@ const Slider = ({ onSearch, onCategory, onToggle }) => {
 
   const calendarRef = useRef();
 
-  const categories = ["Hackathon", "Collab", "Tournament", "Project"];
+  const categories = ["Hackathon", "Workshop", "Seminar", "Tournament", "Meetup", "Project", "Game", "Sport"];
   const liveUpdates = [
     "💡 New hackathon teams forming now!",
     "🎮 Esports tournament starting soon!",
@@ -35,7 +35,15 @@ const Slider = ({ onSearch, onCategory, onToggle }) => {
 
   const handleDateSelect = (day) => {
     const monthStr = (calendarMonth + 1).toString().padStart(2, "0");
-    setSelectedDate(`${calendarYear}-${monthStr}-${day.toString().padStart(2, "0")}`);
+    const dateStr = `${calendarYear}-${monthStr}-${day.toString().padStart(2, "0")}`;
+
+    if (selectedDate === dateStr) {
+      setSelectedDate("");
+      onDateSelect?.("");
+    } else {
+      setSelectedDate(dateStr);
+      onDateSelect?.(dateStr);
+    }
     setShowCalendar(false);
   };
 
@@ -52,7 +60,7 @@ const Slider = ({ onSearch, onCategory, onToggle }) => {
 
   return (
     <div className="w-full lg:w-80 bg-white text-gray-900 p-5 rounded-xl shadow-sm sticky top-[80px] max-h-[88vh] flex flex-col border border-gray-200">
-      
+
       {/* 🔍 Search */}
       <div className="flex items-center bg-white rounded-xl px-3 py-2 mb-5 shadow-sm border border-gray-300">
         <FaSearch className="text-gray-400 mr-2" />
@@ -78,11 +86,10 @@ const Slider = ({ onSearch, onCategory, onToggle }) => {
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
-              className={`px-3 py-1.5 text-sm rounded-full border transition-all duration-200 ${
-                activeCategory === cat
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "border-gray-300 text-gray-700 hover:bg-blue-50"
-              }`}
+              className={`px-3 py-1.5 text-sm rounded-full border transition-all duration-200 ${activeCategory === cat
+                ? "bg-blue-600 border-blue-600 text-white"
+                : "border-gray-300 text-gray-700 hover:bg-blue-50"
+                }`}
             >
               {cat}
             </button>
@@ -184,11 +191,10 @@ const Slider = ({ onSearch, onCategory, onToggle }) => {
                     <div
                       key={day}
                       onClick={() => handleDateSelect(day)}
-                      className={`p-1 rounded cursor-pointer ${
-                        isSelected
-                          ? "bg-blue-600 text-white"
-                          : "hover:bg-blue-50"
-                      }`}
+                      className={`p-1 rounded cursor-pointer ${isSelected
+                        ? "bg-blue-600 text-white"
+                        : "hover:bg-blue-50"
+                        }`}
                     >
                       {day}
                     </div>
@@ -206,11 +212,11 @@ const Slider = ({ onSearch, onCategory, onToggle }) => {
         <button
           onClick={() => {
             setIsOngoing(!isOngoing);
-            onToggle?.(!isOngoing ? "Ongoing" : "Upcoming");
+            onToggle?.(!isOngoing ? "All" : "Upcoming");
           }}
           className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm text-white transition"
         >
-          {isOngoing ? "Ongoing" : "Upcoming"}
+          {isOngoing ? "All" : "Upcoming"}
         </button>
       </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import Avatar from '../common/Avatar';
 import {
     User,
     Shield,
@@ -51,13 +52,47 @@ const Settings = () => {
     };
 
     const menuItems = [
-        { id: 'account', label: 'Account', icon: User },
-        { id: 'profile', label: 'Profile', icon: Briefcase },
-        { id: 'privacy', label: 'Privacy', icon: Eye },
-        { id: 'notifications', label: 'Notifications', icon: Bell },
-        { id: 'security', label: 'Security', icon: Shield },
-        { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, className: 'text-red-500 hover:bg-red-50' },
+        {
+            id: 'account',
+            label: 'Account',
+            icon: User,
+            description: "Manage your personal account information."
+        },
+        {
+            id: 'profile',
+            label: 'Profile',
+            icon: Briefcase,
+            description: "Customize how others see you on Synapse."
+        },
+        {
+            id: 'privacy',
+            label: 'Privacy',
+            icon: Eye,
+            description: "Control who can see your profile and contact you."
+        },
+        {
+            id: 'notifications',
+            label: 'Notifications',
+            icon: Bell,
+            description: "Manage how you receive updates and alerts."
+        },
+        {
+            id: 'security',
+            label: 'Security',
+            icon: Shield,
+            description: "Keep your account safe and secure."
+        },
+        {
+            id: 'danger',
+            label: 'Danger Zone',
+            icon: AlertTriangle,
+            className: 'text-red-500 hover:bg-red-50',
+            activeClassName: 'bg-red-50 text-red-600 border-l-4 border-red-500',
+            description: "Irreversible and destructive actions."
+        },
     ];
+
+    const activeItem = menuItems.find(item => item.id === activeSection);
 
     const renderSection = () => {
         if (loading) return <div className="p-8 text-center text-gray-500">Loading settings...</div>;
@@ -95,8 +130,8 @@ const Settings = () => {
                                     key={item.id}
                                     onClick={() => setActiveSection(item.id)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeSection === item.id
-                                        ? 'bg-blue-50 text-blue-600'
-                                        : 'text-gray-600 hover:bg-gray-50'
+                                            ? item.activeClassName || 'bg-gradient-to-r from-blue-50 to-white text-blue-600 border-l-4 border-blue-600 shadow-sm'
+                                            : 'text-gray-600 hover:bg-gray-50 border-l-4 border-transparent'
                                         } ${item.className || ''}`}
                                 >
                                     <item.icon size={18} />
@@ -108,7 +143,7 @@ const Settings = () => {
                         <div className="p-2 border-t border-gray-100">
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 border-l-4 border-transparent"
                             >
                                 <LogOut size={18} />
                                 Log Out
@@ -118,6 +153,16 @@ const Settings = () => {
 
                     {/* Main Content */}
                     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        {/* Common Header with Gradient */}
+                        <div className="px-8 py-6 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100">
+                            <h2 className="text-xl font-bold text-gray-900 mb-1">
+                                {activeItem?.label || 'Settings'}
+                            </h2>
+                            <p className="text-sm text-gray-500">
+                                {activeItem?.description || 'Manage your settings'}
+                            </p>
+                        </div>
+
                         <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
                             {renderSection()}
                         </div>
@@ -158,11 +203,6 @@ const AccountSettings = ({ user, setUser }) => {
 
     return (
         <div className="space-y-8 max-w-3xl">
-            <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">Account Settings</h2>
-                <p className="text-sm text-gray-500">Manage your personal account information.</p>
-            </div>
-
             <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -286,11 +326,6 @@ const ProfileSettings = ({ user, setUser }) => {
 
     return (
         <div className="space-y-8 max-w-3xl">
-            <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">Profile Settings</h2>
-                <p className="text-sm text-gray-500">Customize how others see you on Synapse.</p>
-            </div>
-
             {/* Banner & Avatar */}
             <div className="relative mb-12 group">
                 <div className="h-32 w-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-xl overflow-hidden">
@@ -303,10 +338,11 @@ const ProfileSettings = ({ user, setUser }) => {
                 </div>
                 <div className="absolute -bottom-10 left-6">
                     <div className="relative">
-                        <img
-                            src={user.profilePic || "https://via.placeholder.com/150"}
+                        <Avatar
+                            src={user.profilePic}
                             alt="Profile"
-                            className="w-24 h-24 rounded-full border-4 border-white shadow-md bg-white object-cover"
+                            size="custom"
+                            className="w-24 h-24 border-4 border-white shadow-md bg-white"
                         />
                         <button className="absolute bottom-0 right-0 bg-gray-900 text-white p-1.5 rounded-full hover:bg-gray-700 transition-colors border-2 border-white">
                             <Camera size={14} />
@@ -454,11 +490,6 @@ const PrivacySettings = ({ user, setUser }) => {
 
     return (
         <div className="space-y-8 max-w-3xl">
-            <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">Privacy Settings</h2>
-                <p className="text-sm text-gray-500">Control who can see your profile and contact you.</p>
-            </div>
-
             <div className="space-y-6">
                 <div className="space-y-4">
                     <h3 className="text-sm font-medium text-gray-900">Profile Visibility</h3>
@@ -563,11 +594,6 @@ const NotificationSettings = ({ user, setUser }) => {
 
     return (
         <div className="space-y-8 max-w-3xl">
-            <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">Notifications</h2>
-                <p className="text-sm text-gray-500">Manage how you receive updates and alerts.</p>
-            </div>
-
             <div className="space-y-6">
                 <div className="bg-blue-50 p-4 rounded-xl flex items-start gap-3">
                     <Mail className="text-blue-600 mt-0.5" size={20} />
@@ -650,11 +676,6 @@ const NotificationRow = ({ label, description, checked, onChange }) => (
 
 const SecuritySettings = () => (
     <div className="space-y-8 max-w-3xl">
-        <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">Security</h2>
-            <p className="text-sm text-gray-500">Keep your account safe and secure.</p>
-        </div>
-
         <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -717,11 +738,6 @@ const DangerZone = () => {
 
     return (
         <div className="space-y-8 max-w-3xl">
-            <div>
-                <h2 className="text-xl font-semibold text-red-600 mb-1">Danger Zone</h2>
-                <p className="text-sm text-gray-500">Irreversible and destructive actions.</p>
-            </div>
-
             <div className="space-y-4">
                 <div className="border border-red-100 bg-red-50 rounded-xl p-4 flex items-center justify-between">
                     <div>

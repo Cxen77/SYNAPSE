@@ -6,19 +6,18 @@ function NavItem({ to, icon: Icon, label, end }) {
       to={to}
       end={end}
       className={({ isActive }) =>
-        `flex flex-col items-center w-20 pt-1 transition-all duration-200 relative ${isActive ? "text-blue-600" : "text-gray-600 hover:text-blue-600"
+        `flex flex-col items-center justify-center w-20 h-12 rounded-xl transition-all duration-200 ${isActive
+          ? "bg-gradient-to-r from-blue-50 to-white text-blue-600 shadow-sm border border-blue-100"
+          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 border border-transparent"
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon className="w-5 h-5 mb-1" />
-          <span className={`text-xs ${isActive ? "font-bold" : "font-medium"}`}>
+          <Icon className={`w-5 h-5 mb-0.5 ${isActive ? "drop-shadow-sm" : ""}`} />
+          <span className={`text-[10px] ${isActive ? "font-bold" : "font-medium"}`}>
             {label}
           </span>
-          {isActive && (
-            <div className="absolute -bottom-4 left-0 right-0 h-1 bg-blue-600 rounded-t"></div>
-          )}
         </>
       )}
     </NavLink>

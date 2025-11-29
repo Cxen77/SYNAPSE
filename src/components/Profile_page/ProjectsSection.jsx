@@ -12,14 +12,14 @@ const ProjectsSection = () => {
             </div>
 
             <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex overflow-x-auto pb-6 gap-6 snap-x custom-scrollbar">
                     {userData.projects.map((project) => (
                         <div
                             key={project.id}
-                            className="bg-white border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group"
+                            className="min-w-[320px] w-[320px] bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group snap-center flex flex-col"
                         >
                             {/* Project Thumbnail */}
-                            <div className="h-48 overflow-hidden bg-gray-100 relative">
+                            <div className="h-48 overflow-hidden bg-gray-100 relative shrink-0">
                                 <img
                                     src={project.image}
                                     alt={project.title}
@@ -29,9 +29,9 @@ const ProjectsSection = () => {
                             </div>
 
                             {/* Project Info */}
-                            <div className="p-5">
+                            <div className="p-5 flex flex-col flex-1">
                                 <div className="flex items-start justify-between mb-2">
-                                    <h4 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{project.title}</h4>
+                                    <h4 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1" title={project.title}>{project.title}</h4>
                                     <span
                                         className={`px-2.5 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${project.status === 'Completed'
                                             ? 'bg-green-100 text-green-700'
@@ -42,7 +42,7 @@ const ProjectsSection = () => {
                                     </span>
                                 </div>
 
-                                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.desc}</p>
+                                <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{project.desc}</p>
 
                                 {/* Role Badge */}
                                 <div className="mb-4">
@@ -52,7 +52,7 @@ const ProjectsSection = () => {
                                 </div>
 
                                 {/* Tech Stack Tags */}
-                                <div className="flex flex-wrap gap-2 mb-4">
+                                <div className="flex flex-wrap gap-2 mb-4 h-16 overflow-hidden content-start">
                                     {project.tags.map((tag, index) => (
                                         <span
                                             key={index}
@@ -64,7 +64,7 @@ const ProjectsSection = () => {
                                 </div>
 
                                 {/* Footer: Team & Links */}
-                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
                                     {/* Team Members */}
                                     {project.teamMembers && project.teamMembers.length > 0 ? (
                                         <div className="flex -space-x-2">

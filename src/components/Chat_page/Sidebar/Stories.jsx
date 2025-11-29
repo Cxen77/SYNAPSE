@@ -7,8 +7,8 @@ function Stories({ chats = [] }) {
   return (
     <div className="px-4 py-3 border-b border-gray-200 bg-white">
       <div
-        className="flex gap-4 overflow-x-auto items-start pb-4 scrollbar-hide"
-        style={{ paddingTop: 28 }}
+        className="flex gap-8 overflow-x-auto items-start pb-4 scrollbar-hide"
+        style={{ paddingTop: 45 }}
       >
         <style>
           {`
@@ -69,13 +69,14 @@ function StoryCircle({ name, avatar, note, isYou, onClick }) {
   return (
     <div className="w-20 flex-shrink-0 flex flex-col items-center relative">
       {/* Note icon/button */}
-      <button
-        className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded-md text-[10px] truncate max-w-[90px] focus:outline-none"
-        onClick={onClick}
-        title="View note"
-      >
-        {short}
-      </button>
+      {/* Note icon/button (Bubble) */}
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center cursor-pointer group" onClick={onClick}>
+        <div className="bg-gradient-to-r from-blue-50 to-white border border-blue-100 text-gray-700 w-24 h-9 flex items-center justify-center rounded-xl text-[10px] font-medium shadow-sm relative hover:scale-105 transition-transform px-2">
+          <span className="truncate w-full text-center">{short}</span>
+        </div>
+        {/* Tail */}
+        <div className="w-2 h-2 bg-white border-b border-r border-blue-100 rotate-45 -mt-1"></div>
+      </div>
 
       {/* Avatar circle (no gradient) */}
       <div

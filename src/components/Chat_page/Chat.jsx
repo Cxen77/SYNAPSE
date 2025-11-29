@@ -130,10 +130,10 @@ function Chat() {
     };
 
     return (
-        <div className="bg-gray-50 absolute inset-x-0 top-16 bottom-0 flex">
+        <div className="bg-gray-50 absolute inset-x-0 top-16 bottom-0 flex p-6 gap-6">
 
             {/* LEFT SIDEBAR */}
-            <div className="w-96 flex flex-col bg-white border-r border-gray-200">
+            <div className="w-96 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                 <ChatSearch search={search} setSearch={setSearch} />
                 <Stories chats={chats} />
                 <Tabs />
@@ -145,7 +145,7 @@ function Chat() {
             </div>
 
             {/* RIGHT CHAT WINDOW */}
-            <div className="flex-1 flex flex-col bg-white min-h-0">
+            <div className="flex-1 flex flex-col bg-white min-h-0 rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {activeChat ? (
                     <>
                         <ChatHeader chat={activeChat} />

@@ -1,10 +1,12 @@
 import React from "react";
 import { FaUserFriends, FaUsers, FaBookmark, FaCalendarAlt } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import Avatar from "../common/Avatar";
 
 export default function ProfileCard({ user, loading }) {
   if (loading) {
     return (
-      <aside className="bg-white rounded-xl shadow-sm p-5 sticky top-28 self-start border border-gray-200 overflow-hidden animate-pulse">
+      <aside className="bg-white rounded-xl shadow-sm p-5 sticky top-28 border border-gray-200 overflow-hidden animate-pulse">
         <div className="h-24 -mx-5 -mt-5 bg-gray-200 mb-4"></div>
         <div className="flex flex-col items-center -mt-16 relative z-10">
           <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-300"></div>
@@ -26,7 +28,7 @@ export default function ProfileCard({ user, loading }) {
   const subtitle = displayUser.profession || (displayUser.course ? `${displayUser.course} Student` : "Student");
 
   return (
-    <aside className="bg-white rounded-xl shadow-sm p-5 sticky top-28 self-start border border-gray-200 overflow-hidden">
+    <aside className="bg-white rounded-xl shadow-sm p-5 sticky top-[72px] self-start border border-gray-200 overflow-hidden">
       {/* Header image */}
       <div className="h-24 -mx-5 -mt-5 bg-gradient-to-r from-blue-50 to-purple-50 mb-4 relative">
         {banner && (
@@ -40,12 +42,17 @@ export default function ProfileCard({ user, loading }) {
 
       {/* profile */}
       <div className="flex flex-col items-center -mt-16 relative z-10">
-        <img
-          src={displayUser.profilePic || "https://via.placeholder.com/150"}
-          alt="profile"
-          className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover bg-white"
-        />
-        <h3 className="mt-3 text-lg font-bold text-gray-900">{displayUser.name}</h3>
+        <Link to="/profile">
+          <Avatar
+            src={displayUser.profilePic}
+            alt={displayUser.name}
+            size="custom"
+            className="w-24 h-24 border-4 border-white shadow-md bg-white hover:opacity-90 transition"
+          />
+        </Link>
+        <Link to="/profile">
+          <h3 className="mt-3 text-lg font-bold text-gray-900 hover:text-blue-600 transition">{displayUser.name}</h3>
+        </Link>
         <p className="text-sm text-gray-600 text-center px-4">{subtitle}</p>
       </div>
 

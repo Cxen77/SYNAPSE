@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { FaImage, FaVideo, FaSmile, FaPaperPlane, FaTimes } from "react-icons/fa";
 import api from "../../api/axios";
+import Avatar from "../common/Avatar";
 
 export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }) {
   const [text, setText] = useState("");
@@ -9,6 +10,22 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
   const [expanded, setExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // Handle click outside to collapse
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        // Only collapse if no content, or just collapse anyway as per user request
+        setExpanded(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // If user is not loaded yet, we can show a skeleton or just render safely
   const displayUser = user || {};
@@ -67,7 +84,7 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 mb-6">
+    <div ref={containerRef} className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 mb-6">
       {/* Feed Toggle */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-bold text-gray-900">Create Post</h3>
@@ -91,10 +108,11 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
 
       {/* Input Section */}
       <div className="flex gap-4">
-        <img
-          src={displayUser.profilePic || "https://via.placeholder.com/150"}
+        <Avatar
+          src={displayUser.profilePic}
           alt="me"
-          className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50 flex-shrink-0 bg-white"
+          size="md"
+          className="ring-2 ring-gray-50 flex-shrink-0 bg-white"
         />
 
         <div className="flex-1">

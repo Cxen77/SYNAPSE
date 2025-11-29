@@ -63,9 +63,9 @@ function MessageInput({
         <button
           onClick={sendMessage}
           disabled={!newMessage.trim() || isReplying}
-          className={`p-2 rounded-lg transition ${newMessage.trim() && !isReplying
-              ? "bg-blue-600 text-white hover:bg-blue-700"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+          className={`p-2 rounded-lg transition shadow-sm ${newMessage.trim() && !isReplying
+            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600"
+            : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           title="Send message"
         >

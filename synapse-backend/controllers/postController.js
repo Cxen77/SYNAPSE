@@ -35,6 +35,8 @@ const getPosts = asyncHandler(async (req, res) => {
     if (filter === 'following') {
         const user = await User.findById(req.user._id);
         query = { user: { $in: user.following } };
+    } else if (req.query.userId) {
+        query = { user: req.query.userId };
     }
 
     const count = await Post.countDocuments(query);

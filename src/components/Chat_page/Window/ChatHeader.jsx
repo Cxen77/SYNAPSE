@@ -4,7 +4,7 @@ function ChatHeader({ chat }) {
     if (!chat) return null;
 
     return (
-        <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200 bg-white">
+        <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
             <div className="flex items-center gap-3">
                 <div className="relative">
                     <img

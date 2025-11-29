@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ProfileHero from './ProfileHero';
 import AboutSection from './AboutSection';
@@ -24,6 +24,8 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [viewAsPublic, setViewAsPublic] = useState(false); // Only for owner
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  const [invites, setInvites] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,6 +69,22 @@ const Profile = () => {
           // /profile route -> It's me
           setIsOwnProfile(true);
           setIsFollowing(false);
+        }
+
+        // 4. Fetch "Invites" (Simulated with recommended users for now to use real data)
+        // In a real app, this would be /teams/invites or similar
+        try {
+          const invitesRes = await api.get('/users/recommended');
+          // Map to match PendingInvites expected format
+          const mappedInvites = invitesRes.data.slice(0, 2).map(u => ({
+            id: u._id,
+            name: u.name,
+            skill: u.skills && u.skills.length > 0 ? u.skills[0].name || u.skills[0] : 'Developer',
+            img: u.profilePic
+          }));
+          setInvites(mappedInvites);
+        } catch (e) {
+          console.error("Failed to fetch invites", e);
         }
 
       } catch (err) {
@@ -180,12 +198,12 @@ const Profile = () => {
             <AboutSection user={user} />
             <ProjectsSection />
             <TeamsSection />
-            <PostsSection isOwner={showOwnerControls} />
+            <PostsSection isOwner={showOwnerControls} user={user} />
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="lg:col-span-4 space-y-6">
-            {showOwnerControls && <PendingInvites invites={userData.invites} />}
+            {showOwnerControls && <PendingInvites invites={invites} />}
             {showOwnerControls && <ProfileScore />}
             {!showOwnerControls && <SuggestedConnections />}
             <AchievementsSection />

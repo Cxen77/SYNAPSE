@@ -5,6 +5,13 @@ const eventSchema = mongoose.Schema({
     description: { type: String, required: true },
     date: { type: Date, required: true },
     location: { type: String, required: true },
+    category: {
+        type: String,
+        required: true,
+        enum: ['Hackathon', 'Workshop', 'Seminar', 'Tournament', 'Meetup', 'Project', 'Game', 'Sport']
+    },
+    prize: { type: String },
+    imageUrl: { type: String },
     organizer: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, {
