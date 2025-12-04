@@ -15,10 +15,16 @@ import teamRoutes from './routes/teamRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import forumRoutes from './routes/forumRoutes.js';
+
+import initDirectories from './utils/initDirectories.js';
+import { initializeFirebase } from './config/firebaseAdmin.js';
 
 dotenv.config();
 
 connectDB();
+initDirectories();
+initializeFirebase();
 
 const app = express();
 
@@ -59,6 +65,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/forums', forumRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -96,3 +103,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
+
+// Trigger restart

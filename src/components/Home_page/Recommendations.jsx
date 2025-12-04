@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaUserPlus } from "react-icons/fa";
+import { HiUserAdd } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
@@ -32,7 +32,7 @@ export default function Recommendations() {
   return (
     <aside className="bg-white rounded-xl shadow-sm sticky top-[72px] self-start border border-gray-200 max-h-[calc(100vh-72px)] flex flex-col overflow-hidden">
       {/* Fixed Header */}
-      <div className="p-5 border-b border-gray-200 flex-shrink-0 bg-gradient-to-r from-gray-50 to-white">
+      <div className="p-5 border-b border-gray-200 flex-shrink-0 bg-gradient-to-r from-blue-50 to-white">
         <h3 className="font-bold text-gray-900">Recommendations</h3>
         {/* Tabs */}
         <div className="flex gap-4 text-sm mt-3">
@@ -87,7 +87,7 @@ export default function Recommendations() {
                     </div>
                   </div>
                   <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition flex-shrink-0">
-                    <FaUserPlus size={14} />
+                    <HiUserAdd size={16} />
                   </button>
                 </div>
               ))}
@@ -119,7 +119,7 @@ export default function Recommendations() {
                   </div>
                 </div>
                 <button className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition flex-shrink-0">
-                  <FaUserPlus size={14} />
+                  <HiUserAdd size={16} />
                 </button>
               </div>
             ))}

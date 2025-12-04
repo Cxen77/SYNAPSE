@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import Avatar from '../common/Avatar';
-import { FaEdit, FaShare, FaMapMarkerAlt, FaBriefcase, FaEnvelope, FaUserPlus, FaEye, FaUsers, FaProjectDiagram, FaLayerGroup, FaList } from 'react-icons/fa';
+import {
+    Edit3,
+    Share2,
+    MapPin,
+    Briefcase,
+    Mail,
+    UserPlus,
+    Eye,
+    Users,
+    FolderGit,
+    FileText,
+    Check
+} from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
 
@@ -30,10 +42,18 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                 await navigator.share(shareData);
             } else {
                 await navigator.clipboard.writeText(window.location.href);
+                // toast.success('Profile link copied!'); // Assuming toast is available or will be
                 alert('Profile link copied to clipboard!');
             }
         } catch (err) {
             console.error('Error sharing:', err);
+        }
+    };
+
+    const scrollToSection = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
@@ -89,7 +109,8 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         <div className="mb-2 min-w-0 w-full">
                             <div className="flex items-center gap-3 mb-1 flex-wrap">
                                 <h1 className="text-3xl font-bold text-gray-900 break-words leading-tight">{user.name}</h1>
-                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex-shrink-0">
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex-shrink-0 flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                                     Available
                                 </span>
                             </div>
@@ -99,66 +120,66 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap md:flex-nowrap gap-3 mt-4 md:mt-0 mb-2 flex-shrink-0">
+                    <div className="flex flex-wrap md:flex-nowrap gap-3 mt-4 md:mt-0 mb-2 flex-shrink-0 w-full md:w-auto">
                         {isOwnProfile ? (
                             // Owner Controls
                             isOwner ? (
                                 <>
                                     <button
                                         onClick={onToggleView}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold border border-blue-200 shadow-sm whitespace-nowrap"
+                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold border border-blue-200 shadow-sm whitespace-nowrap"
                                     >
-                                        <FaEye className="w-4 h-4" />
+                                        <Eye className="w-4 h-4" />
                                         View as Public
                                     </button>
                                     <button
                                         onClick={() => setShowEditModal(true)}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm whitespace-nowrap"
+                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm whitespace-nowrap"
                                     >
-                                        <FaEdit className="w-4 h-4" />
+                                        <Edit3 className="w-4 h-4" />
                                         Edit Profile
                                     </button>
                                 </>
                             ) : (
                                 <button
                                     onClick={onToggleView}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold shadow-sm whitespace-nowrap"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold shadow-sm whitespace-nowrap"
                                 >
-                                    <FaEdit className="w-4 h-4" />
+                                    <Edit3 className="w-4 h-4" />
                                     View as Owner
                                 </button>
                             )
                         ) : (
                             // Visitor Controls
-                            <>
+                            <div className="grid grid-cols-2 md:flex gap-3 w-full md:w-auto">
                                 <button
                                     onClick={onFollow}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold shadow-sm whitespace-nowrap ${isFollowing
+                                    className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold shadow-sm whitespace-nowrap ${isFollowing
                                         ? "bg-white text-blue-600 border border-blue-200 hover:bg-blue-50"
                                         : "bg-blue-600 text-white hover:bg-blue-700"
                                         }`}
                                 >
-                                    <FaUserPlus className="w-4 h-4" />
+                                    {isFollowing ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                                     {isFollowing ? "Following" : "Follow"}
                                 </button>
                                 <button
                                     onClick={onInvite}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
+                                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
                                 >
-                                    <FaUsers className="w-4 h-4" />
+                                    <UserPlus className="w-4 h-4" />
                                     Invite
                                 </button>
-                                <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap">
-                                    <FaEnvelope className="w-4 h-4" />
+                                <button className="col-span-2 md:col-span-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap">
+                                    <Mail className="w-4 h-4" />
                                     Message
                                 </button>
-                            </>
+                            </div>
                         )}
                         <button
                             onClick={handleShare}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
                         >
-                            <FaShare className="w-4 h-4" />
+                            <Share2 className="w-4 h-4" />
                             Share
                         </button>
                     </div>
@@ -170,25 +191,25 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
 
                     <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
                         <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
-                            <FaBriefcase className="w-4 h-4 text-gray-500" />
+                            <Briefcase className="w-4 h-4 text-gray-500" />
                             {user.course} • {user.year}
                         </span>
                         <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
-                            <FaMapMarkerAlt className="w-4 h-4 text-gray-500" />
+                            <MapPin className="w-4 h-4 text-gray-500" />
                             University Campus
                         </span>
                     </div>
                 </div>
 
                 {/* Stats Summary */}
-                <div className="flex flex-wrap gap-4 py-6 border-t border-gray-100">
+                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-4 py-6 border-t border-gray-100">
                     {/* Followers */}
                     <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group cursor-pointer border border-transparent hover:border-blue-100">
                         <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
-                            <FaUsers className="w-5 h-5" />
+                            <Users className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-gray-900 leading-none">{user.followers?.length || 0}</p>
+                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.followers?.length || 0}</p>
                             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Followers</p>
                         </div>
                     </div>
@@ -196,43 +217,52 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                     {/* Following */}
                     <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group cursor-pointer border border-transparent hover:border-blue-100">
                         <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
-                            <FaUserPlus className="w-5 h-5" />
+                            <UserPlus className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-gray-900 leading-none">{user.following?.length || 0}</p>
+                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.following?.length || 0}</p>
                             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Following</p>
                         </div>
                     </div>
 
                     {/* Teams */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-purple-50 transition-colors group cursor-pointer border border-transparent hover:border-purple-100">
+                    <div
+                        onClick={() => scrollToSection('teams-section')}
+                        className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-purple-50 transition-colors group cursor-pointer border border-transparent hover:border-purple-100"
+                    >
                         <div className="p-2 bg-white rounded-lg text-purple-600 shadow-sm group-hover:scale-110 transition-transform">
-                            <FaLayerGroup className="w-5 h-5" />
+                            <Briefcase className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-gray-900 leading-none">0</p>
+                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.teams?.length || 0}</p>
                             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Teams</p>
                         </div>
                     </div>
 
                     {/* Projects */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-orange-50 transition-colors group cursor-pointer border border-transparent hover:border-orange-100">
+                    <div
+                        onClick={() => scrollToSection('projects-section')}
+                        className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-orange-50 transition-colors group cursor-pointer border border-transparent hover:border-orange-100"
+                    >
                         <div className="p-2 bg-white rounded-lg text-orange-600 shadow-sm group-hover:scale-110 transition-transform">
-                            <FaProjectDiagram className="w-5 h-5" />
+                            <FolderGit className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-gray-900 leading-none">0</p>
+                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.projects?.length || 0}</p>
                             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Projects</p>
                         </div>
                     </div>
 
                     {/* Posts */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-green-50 transition-colors group cursor-pointer border border-transparent hover:border-green-100">
+                    <div
+                        onClick={() => scrollToSection('posts-section')}
+                        className="col-span-2 md:col-span-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-green-50 transition-colors group cursor-pointer border border-transparent hover:border-green-100"
+                    >
                         <div className="p-2 bg-white rounded-lg text-green-600 shadow-sm group-hover:scale-110 transition-transform">
-                            <FaList className="w-5 h-5" />
+                            <FileText className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-gray-900 leading-none">0</p>
+                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.postsCount || 0}</p>
                             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Posts</p>
                         </div>
                     </div>

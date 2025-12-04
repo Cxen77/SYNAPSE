@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 import Avatar from '../common/Avatar';
 import {
     User,
@@ -22,9 +23,11 @@ import {
 } from 'lucide-react';
 
 const Settings = () => {
+    const { currentUser } = useAuth();
     const [activeSection, setActiveSection] = useState('account');
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showMobileMenu, setShowMobileMenu] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -34,12 +37,24 @@ const Settings = () => {
                 setUser(data);
             } catch (err) {
                 console.error("Failed to fetch profile", err);
+                // Fallback to Firebase user if backend fails
+                if (currentUser) {
+                    setUser({
+                        name: currentUser.displayName,
+                        email: currentUser.email,
+                        username: currentUser.email?.split('@')[0],
+                        profilePic: currentUser.photoURL,
+                        bio: "Welcome to your settings!",
+                        socials: {},
+                        settings: {}
+                    });
+                }
             } finally {
                 setLoading(false);
             }
         };
         fetchProfile();
-    }, []);
+    }, [currentUser]);
 
     const handleLogout = async () => {
         try {
@@ -117,21 +132,27 @@ const Settings = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-4rem)] bg-gray-50 pt-6 pb-6 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="h-[calc(100vh-4rem)] bg-gray-50 pt-0 md:pt-6 pb-16 md:pb-6 px-0 md:px-4 sm:px-6 lg:px-8 overflow-hidden">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
-                <h1 className="text-3xl font-bold text-gray-900 mb-6 flex-shrink-0">Settings</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-6 flex-shrink-0 hidden md:block">Settings</h1>
 
                 <div className="flex flex-col md:flex-row gap-6 h-full overflow-hidden">
                     {/* Sidebar */}
-                    <div className="w-full md:w-64 flex-shrink-0 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className={`${showMobileMenu ? 'flex' : 'hidden'} md:flex w-full md:w-64 flex-shrink-0 flex-col bg-white md:rounded-2xl shadow-sm border-b md:border border-gray-100 overflow-hidden h-full`}>
+                        <div className="p-4 md:hidden border-b border-gray-100 bg-white sticky top-0 z-10">
+                            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+                        </div>
                         <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                             {menuItems.map((item) => (
                                 <button
                                     key={item.id}
-                                    onClick={() => setActiveSection(item.id)}
+                                    onClick={() => {
+                                        setActiveSection(item.id);
+                                        setShowMobileMenu(false);
+                                    }}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeSection === item.id
-                                            ? item.activeClassName || 'bg-gradient-to-r from-blue-50 to-white text-blue-600 border-l-4 border-blue-600 shadow-sm'
-                                            : 'text-gray-600 hover:bg-gray-50 border-l-4 border-transparent'
+                                        ? item.activeClassName || 'bg-gradient-to-r from-blue-50 to-white text-blue-600 border-l-4 border-blue-600 shadow-sm'
+                                        : 'text-gray-600 hover:bg-gray-50 border-l-4 border-transparent'
                                         } ${item.className || ''}`}
                                 >
                                     <item.icon size={18} />
@@ -152,18 +173,28 @@ const Settings = () => {
                     </div>
 
                     {/* Main Content */}
-                    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                    <div className={`${!showMobileMenu ? 'flex' : 'hidden'} md:flex flex-1 bg-white md:rounded-2xl shadow-sm border-b md:border border-gray-100 overflow-hidden flex-col h-full fixed inset-0 top-16 bottom-16 md:static z-20`}>
                         {/* Common Header with Gradient */}
-                        <div className="px-8 py-6 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100">
-                            <h2 className="text-xl font-bold text-gray-900 mb-1">
-                                {activeItem?.label || 'Settings'}
-                            </h2>
-                            <p className="text-sm text-gray-500">
-                                {activeItem?.description || 'Manage your settings'}
-                            </p>
+                        <div className="px-4 md:px-8 py-4 md:py-6 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100 flex items-center gap-3">
+                            <button
+                                onClick={() => setShowMobileMenu(true)}
+                                className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-white/50 rounded-full transition"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 mb-1">
+                                    {activeItem?.label || 'Settings'}
+                                </h2>
+                                <p className="text-sm text-gray-500">
+                                    {activeItem?.description || 'Manage your settings'}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar pb-24 md:pb-8">
                             {renderSection()}
                         </div>
                     </div>

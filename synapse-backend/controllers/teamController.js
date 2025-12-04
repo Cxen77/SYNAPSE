@@ -304,9 +304,9 @@ const getMyInvites = asyncHandler(async (req, res) => {
             }
         }
     })
-        .populate('leader', 'name username profilePic')
+        .populate('createdBy', 'name username profilePic')
         .populate('members', 'name username profilePic')
-        .select('name description category members leader invites'); // Select necessary fields
+        .select('name description category members createdBy invites'); // Select necessary fields
 
     // Filter the invites array in the response to only show the user's invite (optional, but cleaner)
     // or just return the team info. The frontend needs team info to show "You are invited to join [Team Name]"

@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { createPost, getPosts, deletePost, likePost, addComment, deleteComment } from '../controllers/postController.js';
+import { createPost, getPosts, deletePost, likePost, addComment, deleteComment, replyToComment } from '../controllers/postController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import validate from '../middleware/validate.js';
 import { postSchema, commentSchema } from '../utils/validationSchemas.js';
@@ -50,5 +50,8 @@ router.route('/:id/comments')
 
 router.route('/:id/comments/:commentId')
     .delete(protect, deleteComment);
+
+router.route('/:id/comments/:commentId/replies')
+    .post(protect, validate(commentSchema), replyToComment);
 
 export default router;

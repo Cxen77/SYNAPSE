@@ -8,32 +8,74 @@ import Profile from './components/Profile_page/Profile.jsx';
 import Login from './components/Login.jsx';
 import Signup from './components/Signup.jsx';
 import Settings from './components/Settings_page/Settings.jsx';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import VerifyEmail from './components/VerifyEmail.jsx';
+import ForgotPassword from './components/ForgotPassword.jsx';
+import ForumLayout from './components/Forum_page/ForumLayout.jsx';
+import ForumHome from './components/Forum_page/ForumHome.jsx';
+import ForumDetails from './components/Forum_page/ForumDetails.jsx';
+import BottomNav from './components/Navbar_page/BottomNav.jsx';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+const ProtectedRoute = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!currentUser.emailVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password'].includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {!isAuthPage && <Navbar />}
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+        {!isAuthPage && <Navbar />}
 
-      <main className={!isAuthPage ? "pt-16" : ""}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/teams" element={<Teams />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/events/:id" element={<EventDetails />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/:username" element={<Profile />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </main>
+        <main className={!isAuthPage ? "pt-16 pb-16 md:pb-0" : ""}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-    </div>
+            {/* Protected Routes */}
+            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+            <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+            {/* Forum Routes */}
+            <Route path="/forums" element={<ProtectedRoute><ForumLayout /></ProtectedRoute>}>
+              <Route index element={<ForumHome />} />
+              <Route path=":id" element={<ForumDetails />} />
+            </Route>
+          </Routes>
+        </main>
+
+      </div>
+      {!isAuthPage && <BottomNav />}
+    </AuthProvider>
   );
 }
 

@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 
@@ -18,7 +19,9 @@ const formatUserResponse = (user) => {
         skills: user.skills,
         followers: user.followers,
         following: user.following,
-        settings: user.settings
+        settings: user.settings,
+        teams: user.teams || [],
+        projects: user.projects || []
     };
 };
 
@@ -26,10 +29,21 @@ const formatUserResponse = (user) => {
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id)
+        .populate({
+            path: 'teams',
+            select: 'name category members admins', // Select specific fields
+            populate: { path: 'admins', select: '_id' } // Only need IDs to check role
+        });
 
     if (user) {
-        res.json(formatUserResponse(user));
+        // Get post count
+        const postsCount = await mongoose.model('Post').countDocuments({ user: req.user._id });
+
+        const response = formatUserResponse(user);
+        response.postsCount = postsCount;
+
+        res.json(response);
     } else {
         res.status(404);
         throw new Error('User not found');
@@ -131,10 +145,22 @@ const updateBannerPic = asyncHandler(async (req, res) => {
 // @route   GET /api/users/:username
 // @access  Public
 const getUserByUsername = asyncHandler(async (req, res) => {
-    const user = await User.findOne({ username: req.params.username }).select('-password');
+    const user = await User.findOne({ username: req.params.username })
+        .select('-password')
+        .populate({
+            path: 'teams',
+            select: 'name category members admins',
+            populate: { path: 'admins', select: '_id' }
+        });
 
     if (user) {
-        res.json(user);
+        // Get post count
+        const postsCount = await mongoose.model('Post').countDocuments({ user: user._id });
+
+        const response = formatUserResponse(user);
+        response.postsCount = postsCount;
+
+        res.json(response);
     } else {
         res.status(404);
         throw new Error('User not found');

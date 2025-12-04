@@ -1,8 +1,8 @@
 import React from "react";
-import { FaCog } from "react-icons/fa";
+import { FaCog, FaUserPlus } from "react-icons/fa";
 import MemberCard from "./MemberCard";
 
-function TeamCard({ team }) {
+function TeamCard({ team, onInviteClick }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
 
@@ -23,9 +23,17 @@ function TeamCard({ team }) {
             </p>
           </div>
 
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition border border-blue-200">
-            <FaCog /> Manage
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onInviteClick}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition border border-blue-200"
+            >
+              <FaUserPlus /> Invite
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition border border-gray-200">
+              <FaCog /> Manage
+            </button>
+          </div>
         </div>
 
         <div className="text-sm text-gray-600 font-medium">

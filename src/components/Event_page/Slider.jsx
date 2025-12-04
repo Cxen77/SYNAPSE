@@ -62,7 +62,7 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
     <div className="w-full lg:w-80 bg-white text-gray-900 p-5 rounded-xl shadow-sm sticky top-[80px] max-h-[88vh] flex flex-col border border-gray-200">
 
       {/* 🔍 Search */}
-      <div className="flex items-center bg-white rounded-xl px-3 py-2 mb-5 shadow-sm border border-gray-300">
+      <div className="flex items-center bg-gradient-to-r from-blue-50 to-white rounded-xl px-3 py-2 mb-5 shadow-sm border border-gray-300">
         <FaSearch className="text-gray-400 mr-2" />
         <input
           type="text"

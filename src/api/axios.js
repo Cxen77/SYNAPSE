@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth } from '../firebaseClient';
 
 const api = axios.create({
     baseURL: 'http://localhost:5000/api',
@@ -7,14 +8,16 @@ const api = axios.create({
     },
 });
 
-// Add a request interceptor to attach the token
+// Add Firebase ID token to all requests
 api.interceptors.request.use(
-    (config) => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
-            const { token } = JSON.parse(userInfo);
-            if (token) {
+    async (config) => {
+        const user = auth.currentUser;
+        if (user) {
+            try {
+                const token = await user.getIdToken();
                 config.headers.Authorization = `Bearer ${token}`;
+            } catch (error) {
+                console.error('Failed to get Firebase token:', error);
             }
         }
         return config;

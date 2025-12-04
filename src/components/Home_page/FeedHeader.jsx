@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { FaImage, FaVideo, FaSmile, FaPaperPlane, FaTimes } from "react-icons/fa";
+import { HiPhotograph, HiVideoCamera, HiEmojiHappy, HiPaperAirplane, HiX } from "react-icons/hi";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
 
@@ -7,25 +7,9 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [expanded, setExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  const containerRef = useRef(null);
-
-  // Handle click outside to collapse
-  React.useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        // Only collapse if no content, or just collapse anyway as per user request
-        setExpanded(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  const textareaRef = useRef(null);
 
   // If user is not loaded yet, we can show a skeleton or just render safely
   const displayUser = user || {};
@@ -35,7 +19,6 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
-      setExpanded(true);
     }
   };
 
@@ -44,6 +27,15 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
     setImagePreview("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleTextChange = (e) => {
+    setText(e.target.value);
+    // Auto-resize
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   };
 
@@ -74,7 +66,10 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
 
       setText("");
       removeImage();
-      setExpanded(false);
+      // Reset height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     } catch (err) {
       console.error("Failed to create post", err);
       alert("Failed to create post. Please try again.");
@@ -84,21 +79,25 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
   }
 
   return (
-    <div ref={containerRef} className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 mb-6">
+    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 mb-6">
       {/* Feed Toggle */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-bold text-gray-900">Create Post</h3>
-        <div className="bg-gray-50 rounded-lg p-1 flex text-sm border border-gray-200">
+        <div className="bg-gray-100 p-1 rounded-lg flex text-sm font-medium">
           <button
             onClick={() => setFeedType("For You")}
-            className={`px-4 py-1.5 rounded-md font-semibold transition-all ${feedType === "For You" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            className={`px-4 py-1.5 rounded-md transition-all duration-200 ${feedType === "For You"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
               }`}
           >
             For You
           </button>
           <button
             onClick={() => setFeedType("Following")}
-            className={`px-4 py-1.5 rounded-md font-semibold transition-all ${feedType === "Following" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            className={`px-4 py-1.5 rounded-md transition-all duration-200 ${feedType === "Following"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
               }`}
           >
             Following
@@ -118,12 +117,12 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
         <div className="flex-1">
           <div className="relative">
             <textarea
-              rows={expanded || imagePreview ? 4 : 2}
+              ref={textareaRef}
+              rows={2}
               placeholder={`What's on your mind, ${displayUser.name ? displayUser.name.split(' ')[0] : 'User'}?`}
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              onFocus={() => setExpanded(true)}
-              className="w-full resize-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder-gray-400"
+              onChange={handleTextChange}
+              className="w-full resize-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder-gray-400 min-h-[50px]"
             />
           </div>
 
@@ -139,7 +138,7 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
                 onClick={removeImage}
                 className="absolute top-2 right-2 bg-gray-900/70 text-white p-1.5 rounded-full hover:bg-gray-900 transition"
               >
-                <FaTimes size={12} />
+                <HiX size={12} />
               </button>
             </div>
           )}
@@ -160,15 +159,15 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 hover:text-blue-600 font-medium transition-colors text-sm"
               >
-                <FaImage className="text-blue-500" size={16} />
+                <HiPhotograph className="text-blue-500" size={16} />
                 <span className="hidden sm:inline">Photo</span>
               </button>
               <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-purple-50 text-gray-600 hover:text-purple-600 font-medium transition-colors text-sm">
-                <FaVideo className="text-purple-500" size={16} />
+                <HiVideoCamera className="text-purple-500" size={16} />
                 <span className="hidden sm:inline">Video</span>
               </button>
               <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-orange-50 text-gray-600 hover:text-orange-600 font-medium transition-colors text-sm">
-                <FaSmile className="text-orange-500" size={16} />
+                <HiEmojiHappy className="text-orange-500" size={16} />
                 <span className="hidden sm:inline">Feeling</span>
               </button>
             </div>
@@ -185,7 +184,7 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
                 </>
               ) : (
                 <>
-                  <FaPaperPlane size={12} />
+                  <HiPaperAirplane size={12} className="rotate-90" />
                   Post
                 </>
               )}

@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Post from '../models/Post.js';
+import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 
 // @desc    Create a new post
@@ -42,7 +43,14 @@ const getPosts = asyncHandler(async (req, res) => {
     const count = await Post.countDocuments(query);
     const posts = await Post.find(query)
         .populate('user', 'name username profilePic')
-        .populate('comments.user', 'name username profilePic')
+        .populate({
+            path: 'comments.user',
+            select: 'name username profilePic'
+        })
+        .populate({
+            path: 'comments.replies.user',
+            select: 'name username profilePic'
+        })
         .limit(pageSize)
         .skip(pageSize * (page - 1))
         .sort({ createdAt: -1 });
@@ -128,7 +136,9 @@ const addComment = asyncHandler(async (req, res) => {
         }
 
         // Populate the user in the new comment for immediate display
-        const updatedPost = await Post.findById(req.params.id).populate('comments.user', 'name username profilePic');
+        const updatedPost = await Post.findById(req.params.id)
+            .populate('comments.user', 'name username profilePic')
+            .populate('comments.replies.user', 'name username profilePic');
 
         res.status(201).json(updatedPost.comments);
     } else {
@@ -166,4 +176,50 @@ const deleteComment = asyncHandler(async (req, res) => {
     }
 });
 
-export { createPost, getPosts, deletePost, likePost, addComment, deleteComment };
+// @desc    Reply to a comment
+// @route   POST /api/posts/:id/comments/:commentId/replies
+// @access  Private
+const replyToComment = asyncHandler(async (req, res) => {
+    const { text } = req.body;
+    const post = await Post.findById(req.params.id);
+
+    if (post) {
+        const comment = post.comments.id(req.params.commentId);
+
+        if (!comment) {
+            res.status(404);
+            throw new Error('Comment not found');
+        }
+
+        const reply = {
+            text,
+            user: req.user._id
+        };
+
+        comment.replies.push(reply);
+        await post.save();
+
+        // Create Notification for comment owner
+        if (comment.user.toString() !== req.user._id.toString()) {
+            await Notification.create({
+                recipient: comment.user,
+                sender: req.user._id,
+                type: 'reply',
+                post: post._id,
+                commentId: comment._id
+            });
+        }
+
+        // Return updated comments with population
+        const updatedPost = await Post.findById(req.params.id)
+            .populate('comments.user', 'name username profilePic')
+            .populate('comments.replies.user', 'name username profilePic');
+
+        res.status(201).json(updatedPost.comments);
+    } else {
+        res.status(404);
+        throw new Error('Post not found');
+    }
+});
+
+export { createPost, getPosts, deletePost, likePost, addComment, deleteComment, replyToComment };

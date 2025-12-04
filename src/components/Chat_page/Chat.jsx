@@ -24,6 +24,7 @@ function Chat() {
     const [reactingToMsg, setReactingToMsg] = useState(null);
 
     const [isReplying, setIsReplying] = useState(false);
+    const [showMobileChat, setShowMobileChat] = useState(false);
     const chatEndRef = useRef(null);
 
     const emojis = ["😊", "👍", "🎉", "🔥", "😂", "💡", "😎", "❤️", "🙏", "🤔"];
@@ -52,6 +53,11 @@ function Chat() {
         );
         return nameMatch || msgMatch;
     });
+
+    const handleChatSelect = (chat) => {
+        setActiveChat(chat);
+        setShowMobileChat(true);
+    };
 
     /** Send new message */
     const sendMessage = () => {
@@ -130,25 +136,25 @@ function Chat() {
     };
 
     return (
-        <div className="bg-gray-50 absolute inset-x-0 top-16 bottom-0 flex p-6 gap-6">
+        <div className="bg-gray-50 absolute inset-x-0 top-16 bottom-16 md:bottom-0 flex md:p-6 gap-6">
 
             {/* LEFT SIDEBAR */}
-            <div className="w-96 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-96 flex-col bg-white md:border border-gray-200 md:rounded-2xl shadow-sm overflow-hidden`}>
                 <ChatSearch search={search} setSearch={setSearch} />
                 <Stories chats={chats} />
                 <Tabs />
                 <ChatList
                     chats={filteredChats}
                     activeChat={activeChat}
-                    setActiveChat={setActiveChat}
+                    setActiveChat={handleChatSelect}
                 />
             </div>
 
             {/* RIGHT CHAT WINDOW */}
-            <div className="flex-1 flex flex-col bg-white min-h-0 rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className={`${showMobileChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-white min-h-0 md:rounded-2xl shadow-sm md:border border-gray-200 overflow-hidden fixed inset-0 top-16 bottom-16 md:static z-20`}>
                 {activeChat ? (
                     <>
-                        <ChatHeader chat={activeChat} />
+                        <ChatHeader chat={activeChat} onBack={() => setShowMobileChat(false)} />
 
                         <MessageList
                             chat={activeChat}

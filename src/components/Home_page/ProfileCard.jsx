@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUserFriends, FaUsers, FaBookmark, FaCalendarAlt } from "react-icons/fa";
+import { HiUserGroup, HiUsers, HiBookmark, HiCalendar } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import Avatar from "../common/Avatar";
 
@@ -21,7 +21,22 @@ export default function ProfileCard({ user, loading }) {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <aside className="bg-white rounded-xl shadow-sm p-5 sticky top-[72px] self-start border border-gray-200">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
+            <HiUsers className="text-gray-400 text-3xl" />
+          </div>
+          <h3 className="font-bold text-gray-900">Welcome!</h3>
+          <p className="text-sm text-gray-500 mt-1 mb-4">Sign in to see your profile</p>
+          <Link to="/login" className="block w-full bg-blue-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-blue-700 transition">
+            Sign In
+          </Link>
+        </div>
+      </aside>
+    );
+  }
 
   const displayUser = user;
   const banner = displayUser.bannerPic || displayUser.coverImage;
@@ -71,21 +86,25 @@ export default function ProfileCard({ user, loading }) {
 
         <ul className="space-y-1 text-sm">
           <li className="flex items-center gap-3 text-gray-700 hover:bg-blue-50 p-2 rounded-lg transition cursor-pointer group">
-            <FaUserFriends className="text-gray-400 group-hover:text-blue-500 transition" />
+            <HiUserGroup className="text-gray-400 group-hover:text-blue-500 transition" />
             <span className="font-medium group-hover:text-blue-700 transition">My Network</span>
           </li>
           <li className="flex items-center gap-3 text-gray-700 hover:bg-blue-50 p-2 rounded-lg transition cursor-pointer group">
-            <FaUsers className="text-gray-400 group-hover:text-blue-500 transition" />
+            <HiUsers className="text-gray-400 group-hover:text-blue-500 transition" />
             <span className="font-medium group-hover:text-blue-700 transition">Groups</span>
           </li>
           <li className="flex items-center gap-3 text-gray-700 hover:bg-blue-50 p-2 rounded-lg transition cursor-pointer group">
-            <FaBookmark className="text-gray-400 group-hover:text-blue-500 transition" />
+            <HiBookmark className="text-gray-400 group-hover:text-blue-500 transition" />
             <span className="font-medium group-hover:text-blue-700 transition">Saved</span>
           </li>
           <li className="flex items-center gap-3 text-gray-700 hover:bg-blue-50 p-2 rounded-lg transition cursor-pointer group">
-            <FaCalendarAlt className="text-gray-400 group-hover:text-blue-500 transition" />
+            <HiCalendar className="text-gray-400 group-hover:text-blue-500 transition" />
             <span className="font-medium group-hover:text-blue-700 transition">Events</span>
           </li>
+          <Link to="/forums" className="flex items-center gap-3 text-gray-700 hover:bg-blue-50 p-2 rounded-lg transition cursor-pointer group">
+            <HiUserGroup className="text-gray-400 group-hover:text-blue-500 transition" />
+            <span className="font-medium group-hover:text-blue-700 transition">Forums</span>
+          </Link>
         </ul>
 
         <button className="mt-4 w-full bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 text-sm rounded-lg py-2.5 hover:from-blue-100 hover:to-purple-100 transition font-bold text-blue-700 shadow-sm">

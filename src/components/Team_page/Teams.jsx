@@ -7,14 +7,18 @@ import Recommended from "./Recommended";
 import CreateTeamModal from "./CreateTeamModal";
 import FindMembersModal from "./FindMembersModal";
 import api from "../../api/axios";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 function Teams() {
+  const { currentUser } = useAuth();
   const [teams, setTeams] = useState([]);
   const [invites, setInvites] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFindMembersOpen, setIsFindMembersOpen] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -40,7 +44,9 @@ function Teams() {
           name: m.name,
           role: "Member",
           avatar: m.profilePic
-        }))
+        })),
+        // Check if current user is admin (using Firebase UID as fallback for ID comparison)
+        isAdmin: team.admins.some(admin => admin._id === currentUser?.uid) || team.createdBy === currentUser?.uid
       }));
       setTeams(formattedTeams);
 
@@ -49,7 +55,7 @@ function Teams() {
         id: team._id, // Team ID
         name: team.name, // Team Name
         skill: team.category, // Using category as "skill" or context
-        img: team.leader?.profilePic // Showing leader's pic as the invite image
+        img: team.createdBy?.profilePic // Showing leader's pic as the invite image
       }));
       setInvites(formattedInvites);
 
@@ -67,6 +73,11 @@ function Teams() {
 
     } catch (err) {
       console.error("Failed to fetch data", err);
+      // Only show error toast if it's NOT a 401 (Unauthorized)
+      // 401 just means backend isn't ready/connected, so we show empty state silently
+      if (err.response && err.response.status !== 401) {
+        toast.error("Failed to load teams data");
+      }
     } finally {
       setLoading(false);
     }
@@ -74,23 +85,33 @@ function Teams() {
 
   const handleTeamCreated = () => {
     fetchData();
+    toast.success("Team created successfully!");
+  };
+
+  const handleInviteClick = (teamId) => {
+    setSelectedTeamId(teamId);
+    setIsFindMembersOpen(true);
   };
 
   const handleAcceptInvite = async (teamId) => {
     try {
       await api.put(`/teams/${teamId}/accept`);
+      toast.success("Invite accepted!");
       fetchData(); // Refresh all data
     } catch (err) {
       console.error("Failed to accept invite", err);
+      toast.error("Failed to accept invite");
     }
   };
 
   const handleDeclineInvite = async (teamId) => {
     try {
       await api.put(`/teams/${teamId}/decline`);
+      toast.success("Invite declined");
       fetchData(); // Refresh all data
     } catch (err) {
       console.error("Failed to decline invite", err);
+      toast.error("Failed to decline invite");
     }
   };
 
@@ -106,7 +127,10 @@ function Teams() {
           <div className="lg:col-span-8 space-y-6">
             <QuickActions
               onCreateClick={() => setIsCreateModalOpen(true)}
-              onFindMembersClick={() => setIsFindMembersOpen(true)}
+              onFindMembersClick={() => {
+                setSelectedTeamId(null);
+                setIsFindMembersOpen(true);
+              }}
             />
 
             {loading ? (
@@ -118,7 +142,11 @@ function Teams() {
               </div>
             ) : (
               teams.map(team => (
-                <TeamCard key={team.id} team={team} />
+                <TeamCard
+                  key={team.id}
+                  team={team}
+                  onInviteClick={() => handleInviteClick(team.id)}
+                />
               ))
             )}
           </div>
@@ -147,6 +175,7 @@ function Teams() {
       <FindMembersModal
         isOpen={isFindMembersOpen}
         onClose={() => setIsFindMembersOpen(false)}
+        teamId={selectedTeamId}
       />
     </div>
   );

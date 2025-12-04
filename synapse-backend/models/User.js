@@ -5,7 +5,8 @@ const userSchema = mongoose.Schema({
     name: { type: String, required: true },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String }, // Optional for Google users
+    firebaseUid: { type: String, unique: true, sparse: true }, // Link to Firebase Auth
     profilePic: { type: String, default: '' },
     bannerPic: { type: String, default: '' },
     course: { type: String, default: '' },
@@ -22,6 +23,16 @@ const userSchema = mongoose.Schema({
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     teams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
+    projects: [{
+        title: String,
+        desc: String,
+        image: String,
+        status: String,
+        role: String,
+        tags: [String],
+        github: String,
+        liveDemo: String
+    }],
     settings: {
         privacy: {
             profileVisibility: { type: String, default: 'public' },

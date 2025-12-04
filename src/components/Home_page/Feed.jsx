@@ -42,7 +42,8 @@ export default function Feed({ user }) {
         image: post.image,
         likes: post.likes.length,
         comments: post.comments,
-        avatar: post.user.profilePic
+        avatar: post.user.profilePic,
+        userId: post.user._id // Add userId for ownership check
       }));
 
       setPosts(prev => isRefresh ? formattedPosts : [...prev, ...formattedPosts]);
@@ -91,6 +92,19 @@ export default function Feed({ user }) {
     setPosts((p) => [formattedPost, ...p]);
   }
 
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      await api.delete(`/posts/${postId}`);
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      // toast.success("Post deleted successfully"); // Assuming toast is available
+    } catch (err) {
+      console.error("Failed to delete post", err);
+      // toast.error("Failed to delete post");
+    }
+  };
+
   return (
     <main className="flex flex-col items-center w-full">
       <div className="w-full">
@@ -113,7 +127,7 @@ export default function Feed({ user }) {
         {/* posts */}
         <div className="space-y-5">
           {posts.map((p) => (
-            <PostCard key={p.id} post={p} />
+            <PostCard key={p.id} post={p} currentUser={user} onDelete={handleDeletePost} />
           ))}
 
           {loading && (
@@ -123,10 +137,34 @@ export default function Feed({ user }) {
           )}
 
           {!loading && posts.length === 0 && (
-            <div className="text-center py-10 text-gray-500">
-              {feedType === "Following"
-                ? "You aren't following anyone yet. Switch to 'For You' to find people!"
-                : "No posts yet. Be the first to post!"}
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                {feedType === "Following" ? (
+                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                )}
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                {feedType === "Following" ? "No posts from friends yet" : "No posts yet"}
+              </h3>
+              <p className="text-gray-500 max-w-xs mx-auto mb-6">
+                {feedType === "Following"
+                  ? "You aren't following anyone yet, or they haven't posted anything. Explore 'For You' to find people!"
+                  : "Be the first to share something with the community!"}
+              </p>
+              {feedType === "Following" && (
+                <button
+                  onClick={() => setFeedType("For You")}
+                  className="text-blue-600 font-semibold hover:bg-blue-50 px-4 py-2 rounded-lg transition"
+                >
+                  Switch to For You
+                </button>
+              )}
             </div>
           )}
 

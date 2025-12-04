@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../api/axios';
+import Avatar from '../common/Avatar';
 
 const Cards = ({ eventData, onEdit, currentUserId }) => {
   const {
@@ -48,7 +49,7 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     <div className="bg-white rounded-xl shadow-sm overflow-hidden my-4 mx-4 sm:mx-auto max-w-sm border border-gray-200 flex flex-col h-full">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-3">
-          <img className="w-10 h-10 rounded-full ring-2 ring-gray-100 object-cover" src={organizerAvatar} alt="" />
+          <Avatar src={organizerAvatar} alt={organizerName} size="sm" className="ring-2 ring-gray-100" />
           <div>
             <p className="font-semibold text-gray-900 truncate max-w-[150px]">{organizerName}</p>
             <p className="text-xs text-gray-500 truncate max-w-[150px]">{organizerTitle}</p>

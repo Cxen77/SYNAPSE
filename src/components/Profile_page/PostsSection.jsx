@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FaHeart, FaComment, FaShare, FaEllipsisH, FaRegHeart } from 'react-icons/fa';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
+import PostCard from '../Home_page/PostCard';
+import toast from 'react-hot-toast';
 
-const PostsSection = ({ isOwner, user }) => {
+const PostsSection = ({ isOwner, user, currentUser }) => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [likedPosts, setLikedPosts] = useState({});
 
     useEffect(() => {
         if (user?._id) {
@@ -18,10 +18,6 @@ const PostsSection = ({ isOwner, user }) => {
         try {
             const res = await api.get(`/posts?userId=${user._id}`);
             setPosts(res.data.posts);
-
-            // Initialize liked state
-            // Note: In a real app, the backend should tell us if we liked it
-            // For now, we'll just default to false as per existing logic
         } catch (err) {
             console.error("Failed to fetch user posts", err);
         } finally {
@@ -29,16 +25,16 @@ const PostsSection = ({ isOwner, user }) => {
         }
     };
 
-    const toggleLike = async (postId) => {
+    const handleDeletePost = async (postId) => {
+        if (!window.confirm("Are you sure you want to delete this post?")) return;
+
         try {
-            await api.put(`/posts/${postId}/like`);
-            setLikedPosts(prev => ({
-                ...prev,
-                [postId]: !prev[postId]
-            }));
-            // Ideally refetch or update local count
+            await api.delete(`/posts/${postId}`);
+            setPosts(prev => prev.filter(p => p._id !== postId));
+            toast.success("Post deleted successfully");
         } catch (err) {
-            console.error("Failed to like post", err);
+            console.error("Failed to delete post", err);
+            toast.error("Failed to delete post");
         }
     };
 
@@ -74,91 +70,12 @@ const PostsSection = ({ isOwner, user }) => {
                 </div>
             ) : (
                 posts.map((post) => (
-                    <div
+                    <PostCard
                         key={post._id}
-                        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition"
-                    >
-                        {/* Post Header */}
-                        <div className="p-4 flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                                <Avatar
-                                    src={post.user?.profilePic || user.profilePic}
-                                    alt={post.user?.name || user.name}
-                                    size="md"
-                                    className="object-cover"
-                                />
-                                <div>
-                                    <h4 className="font-bold text-gray-900 hover:underline cursor-pointer">
-                                        {post.user?.name || user.name}
-                                    </h4>
-                                    <p className="text-sm text-gray-500">
-                                        {new Date(post.createdAt).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </div>
-                            <button className="text-gray-500 hover:bg-gray-100 p-2 rounded-full transition">
-                                <FaEllipsisH className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Post Content */}
-                        <div className="px-4 pb-3">
-                            <p className="text-gray-900 whitespace-pre-wrap">{post.content}</p>
-                        </div>
-
-                        {/* Post Image */}
-                        {post.image && (
-                            <div className="w-full">
-                                <img
-                                    src={post.image}
-                                    alt="Post content"
-                                    className="w-full object-cover max-h-96"
-                                />
-                            </div>
-                        )}
-
-                        {/* Post Stats */}
-                        <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-600 border-t border-gray-200">
-                            <div className="flex items-center gap-1">
-                                <div className="flex -space-x-1">
-                                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <FaHeart className="w-3 h-3 text-white" />
-                                    </div>
-                                </div>
-                                <span className="ml-1 hover:underline cursor-pointer">
-                                    {post.likes?.length || 0} likes
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="hover:underline cursor-pointer">{post.comments?.length || 0} comments</span>
-                                <span className="hover:underline cursor-pointer">0 shares</span>
-                            </div>
-                        </div>
-
-                        {/* Post Actions */}
-                        <div className="px-4 py-2 border-t border-gray-200 flex items-center justify-around">
-                            <button
-                                onClick={() => toggleLike(post._id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition font-semibold ${likedPosts[post._id] ? 'text-blue-600' : 'text-gray-600'
-                                    }`}
-                            >
-                                {likedPosts[post._id] ? (
-                                    <FaHeart className="w-5 h-5" />
-                                ) : (
-                                    <FaRegHeart className="w-5 h-5" />
-                                )}
-                                Like
-                            </button>
-                            <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition text-gray-600 font-semibold">
-                                <FaComment className="w-5 h-5" />
-                                Comment
-                            </button>
-                            <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition text-gray-600 font-semibold">
-                                <FaShare className="w-5 h-5" />
-                                Share
-                            </button>
-                        </div>
-                    </div>
+                        post={post}
+                        currentUser={currentUser}
+                        onDelete={handleDeletePost}
+                    />
                 ))
             )}
 
