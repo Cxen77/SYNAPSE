@@ -1,0 +1,26 @@
+2025-12-12T15:32:35.229Z - 401 - Not authorized, no token
+Error: Not authorized, no token
+    at file:///C:/Users/Dev/OneDrive/Desktop/synapse/synapse-backend/middleware/authMiddleware.js:52:15
+    at asyncUtilWrap (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express-async-handler\index.js:3:20)
+    at Layer.handle [as handle_request] (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:149:13)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:145:7)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:145:7)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:145:7)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:145:7)
+    at Route.dispatch (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\layer.js:95:5)
+
+2025-12-12T15:37:39.810Z - 401 - Not authorized, no token
+Error: Not authorized, no token
+    at file:///C:/Users/Dev/OneDrive/Desktop/synapse/synapse-backend/middleware/authMiddleware.js:52:15
+    at asyncUtilWrap (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express-async-handler\index.js:3:20)
+    at Layer.handle [as handle_request] (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\index.js:284:15
+    at router.process_params (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\index.js:280:10)
+    at router.handle (C:\Users\Dev\OneDrive\Desktop\synapse\synapse-backend\node_modules\express\lib\router\index.js:175:3)
+

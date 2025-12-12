@@ -6,6 +6,7 @@ const BottomNav = () => {
     const navItems = [
         { to: "/", icon: HiHome, label: "Home" },
         { to: "/teams", icon: HiUserGroup, label: "Teams" },
+        { to: "/forums", icon: HiChatAlt2, label: "Forums" },
         { to: "/events", icon: HiCalendar, label: "Events" },
         { to: "/chat", icon: HiChatAlt2, label: "Chat" },
         { to: "/settings", icon: HiCog, label: "Settings" },

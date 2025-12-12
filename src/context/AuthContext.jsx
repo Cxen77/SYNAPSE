@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebaseClient';
+import api from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -68,8 +69,45 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    // Fetch MongoDB user data
+                    // We need to ensure the token is ready for the interceptor
+                    const token = await user.getIdToken();
+                    // The axios interceptor will attach the token
+                    // We might need a specific endpoint to get "me" or just use the user sync logic
+                    // For now, let's assume we can hit a profile endpoint or similar if it exists
+                    // Or we can rely on the fact that the backend creates the user if missing on protected routes
+                    // But we need the _id for the frontend.
+
+                    // Let's try to fetch the user profile from our backend
+                    // If the user is new, this might fail if we don't have a "create if not exists" on GET /me
+                    // But our protect middleware does that!
+                    // So let's add a route for getting current user details if not already present, 
+                    // or just use an existing one.
+                    // Looking at userRoutes.js, there isn't a specific "me" route, but we can add one or use search?
+                    // Actually, let's just use the firebase user for now and rely on the backend to handle the mapping
+                    // BUT, the frontend needs _id for comparisons (isMember, etc).
+
+                    // Let's add a simple fetch to a new endpoint or existing one.
+                    // Since I can't easily add a new endpoint without editing backend again (which I can do),
+                    // I will update userRoutes.js to include a /me endpoint or similar.
+                    // Wait, I can just use the user search or update profile? No.
+
+                    // Let's use the existing /users/profile endpoint
+                    const res = await api.get('/users/profile');
+                    // MERGE CAREFULLY: Do not use spread {...user} as it strips Firebase prototype methods (getIdToken)
+                    // Instead, mutate the user object or use Object.assign to preserve the prototype chain
+                    const mergedUser = Object.assign(user, res.data);
+                    setCurrentUser(mergedUser);
+                } catch (error) {
+                    console.error("Failed to fetch MongoDB user", error);
+                    setCurrentUser(user); // Fallback to just Firebase user
+                }
+            } else {
+                setCurrentUser(null);
+            }
             setLoading(false);
         });
 

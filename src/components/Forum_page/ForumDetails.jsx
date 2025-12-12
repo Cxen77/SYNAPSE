@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { HiPlus, HiUserGroup, HiInformationCircle, HiShieldCheck } from 'react-icons/hi';
+import { useParams, Link } from 'react-router-dom';
+import { HiPlus, HiUserGroup, HiInformationCircle, HiShieldCheck, HiFire, HiArrowTrendingUp, HiPhoto } from 'react-icons/hi2';
 import api from '../../api/axios';
 import ForumPostCard from './ForumPostCard';
 import CreatePostModal from './CreatePostModal';
@@ -16,10 +16,11 @@ const ForumDetails = () => {
     const [loading, setLoading] = useState(true);
     const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
     const [isMember, setIsMember] = useState(false);
+    const [sort, setSort] = useState('latest'); // latest, top, trending
 
     useEffect(() => {
         fetchForumData();
-    }, [id]);
+    }, [id, sort]);
 
     useEffect(() => {
         if (forum && currentUser) {
@@ -29,12 +30,15 @@ const ForumDetails = () => {
 
     const fetchForumData = async () => {
         try {
-            const [forumRes, postsRes] = await Promise.all([
-                api.get(`/forums/${id}`),
-                api.get(`/forums/${id}/posts`)
-            ]);
-            setForum(forumRes.data);
-            setPosts(postsRes.data);
+            // Fetch forum details only if not already loaded or id changed
+            if (!forum || forum._id !== id) {
+                const forumRes = await api.get(`/forums/${id}`);
+                setForum(forumRes.data);
+            }
+
+            // Fetch posts with sort
+            const postsRes = await api.get(`/forums/${id}/posts?sort=${sort}`);
+            setPosts(postsRes.data.posts || []);
         } catch (error) {
             console.error("Failed to fetch forum details", error);
             toast.error("Failed to load community");
@@ -48,12 +52,20 @@ const ForumDetails = () => {
             if (isMember) {
                 await api.put(`/forums/${id}/leave`);
                 setIsMember(false);
-                setForum(prev => ({ ...prev, members: prev.members.filter(m => m !== currentUser._id) }));
+                setForum(prev => ({
+                    ...prev,
+                    members: prev.members.filter(m => m !== currentUser._id),
+                    stats: { ...prev.stats, membersCount: (prev.stats?.membersCount || 1) - 1 }
+                }));
                 toast.success(`Left r/${forum.name}`);
             } else {
                 await api.put(`/forums/${id}/join`);
                 setIsMember(true);
-                setForum(prev => ({ ...prev, members: [...prev.members, currentUser._id] }));
+                setForum(prev => ({
+                    ...prev,
+                    members: [...prev.members, currentUser._id],
+                    stats: { ...prev.stats, membersCount: (prev.stats?.membersCount || 0) + 1 }
+                }));
                 toast.success(`Joined r/${forum.name}`);
             }
         } catch (error) {
@@ -68,9 +80,14 @@ const ForumDetails = () => {
 
     const handleNewPost = (newPost) => {
         setPosts(prev => [newPost, ...prev]);
+        // Update stats locally
+        setForum(prev => ({
+            ...prev,
+            stats: { ...prev.stats, postsCount: (prev.stats?.postsCount || 0) + 1 }
+        }));
     };
 
-    if (loading) return (
+    if (loading && !forum) return (
         <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -126,8 +143,8 @@ const ForumDetails = () => {
                                 <button
                                     onClick={handleJoinLeave}
                                     className={`flex-1 md:flex-none px-6 py-2.5 rounded-full font-bold transition shadow-sm ${isMember
-                                            ? 'bg-white border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200'
-                                            : 'bg-gray-900 text-white hover:bg-gray-800'
+                                        ? 'bg-white border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+                                        : 'bg-gray-900 text-white hover:bg-gray-800'
                                         }`}
                                 >
                                     {isMember ? 'Joined' : 'Join Community'}
@@ -151,7 +168,25 @@ const ForumDetails = () => {
                             readOnly
                         />
                         <button className="p-2.5 text-gray-500 hover:bg-gray-100 rounded-full transition">
-                            <HiPhotograph className="w-6 h-6" />
+                            <HiPhoto className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200 shadow-sm w-fit">
+                        <button
+                            onClick={() => setSort('latest')}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-bold shadow-sm transition ${sort === 'latest' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50'}`}
+                        >
+                            <HiPlus className="w-4 h-4" />
+                            Latest
+                        </button>
+                        <button
+                            onClick={() => setSort('top')}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-bold shadow-sm transition ${sort === 'top' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50'}`}
+                        >
+                            <HiFire className="w-4 h-4 text-orange-500" />
+                            Top
                         </button>
                     </div>
 
@@ -167,7 +202,9 @@ const ForumDetails = () => {
                             </div>
                         ) : (
                             posts.map(post => (
-                                <ForumPostCard key={post._id} post={post} onVote={handlePostUpdate} />
+                                <Link key={post._id} to={`/forums/post/${post._id}`}>
+                                    <ForumPostCard post={post} onVote={handlePostUpdate} />
+                                </Link>
                             ))
                         )}
                     </div>
@@ -186,15 +223,12 @@ const ForumDetails = () => {
 
                             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-100">
                                 <div className="flex-1">
-                                    <div className="text-xl font-bold text-gray-900">{forum.members.length}</div>
+                                    <div className="text-xl font-bold text-gray-900">{forum.stats?.membersCount || forum.members.length}</div>
                                     <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Members</div>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xl font-bold text-green-500">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full inline-block mr-2 mb-1"></div>
-                                        Online
-                                    </div>
-                                    <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Status</div>
+                                    <div className="text-xl font-bold text-gray-900">{forum.stats?.postsCount || 0}</div>
+                                    <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Posts</div>
                                 </div>
                             </div>
 

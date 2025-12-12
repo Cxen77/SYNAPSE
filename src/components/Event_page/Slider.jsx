@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { FaSearch, FaCalendarAlt } from "react-icons/fa";
+import { FaSearch, FaCalendarAlt, FaFire, FaBolt } from "react-icons/fa";
 
 const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
-  const [isOngoing, setIsOngoing] = useState(true); // true means "All", false means "Upcoming"
+  const [isOngoing, setIsOngoing] = useState(true);
   const [selectedDate, setSelectedDate] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -17,9 +17,9 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
 
   const categories = ["Hackathon", "Workshop", "Seminar", "Tournament", "Meetup", "Project", "Game", "Sport"];
   const liveUpdates = [
-    "💡 New hackathon teams forming now!",
-    "🎮 Esports tournament starting soon!",
-    "🤝 Collaborate on AI project with new members!",
+    { text: "New hackathon teams forming now!", icon: "💡" },
+    { text: "Esports tournament starting soon!", icon: "🎮" },
+    { text: "Collaborate on AI project with new members!", icon: "🤝" },
   ];
 
   const months = Array.from({ length: 12 }, (_, i) =>
@@ -59,11 +59,13 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
   }, []);
 
   return (
-    <div className="w-full lg:w-80 bg-white text-gray-900 p-5 rounded-xl shadow-sm sticky top-[80px] max-h-[88vh] flex flex-col border border-gray-200">
+    <div className="w-full bg-white text-gray-900 px-5 py-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col border border-gray-100/50 h-full overflow-hidden">
 
       {/* 🔍 Search */}
-      <div className="flex items-center bg-gradient-to-r from-blue-50 to-white rounded-xl px-3 py-2 mb-5 shadow-sm border border-gray-300">
-        <FaSearch className="text-gray-400 mr-2" />
+      <div className="relative mb-6 group">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <FaSearch className="text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+        </div>
         <input
           type="text"
           placeholder="Search..."
@@ -72,23 +74,23 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
             setSearchText(e.target.value);
             onSearch?.(e.target.value);
           }}
-          className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400 focus:ring-0"
+          className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[15px] font-semibold rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent block pl-10 p-3 outline-none transition-all placeholder-gray-400"
         />
       </div>
 
       {/* 🏷 Categories */}
       <div className="mb-6">
-        <h3 className="uppercase text-gray-500 text-xs mb-2 tracking-wider">
-          Categories
+        <h3 className="uppercase text-gray-400 text-[13px] font-extrabold mb-3 tracking-widest flex items-center gap-2">
+          <FaBolt className="text-yellow-500" /> Categories
         </h3>
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
-              className={`px-3 py-1.5 text-sm rounded-full border transition-all duration-200 ${activeCategory === cat
-                ? "bg-blue-600 border-blue-600 text-white"
-                : "border-gray-300 text-gray-700 hover:bg-blue-50"
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 border ${activeCategory === cat
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200"
+                : "bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50"
                 }`}
             >
               {cat}
@@ -99,8 +101,8 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
 
       {/* 📅 Calendar */}
       <div className="relative mb-6" ref={calendarRef}>
-        <h3 className="uppercase text-gray-500 text-xs mb-2 tracking-wider">
-          Event Date
+        <h3 className="uppercase text-gray-400 text-[13px] font-extrabold mb-3 tracking-widest flex items-center gap-2">
+          <FaCalendarAlt className="text-blue-500" /> Filter by Date
         </h3>
         <div className="flex items-center relative">
           <input
@@ -109,27 +111,26 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
             placeholder="Select date"
             readOnly
             onClick={() => setShowCalendar(!showCalendar)}
-            className="w-full px-3 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full pl-4 pr-10 py-3 rounded-xl bg-white text-gray-700 border border-gray-200 cursor-pointer focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm font-bold shadow-sm"
           />
           <FaCalendarAlt
             onClick={() => setShowCalendar(!showCalendar)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-blue-500 transition-colors"
           />
         </div>
 
         {showCalendar && (
-          <div className="absolute top-full left-0 mt-2 w-full bg-white text-gray-800 p-3 rounded-xl shadow-xl z-50 border border-gray-200">
-            <div className="flex justify-between items-center mb-3">
-              {/* Month */}
+          <div className="absolute top-full left-0 mt-2 w-full bg-white text-gray-800 p-4 rounded-2xl shadow-2xl z-50 border border-gray-100 animate-fadeIn">
+            <div className="flex justify-between items-center mb-4">
               <div className="relative">
                 <button
                   onClick={() => setShowMonthDropdown(!showMonthDropdown)}
-                  className="bg-white px-2 py-1 rounded w-20 text-left border border-gray-300"
+                  className="bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-left text-sm font-bold text-gray-700 transition-colors"
                 >
                   {months[calendarMonth]}
                 </button>
                 {showMonthDropdown && (
-                  <div className="absolute top-full left-0 mt-1 w-20 bg-white border border-gray-200 rounded shadow z-50 max-h-40 overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-1 w-24 bg-white border border-gray-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto no-scrollbar">
                     {months.map((m, i) => (
                       <div
                         key={i}
@@ -137,7 +138,7 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
                           setCalendarMonth(i);
                           setShowMonthDropdown(false);
                         }}
-                        className="px-2 py-1 cursor-pointer hover:bg-blue-50"
+                        className="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-600 hover:text-blue-600"
                       >
                         {m}
                       </div>
@@ -146,16 +147,15 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
                 )}
               </div>
 
-              {/* Year */}
               <div className="relative">
                 <button
                   onClick={() => setShowYearDropdown(!showYearDropdown)}
-                  className="bg-white px-2 py-1 rounded w-20 text-left border border-gray-300"
+                  className="bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-left text-sm font-bold text-gray-700 transition-colors"
                 >
                   {calendarYear}
                 </button>
                 {showYearDropdown && (
-                  <div className="absolute top-full left-0 mt-1 w-20 bg-white border border-gray-200 rounded shadow z-50 max-h-40 overflow-y-auto">
+                  <div className="absolute top-full right-0 mt-1 w-20 bg-white border border-gray-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto no-scrollbar">
                     {years.map((y) => (
                       <div
                         key={y}
@@ -163,7 +163,7 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
                           setCalendarYear(y);
                           setShowYearDropdown(false);
                         }}
-                        className="px-2 py-1 cursor-pointer hover:bg-blue-50"
+                        className="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm text-gray-600 hover:text-blue-600"
                       >
                         {y}
                       </div>
@@ -173,8 +173,7 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
               </div>
             </div>
 
-            {/* Days */}
-            <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-500">
+            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide">
               {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
                 <div key={d}>{d}</div>
               ))}
@@ -191,9 +190,9 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
                     <div
                       key={day}
                       onClick={() => handleDateSelect(day)}
-                      className={`p-1 rounded cursor-pointer ${isSelected
-                        ? "bg-blue-600 text-white"
-                        : "hover:bg-blue-50"
+                      className={`h-8 flex items-center justify-center rounded-lg cursor-pointer text-sm font-bold transition-all ${isSelected
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-200 scale-105"
+                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                         }`}
                     >
                       {day}
@@ -207,39 +206,40 @@ const Slider = ({ onSearch, onCategory, onToggle, onDateSelect }) => {
       </div>
 
       {/* 🔄 Toggle */}
-      <div className="flex justify-between items-center bg-gradient-to-r from-blue-50 to-white p-3 rounded-xl mb-5 border border-gray-300">
-        <span className="text-sm text-gray-700">Show:</span>
+      <div className="bg-gray-50 p-1 rounded-xl mb-6 flex border border-gray-200/50">
         <button
-          onClick={() => {
-            setIsOngoing(!isOngoing);
-            onToggle?.(!isOngoing ? "All" : "Upcoming");
-          }}
-          className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm text-white transition"
+          onClick={() => { setIsOngoing(true); onToggle?.("All"); }}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${isOngoing ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
         >
-          {isOngoing ? "All" : "Upcoming"}
+          All Events
+        </button>
+        <button
+          onClick={() => { setIsOngoing(false); onToggle?.("Upcoming"); }}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${!isOngoing ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+        >
+          Upcoming
         </button>
       </div>
 
       {/* 🧠 Live Updates */}
-      <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-        <div>
-          <h3 className="uppercase text-gray-500 text-xs mb-2 tracking-wider">
-            Live Updates
-          </h3>
-          <ul className="space-y-1 text-sm text-gray-800">
-            {liveUpdates.map((update, i) => (
-              <li
-                key={i}
-                className="bg-gray-50 p-2 rounded-lg hover:bg-blue-50 transition border border-gray-200"
-              >
-                {update}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-300 p-3 rounded-lg text-sm text-blue-800 font-medium">
-          🚀 New collaboration spaces open — find your next project partner!
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <h3 className="uppercase text-gray-400 text-[13px] font-extrabold mb-3 tracking-widest flex items-center gap-2">
+          <FaFire className="text-orange-500" /> Live Updates
+        </h3>
+        <div className="space-y-2 overflow-y-auto no-scrollbar">
+          {liveUpdates.map((update, i) => (
+            <div
+              key={i}
+              className="bg-gradient-to-br from-gray-50 to-white p-3 rounded-xl border border-gray-100 flex gap-3 items-start group hover:border-blue-200 transition-colors"
+            >
+              <span className="text-sm bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm text-center border border-gray-100 flex-shrink-0">{update.icon}</span>
+              <p className="text-xs text-gray-600 leading-relaxed font-bold pt-0.5">
+                {update.text}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

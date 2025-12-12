@@ -256,7 +256,7 @@ const Profile = () => {
                                     )}
                                     {showOwnerControls && <ProfileScore user={user} />}
                                     {!showOwnerControls && <SuggestedConnections />}
-                                    <AchievementsSection />
+                                    <AchievementsSection user={user} />
                                     <SocialLinks user={user} />
                                 </div>
                             </>
@@ -278,7 +278,7 @@ const Profile = () => {
                         )}
                         {showOwnerControls && <ProfileScore user={user} />}
                         {!showOwnerControls && <SuggestedConnections />}
-                        <AchievementsSection />
+                        <AchievementsSection user={user} />
                         <SocialLinks user={user} />
                     </div>
                 </div>

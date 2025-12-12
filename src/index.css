@@ -4,12 +4,15 @@
 
 /* Hide scrollbar globally */
 html {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 ::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 @layer utilities {
@@ -29,5 +32,13 @@ html {
 
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background-color: #d1d5db;
+    }
+
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+
+    .animation-delay-4000 {
+        animation-delay: 4s;
     }
 }

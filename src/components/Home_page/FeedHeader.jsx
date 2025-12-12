@@ -79,116 +79,123 @@ export default function FeedHeader({ user, feedType, setFeedType, onCreatePost }
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 mb-6">
-      {/* Feed Toggle */}
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-lg font-bold text-gray-900">Create Post</h3>
-        <div className="bg-gray-100 p-1 rounded-lg flex text-sm font-medium">
-          <button
-            onClick={() => setFeedType("For You")}
-            className={`px-4 py-1.5 rounded-md transition-all duration-200 ${feedType === "For You"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            For You
-          </button>
-          <button
-            onClick={() => setFeedType("Following")}
-            className={`px-4 py-1.5 rounded-md transition-all duration-200 ${feedType === "Following"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            Following
-          </button>
-        </div>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden transition-shadow hover:shadow-md">
+      {/* Header Tabs - Segmented Control Style */}
+      <div className="flex border-b border-gray-100">
+        <button
+          onClick={() => setFeedType("For You")}
+          className={`flex-1 py-4 text-sm font-semibold transition-all duration-200 relative ${feedType === "For You"
+            ? "text-blue-600"
+            : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
+        >
+          For You
+          {feedType === "For You" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 mx-auto w-16 rounded-t-full"></div>
+          )}
+        </button>
+        <button
+          onClick={() => setFeedType("Following")}
+          className={`flex-1 py-4 text-sm font-semibold transition-all duration-200 relative ${feedType === "Following"
+            ? "text-blue-600"
+            : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
+        >
+          Following
+          {feedType === "Following" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 mx-auto w-16 rounded-t-full"></div>
+          )}
+        </button>
       </div>
 
-      {/* Input Section */}
-      <div className="flex gap-4">
-        <Avatar
-          src={displayUser.profilePic}
-          alt="me"
-          size="md"
-          className="ring-2 ring-gray-50 flex-shrink-0 bg-white"
-        />
-
-        <div className="flex-1">
-          <div className="relative">
-            <textarea
-              ref={textareaRef}
-              rows={2}
-              placeholder={`What's on your mind, ${displayUser.name ? displayUser.name.split(' ')[0] : 'User'}?`}
-              value={text}
-              onChange={handleTextChange}
-              className="w-full resize-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder-gray-400 min-h-[50px]"
+      {/* Input Area */}
+      <div className="p-4 md:p-5">
+        <div className="flex gap-3 md:gap-4">
+          <div className="hidden sm:block pt-1">
+            <Avatar
+              src={displayUser.profilePic}
+              alt="me"
+              size="md"
+              className="ring-2 ring-white shadow-sm"
+            />
+          </div>
+          <div className="block sm:hidden pt-1">
+            <Avatar
+              src={displayUser.profilePic}
+              alt="me"
+              size="sm"
+              className="ring-2 ring-white shadow-sm"
             />
           </div>
 
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="mt-3 relative inline-block">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="max-h-60 rounded-lg border border-gray-200"
+          <div className="flex-1 min-w-0">
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                placeholder={`What's happening?`}
+                value={text}
+                onChange={handleTextChange}
+                className="w-full resize-none bg-transparent border-none p-0 py-2 text-base md:text-lg placeholder-gray-400 focus:ring-0 outline-none text-gray-900 min-h-[50px] md:min-h-[60px]"
               />
-              <button
-                onClick={removeImage}
-                className="absolute top-2 right-2 bg-gray-900/70 text-white p-1.5 rounded-full hover:bg-gray-900 transition"
-              >
-                <HiX size={12} />
-              </button>
-            </div>
-          )}
-
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-            accept="image/*"
-            className="hidden"
-          />
-
-          {/* Actions Row */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 hover:text-blue-600 font-medium transition-colors text-sm"
-              >
-                <HiPhotograph className="text-blue-500" size={16} />
-                <span className="hidden sm:inline">Photo</span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-purple-50 text-gray-600 hover:text-purple-600 font-medium transition-colors text-sm">
-                <HiVideoCamera className="text-purple-500" size={16} />
-                <span className="hidden sm:inline">Video</span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-orange-50 text-gray-600 hover:text-orange-600 font-medium transition-colors text-sm">
-                <HiEmojiHappy className="text-orange-500" size={16} />
-                <span className="hidden sm:inline">Feeling</span>
-              </button>
             </div>
 
-            <button
-              onClick={submitPost}
-              disabled={(!text.trim() && !imageFile) || isSubmitting}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Posting...
-                </>
-              ) : (
-                <>
-                  <HiPaperAirplane size={12} className="rotate-90" />
-                  Post
-                </>
-              )}
-            </button>
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="mt-3 relative inline-block group">
+                <div className="relative rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-h-64 w-auto object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
+                </div>
+                <button
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1.5 rounded-full backdrop-blur-sm transition-all shadow-sm"
+                >
+                  <HiX size={14} className="stroke-2" />
+                </button>
+              </div>
+            )}
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+              accept="image/*"
+              className="hidden"
+            />
+
+            <div className="mt-3 pt-3 flex items-center justify-between border-t border-gray-50">
+              {/* Media Actions */}
+              <div className="flex items-center gap-0.5 md:gap-2 -ml-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors relative group"
+                  title="Add Photo"
+                >
+                  <HiPhotograph size={20} className="md:w-6 md:h-6" />
+                </button>
+                <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors" title="Add Video">
+                  <HiVideoCamera size={20} className="md:w-6 md:h-6" />
+                </button>
+                <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors" title="Feeling/Activity">
+                  <HiEmojiHappy size={20} className="md:w-6 md:h-6" />
+                </button>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={submitPost}
+                disabled={(!text.trim() && !imageFile) || isSubmitting}
+                className="bg-blue-600 text-white px-5 py-1.5 md:px-6 md:py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transform active:scale-95"
+              >
+                {isSubmitting ? 'Posting...' : 'Post'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

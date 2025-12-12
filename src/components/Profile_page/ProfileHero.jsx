@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from '../../api/axios';
 import Avatar from '../common/Avatar';
 import {
     Edit3,
@@ -17,7 +19,18 @@ import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
 
 const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInvite, onToggleView, onProfileUpdate }) => {
+    const navigate = useNavigate();
     const [showEditModal, setShowEditModal] = useState(false);
+
+    const handleMessage = async () => {
+        try {
+            const { data } = await axios.post('/chat', { userId: user._id }); // ensure using _id
+            navigate(`/chat/${data._id}`);
+        } catch (error) {
+            console.error("Error accessing chat", error);
+            navigate('/chat');
+        }
+    };
 
     const handleProfileUpdate = (updatedData) => {
         console.log('ProfileHero received update:', updatedData);
@@ -42,7 +55,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                 await navigator.share(shareData);
             } else {
                 await navigator.clipboard.writeText(window.location.href);
-                // toast.success('Profile link copied!'); // Assuming toast is available or will be
+                // toast.success('Profile link copied!'); 
                 alert('Profile link copied to clipboard!');
             }
         } catch (err) {
@@ -169,7 +182,10 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                     <UserPlus className="w-4 h-4" />
                                     Invite
                                 </button>
-                                <button className="col-span-2 md:col-span-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap">
+                                <button
+                                    onClick={handleMessage}
+                                    className="col-span-2 md:col-span-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold border border-gray-300 shadow-sm whitespace-nowrap"
+                                >
                                     <Mail className="w-4 h-4" />
                                     Message
                                 </button>
@@ -202,68 +218,68 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                 </div>
 
                 {/* Stats Summary */}
-                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-4 py-6 border-t border-gray-100">
+                <div className="flex justify-around md:justify-start md:gap-4 py-4 md:py-6 border-t border-gray-100">
                     {/* Followers */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group cursor-pointer border border-transparent hover:border-blue-100">
-                        <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
+                    <div className="flex flex-col md:flex-row items-center md:gap-3 md:px-4 md:py-3 md:bg-gray-50 md:rounded-xl md:hover:bg-blue-50 transition-colors group cursor-pointer md:border md:border-transparent md:hover:border-blue-100">
+                        <div className="hidden md:block p-2 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
                             <Users className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.followers?.length || 0}</p>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Followers</p>
+                        <div className="text-center md:text-left">
+                            <p className="text-lg md:text-2xl font-bold text-gray-900 leading-none">{user.followers?.length || 0}</p>
+                            <p className="text-xs text-gray-500 md:font-medium md:uppercase md:tracking-wide mt-0.5 md:mt-1">Followers</p>
                         </div>
                     </div>
 
                     {/* Following */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group cursor-pointer border border-transparent hover:border-blue-100">
-                        <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
+                    <div className="flex flex-col md:flex-row items-center md:gap-3 md:px-4 md:py-3 md:bg-gray-50 md:rounded-xl md:hover:bg-blue-50 transition-colors group cursor-pointer md:border md:border-transparent md:hover:border-blue-100">
+                        <div className="hidden md:block p-2 bg-white rounded-lg text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
                             <UserPlus className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.following?.length || 0}</p>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Following</p>
+                        <div className="text-center md:text-left">
+                            <p className="text-lg md:text-2xl font-bold text-gray-900 leading-none">{user.following?.length || 0}</p>
+                            <p className="text-xs text-gray-500 md:font-medium md:uppercase md:tracking-wide mt-0.5 md:mt-1">Following</p>
                         </div>
                     </div>
 
                     {/* Teams */}
                     <div
                         onClick={() => scrollToSection('teams-section')}
-                        className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-purple-50 transition-colors group cursor-pointer border border-transparent hover:border-purple-100"
+                        className="flex flex-col md:flex-row items-center md:gap-3 md:px-4 md:py-3 md:bg-gray-50 md:rounded-xl md:hover:bg-purple-50 transition-colors group cursor-pointer md:border md:border-transparent md:hover:border-purple-100"
                     >
-                        <div className="p-2 bg-white rounded-lg text-purple-600 shadow-sm group-hover:scale-110 transition-transform">
+                        <div className="hidden md:block p-2 bg-white rounded-lg text-purple-600 shadow-sm group-hover:scale-110 transition-transform">
                             <Briefcase className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.teams?.length || 0}</p>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Teams</p>
+                        <div className="text-center md:text-left">
+                            <p className="text-lg md:text-2xl font-bold text-gray-900 leading-none">{user.teams?.length || 0}</p>
+                            <p className="text-xs text-gray-500 md:font-medium md:uppercase md:tracking-wide mt-0.5 md:mt-1">Teams</p>
                         </div>
                     </div>
 
                     {/* Projects */}
                     <div
                         onClick={() => scrollToSection('projects-section')}
-                        className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-orange-50 transition-colors group cursor-pointer border border-transparent hover:border-orange-100"
+                        className="flex flex-col md:flex-row items-center md:gap-3 md:px-4 md:py-3 md:bg-gray-50 md:rounded-xl md:hover:bg-orange-50 transition-colors group cursor-pointer md:border md:border-transparent md:hover:border-orange-100"
                     >
-                        <div className="p-2 bg-white rounded-lg text-orange-600 shadow-sm group-hover:scale-110 transition-transform">
+                        <div className="hidden md:block p-2 bg-white rounded-lg text-orange-600 shadow-sm group-hover:scale-110 transition-transform">
                             <FolderGit className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.projects?.length || 0}</p>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Projects</p>
+                        <div className="text-center md:text-left">
+                            <p className="text-lg md:text-2xl font-bold text-gray-900 leading-none">{user.projects?.length || 0}</p>
+                            <p className="text-xs text-gray-500 md:font-medium md:uppercase md:tracking-wide mt-0.5 md:mt-1">Projects</p>
                         </div>
                     </div>
 
                     {/* Posts */}
                     <div
                         onClick={() => scrollToSection('posts-section')}
-                        className="col-span-2 md:col-span-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-green-50 transition-colors group cursor-pointer border border-transparent hover:border-green-100"
+                        className="flex flex-col md:flex-row items-center md:gap-3 md:px-4 md:py-3 md:bg-gray-50 md:rounded-xl md:hover:bg-green-50 transition-colors group cursor-pointer md:border md:border-transparent md:hover:border-green-100"
                     >
-                        <div className="p-2 bg-white rounded-lg text-green-600 shadow-sm group-hover:scale-110 transition-transform">
+                        <div className="hidden md:block p-2 bg-white rounded-lg text-green-600 shadow-sm group-hover:scale-110 transition-transform">
                             <FileText className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className="text-xl md:text-2xl font-bold text-gray-900 leading-none">{user.postsCount || 0}</p>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">Posts</p>
+                        <div className="text-center md:text-left">
+                            <p className="text-lg md:text-2xl font-bold text-gray-900 leading-none">{user.postsCount || 0}</p>
+                            <p className="text-xs text-gray-500 md:font-medium md:uppercase md:tracking-wide mt-0.5 md:mt-1">Posts</p>
                         </div>
                     </div>
                 </div>

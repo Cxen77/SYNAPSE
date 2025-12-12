@@ -2,7 +2,9 @@ import React from 'react';
 import userData from '../userdata';
 import { Trophy, Award, Rocket, Users, Target, Palette, Medal, Star, Crown, Zap } from 'lucide-react';
 
-const AchievementsSection = () => {
+const AchievementsSection = ({ user }) => {
+    const achievements = user?.achievements || [];
+
     const getAchievementIcon = (title) => {
         const lowerTitle = title.toLowerCase();
         if (lowerTitle.includes('hackathon')) return <Trophy className="w-6 h-6" />;
@@ -27,6 +29,8 @@ const AchievementsSection = () => {
         return gradients[index % gradients.length];
     };
 
+    if (achievements.length === 0) return null;
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
@@ -36,16 +40,16 @@ const AchievementsSection = () => {
                 </div>
                 <div>
                     <h3 className="text-xl font-bold text-gray-900">Achievements</h3>
-                    <p className="text-sm text-gray-600">{userData.achievements.length} badges earned</p>
+                    <p className="text-sm text-gray-600">{achievements.length} badges earned</p>
                 </div>
             </div>
 
             <div className="p-4">
-                <div className="grid grid-cols-1 gap-3">
-                    {userData.achievements.map((achievement, index) => (
+                <div className="flex overflow-x-auto gap-4 pb-2 custom-scrollbar">
+                    {achievements.map((achievement, index) => (
                         <div
-                            key={achievement.id}
-                            className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-all duration-300 group border border-transparent hover:border-gray-100"
+                            key={achievement.id || index}
+                            className="flex-shrink-0 w-64 flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-all duration-300 group border border-transparent hover:border-gray-100 bg-white shadow-sm border-gray-100"
                         >
                             {/* Icon Box */}
                             <div className={`w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br ${getGradient(index)} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
@@ -62,11 +66,6 @@ const AchievementsSection = () => {
                                         {achievement.date}
                                     </span>
                                 </div>
-                            </div>
-
-                            {/* Arrow (Subtle) */}
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
-                                <Zap className="w-4 h-4" />
                             </div>
                         </div>
                     ))}

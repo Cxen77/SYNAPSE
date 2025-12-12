@@ -11,7 +11,8 @@ import {
     searchUsers,
     getUserStats,
     deleteUser,
-    getRecommendedUsers
+    getRecommendedUsers,
+    getOnlineUsers
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -54,6 +55,10 @@ router.route('/profile')
     .put(protect, updateUserProfile)
     .delete(protect, deleteUser);
 
+router.get('/me', protect, (req, res) => {
+    res.json(req.user);
+});
+
 router.put('/profile-pic', protect, upload.single('profilePic'), updateProfilePic);
 router.put('/banner-pic', protect, upload.single('bannerPic'), updateBannerPic);
 
@@ -63,6 +68,9 @@ router.get('/search', protect, searchUsers);
 // Recommended Users
 router.get('/recommended', protect, getRecommendedUsers);
 
+// Online Users
+router.get('/online', protect, getOnlineUsers);
+
 // Follow/Unfollow
 router.put('/:id/follow', protect, followUser);
 
@@ -71,5 +79,7 @@ router.get('/:id/stats', getUserStats);
 
 // Get by Username
 router.get('/:username', getUserByUsername);
+
+
 
 export default router;

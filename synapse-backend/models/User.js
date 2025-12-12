@@ -23,6 +23,7 @@ const userSchema = mongoose.Schema({
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     teams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
+    savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ForumPost' }],
     projects: [{
         title: String,
         desc: String,

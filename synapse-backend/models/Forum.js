@@ -8,7 +8,11 @@ const forumSchema = mongoose.Schema({
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     rules: [{ type: String }],
-    topics: [{ type: String }]
+    topics: [{ type: String }],
+    stats: {
+        postsCount: { type: Number, default: 0 },
+        membersCount: { type: Number, default: 0 }
+    }
 }, {
     timestamps: true
 });

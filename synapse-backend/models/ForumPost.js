@@ -8,11 +8,12 @@ const forumPostSchema = mongoose.Schema({
     forum: { type: mongoose.Schema.Types.ObjectId, ref: 'Forum', required: true },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    comments: [{
-        text: { type: String, required: true },
-        author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        createdAt: { type: Date, default: Date.now }
-    }]
+    views: { type: Number, default: 0 },
+    tags: [{ type: String }],
+    slug: { type: String }, // Optional: for SEO friendly URLs
+    lastActivity: { type: Date, default: Date.now },
+    isSolved: { type: Boolean, default: false },
+    repliesCount: { type: Number, default: 0 }
 }, {
     timestamps: true
 });
@@ -20,6 +21,7 @@ const forumPostSchema = mongoose.Schema({
 // Indexes
 forumPostSchema.index({ forum: 1, createdAt: -1 });
 forumPostSchema.index({ author: 1 });
+forumPostSchema.index({ title: 'text', content: 'text', tags: 'text' }); // Text search
 
 const ForumPost = mongoose.model('ForumPost', forumPostSchema);
 

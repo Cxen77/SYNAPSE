@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
+import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Cards = ({ eventData, onEdit, currentUserId }) => {
   const {
@@ -12,26 +13,23 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     eventName,
     eventPrize,
     eventDescription,
-    organizer, // Assuming this is the ID or object with _id
+    organizer,
     attendees = [],
+    date, // Assuming date is passed
+    location // Assuming location is passed
   } = eventData;
-
-  // If we have the current user ID, we could check if they are in attendees.
-  // For now, let's assume the parent passes a boolean or we just rely on the button action.
-  // Actually, we need to know if the user has joined to show "Joined".
-  // Let's add local state for this.
 
   const [isJoined, setIsJoined] = useState(() => {
     return attendees.some(att => (att._id || att) === currentUserId);
   });
   const [loading, setLoading] = useState(false);
 
-  // Check if organizer is an object or string ID
   const organizerId = organizer?._id || organizer;
   const isOrganizer = currentUserId && organizerId === currentUserId;
 
-  const handleJoin = async () => {
-    if (isJoined) return; // Already joined (or handle leave)
+  const handleJoin = async (e) => {
+    e.stopPropagation(); // Prevent card click
+    if (isJoined) return;
 
     setLoading(true);
     try {
@@ -45,64 +43,106 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     }
   };
 
+  const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : null;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden my-4 mx-4 sm:mx-auto max-w-sm border border-gray-200 flex flex-col h-full">
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center space-x-3">
-          <Avatar src={organizerAvatar} alt={organizerName} size="sm" className="ring-2 ring-gray-100" />
-          <div>
-            <p className="font-semibold text-gray-900 truncate max-w-[150px]">{organizerName}</p>
-            <p className="text-xs text-gray-500 truncate max-w-[150px]">{organizerTitle}</p>
+    <div
+      className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full hover:-translate-y-1 cursor-pointer"
+      onClick={() => window.location.href = `/events/${_id}`}
+    >
+      {/* Image Section */}
+      <div className="relative h-48 overflow-hidden bg-gray-100">
+        {eventImageUrl ? (
+          <img
+            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+            src={eventImageUrl}
+            alt={eventName}
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">
+            <FaCalendarAlt className="text-blue-200 text-4xl" />
           </div>
-        </div>
+        )}
+
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+
+        {/* Date Badge */}
+        {formattedDate && (
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold text-gray-900 shadow-sm">
+            {formattedDate}
+          </div>
+        )}
+
+        {/* Edit Button */}
         {isOrganizer && (
           <button
-            onClick={() => onEdit(eventData)}
-            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition"
+            onClick={(e) => { e.stopPropagation(); onEdit(eventData); }}
+            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
           >
-            Edit
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
           </button>
         )}
       </div>
 
-      <div className="relative h-48 bg-gray-100">
-        {eventImageUrl ? (
-          <img className="h-full w-full object-cover" src={eventImageUrl} alt={eventName} />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-            <div className="text-center p-4">
-              <div className="w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center shadow-sm mb-2">
-                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-gray-400">No image available</span>
+      {/* Content Section */}
+      <div className="p-5 flex flex-col flex-1">
+        {/* Organizer */}
+        <div className="flex items-center space-x-2 mb-3">
+          <Avatar src={organizerAvatar} alt={organizerName} size="xs" className="ring-2 ring-white" />
+          <span className="text-xs font-medium text-gray-500 truncate">{organizerName}</span>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+          {eventName}
+        </h3>
+
+        {/* Prize / Info */}
+        <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
+          {eventPrize && (
+            <div className="flex items-center gap-1.5 text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-md">
+              <FaTrophy className="text-xs" />
+              <span>{eventPrize}</span>
             </div>
+          )}
+        </div>
+
+        {/* Description */}
+        <p className="text-sm text-gray-500 line-clamp-2 mb-6 flex-1">
+          {eventDescription}
+        </p>
+
+        {/* Footer Action */}
+        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+          <div className="flex -space-x-2">
+            {attendees.slice(0, 3).map((att, i) => (
+              <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
+                <img src={att.profilePic || `https://ui-avatars.com/api/?name=${att.name || 'U'}`} alt="" className="w-full h-full object-cover" />
+              </div>
+            ))}
+            {attendees.length > 3 && (
+              <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center text-[10px] text-gray-500 font-medium">
+                +{attendees.length - 3}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <h2 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">{eventName}</h2>
-        <p className="text-md font-medium text-blue-600 mb-2">{eventPrize}</p>
-        <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-1">{eventDescription}</p>
-
-        <div className="flex justify-end space-x-3 mt-auto">
-          <button
-            onClick={() => window.location.href = `/events/${_id}`}
-            className="px-6 py-2 text-sm border border-gray-300 rounded-full text-gray-700 hover:bg-gray-50 transition"
-          >
-            View
-          </button>
           <button
             onClick={handleJoin}
             disabled={loading || isJoined}
-            className={`px-6 py-2 text-sm rounded-full transition shadow-sm font-medium ${isJoined
-              ? "bg-green-100 text-green-700 border border-green-200 cursor-default"
-              : "bg-blue-600 text-white hover:bg-blue-700"
+            className={`px-5 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-2 ${isJoined
+                ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
+                : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
               }`}
           >
-            {loading ? "Joining..." : isJoined ? "Joined" : "Join"}
+            {loading ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : isJoined ? (
+              <><span>Joined</span><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></>
+            ) : (
+              "Join Event"
+            )}
           </button>
         </div>
       </div>

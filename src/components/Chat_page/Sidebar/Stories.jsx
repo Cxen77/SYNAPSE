@@ -1,13 +1,32 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { useStories } from "../../../hooks/useStories";
+import { useAuth } from "../../../context/AuthContext";
+import { FaPlus, FaPaperPlane, FaTrash } from "react-icons/fa";
 
-function Stories({ chats = [] }) {
-  const [viewer, setViewer] = useState(null); // { name, avatar, note }
+function Stories() {
+  const { stories, loading, createStory } = useStories();
+  const { currentUser } = useAuth();
+  const [viewer, setViewer] = useState(null); // { name, avatar, note, images, isCreate }
+
+  // Check if I have an active story
+  // Note: Backend populates userId, so we check userId._id or userId
+  const myStory = stories.find(s => (s.userId._id === currentUser.uid || s.userId._id === currentUser._id || s.userId === currentUser._id));
+
+  // Filter out my story from the main list to avoid duplication if we want
+  // But usually we keep it in order or separate. Let's filter it out for "Other Users" section.
+  const otherStories = stories.filter(s => s._id !== myStory?._id);
+
+  if (loading) return (
+    <div className="px-4 py-3 border-b border-gray-200 bg-white h-[120px] flex items-center justify-center">
+      <span className="text-gray-400 text-sm">Loading stories...</span>
+    </div>
+  );
 
   return (
-    <div className="px-4 py-3 border-b border-gray-200 bg-white">
+    <div className="py-3 border-b border-gray-200 bg-white">
       <div
-        className="flex gap-8 overflow-x-auto items-start pb-4 scrollbar-hide"
+        className="flex gap-4 overflow-x-auto items-start pb-4 px-4 scrollbar-hide"
         style={{ paddingTop: 45 }}
       >
         <style>
@@ -17,33 +36,37 @@ function Stories({ chats = [] }) {
           `}
         </style>
 
-        {/* YOUR NOTE */}
+        {/* YOUR NOTE / CREATE */}
         <StoryCircle
           name="You"
-          avatar="📝"
-          note="Your personal note—click to view full!"
+          avatar={currentUser?.profilePic || "https://via.placeholder.com/150"}
+          note={myStory ? myStory.text : "Share a thought..."}
           isYou
+          hasStory={!!myStory}
           onClick={() =>
             setViewer({
-              name: "Your Note",
-              avatar: "📝",
-              note: "Your personal note—click to view full!"
+              name: currentUser?.displayName || currentUser?.name || "You",
+              avatar: currentUser?.profilePic,
+              note: myStory ? myStory.text : "",
+              isCreate: !myStory,
+              storyId: myStory?._id
             })
           }
         />
 
         {/* OTHER USERS */}
-        {chats.map((c) => (
+        {otherStories.map((story) => (
           <StoryCircle
-            key={c.id}
-            name={c.name}
-            avatar={c.avatar}
-            note={c.note}
+            key={story._id}
+            name={story.userId?.name || "User"}
+            avatar={story.userId?.profilePic || "https://via.placeholder.com/150"}
+            note={story.text}
             onClick={() =>
               setViewer({
-                name: c.name,
-                avatar: c.avatar,
-                note: c.note
+                name: story.userId?.name || "User",
+                avatar: story.userId?.profilePic,
+                note: story.text,
+                images: story.images
               })
             }
           />
@@ -56,6 +79,7 @@ function Stories({ chats = [] }) {
           <FullStoryViewer
             viewer={viewer}
             onClose={() => setViewer(null)}
+            onCreate={createStory}
           />,
           document.body
         )}
@@ -63,36 +87,36 @@ function Stories({ chats = [] }) {
   );
 }
 
-function StoryCircle({ name, avatar, note, isYou, onClick }) {
-  const short = note.length > 12 ? note.slice(0, 12) + "…" : note;
+function StoryCircle({ name, avatar, note, isYou, hasStory, onClick }) {
+  const short = note && note.length > 12 ? note.slice(0, 12) + "…" : note;
 
   return (
-    <div className="w-20 flex-shrink-0 flex flex-col items-center relative">
-      {/* Note icon/button */}
+    <div className="w-20 flex-shrink-0 flex flex-col items-center relative group cursor-pointer" onClick={onClick}>
       {/* Note icon/button (Bubble) */}
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center cursor-pointer group" onClick={onClick}>
-        <div className="bg-gradient-to-r from-blue-50 to-white border border-blue-100 text-gray-700 w-24 h-9 flex items-center justify-center rounded-xl text-[10px] font-medium shadow-sm relative hover:scale-105 transition-transform px-2">
-          <span className="truncate w-full text-center">{short}</span>
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center group-hover:-translate-y-1 transition-transform duration-300">
+        <div className={`border text-gray-700 w-24 h-9 flex items-center justify-center rounded-xl text-[10px] font-medium shadow-sm relative px-2 ${isYou && !hasStory ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-gray-50 border-gray-200"}`}>
+          {isYou && !hasStory ? (
+            <div className="flex items-center gap-1"><FaPlus /> <span className="truncate">New Note</span></div>
+          ) : (
+            <span className="truncate w-full text-center">{short}</span>
+          )}
         </div>
         {/* Tail */}
-        <div className="w-2 h-2 bg-white border-b border-r border-blue-100 rotate-45 -mt-1"></div>
+        <div className={`w-2 h-2 border-b border-r rotate-45 -mt-1 ${isYou && !hasStory ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"}`}></div>
       </div>
 
-      {/* Avatar circle (no gradient) */}
+      {/* Avatar circle */}
       <div
-        className="w-[64px] h-[64px] rounded-full flex items-center justify-center overflow-hidden bg-white border border-gray-300"
+        className={`w-[60px] h-[60px] rounded-full flex items-center justify-center overflow-hidden border-2 transition-all ${isYou && !hasStory ? "border-dashed border-blue-300 hover:border-blue-500 bg-blue-50" : "border-blue-500 hover:scale-105"}`}
       >
-        {isYou ? (
-          <div className="text-2xl">📝</div>
-        ) : (
-          <img
-            src={avatar}
-            className="w-full h-full rounded-full object-cover"
-          />
-        )}
+        <img
+          src={avatar || "https://via.placeholder.com/150"}
+          className={`w-full h-full rounded-full object-cover ${isYou && !hasStory ? "opacity-70" : ""}`}
+          alt={name}
+        />
       </div>
 
-      <span className="text-xs text-gray-800 mt-1 truncate w-full text-center">
+      <span className="text-xs text-gray-800 mt-2 truncate w-full text-center font-medium">
         {name.split(" ")[0]}
       </span>
     </div>
@@ -101,67 +125,96 @@ function StoryCircle({ name, avatar, note, isYou, onClick }) {
 
 /* ---------------- FULLSCREEN VIEWER ---------------- */
 
-function FullStoryViewer({ viewer, onClose }) {
+function FullStoryViewer({ viewer, onClose, onCreate }) {
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!text.trim()) return;
+    setSubmitting(true);
+    try {
+      await onCreate(text);
+      onClose(); // Close after create
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div
       onClick={onClose}
       className="
-        fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm 
+        fixed inset-0 bg-black/80 backdrop-blur-md 
         flex items-center justify-center z-[9999]
-        animate-fadeIn
+        animate-fadeIn p-4
       "
     >
       <style>
         {`
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          .animate-fadeIn {
-            animation: fadeIn .25s ease-out forwards;
-          }
-
-          @keyframes scaleIn {
-            from { opacity: 0; transform: scale(.85); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          .animate-scaleIn {
-            animation: scaleIn .25s ease-out forwards;
-          }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          .animate-fadeIn { animation: fadeIn .25s ease-out forwards; }
+          @keyframes scaleIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
+          .animate-scaleIn { animation: scaleIn .25s ease-out forwards; }
         `}
       </style>
 
       <div
-        className="bg-white rounded-xl p-6 w-[90%] max-w-[360px] animate-scaleIn shadow-2xl"
-        onClick={(e) => e.stopPropagation()} // prevent closing on inner click
+        className="bg-white rounded-3xl p-6 w-full max-w-sm animate-scaleIn shadow-2xl relative flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-3">
-          {/* Avatar */}
-          {viewer.avatar === "📝" ? (
-            <div className="text-3xl">📝</div>
-          ) : (
-            <img
-              src={viewer.avatar}
-              className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500"
-            />
-          )}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 p-2 hover:bg-gray-100 rounded-full transition"
+        >
+          ✕
+        </button>
 
+        <div className="flex flex-col items-center mb-6 mt-2">
+          <div className="w-20 h-20 rounded-full p-1 border-2 border-dashed border-blue-400 mb-3">
+            <img
+              src={viewer.avatar || "https://via.placeholder.com/150"}
+              className="w-full h-full rounded-full object-cover"
+              alt={viewer.name}
+            />
+          </div>
           <h2 className="font-bold text-gray-900 text-lg">
-            {viewer.name}
+            {viewer.isCreate ? "New Note" : viewer.name}
           </h2>
         </div>
 
-        {/* Full note */}
-        <p className="text-gray-800 leading-relaxed text-[15px] whitespace-pre-wrap">
-          {viewer.note}
-        </p>
+        {/* Content */}
+        {viewer.isCreate ? (
+          <div className="w-full">
+            <textarea
+              autoFocus
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="What's on your mind? (Visible for 24h)"
+              maxLength={100}
+              className="w-full bg-blue-50 rounded-2xl p-4 text-center text-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none min-h-[120px]"
+            />
+            <div className="flex justify-between items-center mt-2 px-1 text-xs text-gray-400 font-medium">
+              <span>{text.length}/100</span>
+            </div>
 
-        <button
-          onClick={onClose}
-          className="mt-4 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg w-full hover:bg-gray-700 transition"
-        >
-          Close
-        </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!text.trim() || submitting}
+              className="w-full mt-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+            >
+              {submitting ? "Posting..." : <>Share Note <FaPaperPlane /></>}
+            </button>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto mb-4 custom-scrollbar text-center px-2">
+            <p className="text-gray-800 text-2xl leading-relaxed font-bold break-words">
+              "{viewer.note}"
+            </p>
+            <p className="text-xs text-gray-400 mt-6 font-medium">Posted recenty</p>
+          </div>
+        )}
       </div>
     </div>
   );

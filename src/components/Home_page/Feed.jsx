@@ -1,66 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FeedHeader from "./FeedHeader";
 import PostCard from "./PostCard";
 import api from "../../api/axios";
+import { usePosts } from "../../hooks/usePosts";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Feed({ user }) {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [feedType, setFeedType] = useState("For You");
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const observerTarget = React.useRef(null);
+  const { posts, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts(feedType);
+  const queryClient = useQueryClient();
 
-  // Reset when feed type changes
-  useEffect(() => {
-    setPosts([]);
-    setPage(1);
-    setHasMore(true);
-    setLoading(true); // Start loading immediately
-    fetchPosts(1, feedType, true);
-  }, [feedType]);
-
-  // Fetch more when page changes (but not on initial reset which is handled above)
-  useEffect(() => {
-    if (page > 1) {
-      fetchPosts(page, feedType, false);
-    }
-  }, [page]);
-
-  const fetchPosts = async (pageNum, type, isRefresh) => {
-    try {
-      const filterParam = type === "Following" ? "following" : "";
-      const { data } = await api.get(`/posts?pageNumber=${pageNum}&filter=${filterParam}`);
-
-      const formattedPosts = data.posts.map(post => ({
-        id: post._id,
-        author: post.user.name,
-        username: post.user.username, // Add username
-        role: post.user.course ? `${post.user.course} Student` : "Member",
-        time: new Date(post.createdAt).toLocaleDateString(),
-        text: post.content,
-        image: post.image,
-        likes: post.likes.length,
-        comments: post.comments,
-        avatar: post.user.profilePic,
-        userId: post.user._id // Add userId for ownership check
-      }));
-
-      setPosts(prev => isRefresh ? formattedPosts : [...prev, ...formattedPosts]);
-      setHasMore(data.page < data.pages);
-    } catch (err) {
-      console.error("Failed to fetch posts", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const observerTarget = useRef(null);
 
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          setPage(prev => prev + 1);
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
         }
       },
       { threshold: 1.0 }
@@ -75,21 +32,11 @@ export default function Feed({ user }) {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [hasMore, loading]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   function handleCreatePost(newPost) {
-    const formattedPost = {
-      id: newPost._id,
-      author: newPost.user.name || user.name,
-      role: newPost.user.course ? `${newPost.user.course} Student` : "Member",
-      time: "Just now",
-      text: newPost.content,
-      image: newPost.image,
-      likes: 0,
-      comments: 0,
-      avatar: newPost.user.profilePic || user.profilePic
-    };
-    setPosts((p) => [formattedPost, ...p]);
+    // Invalidate queries to refresh feed
+    queryClient.invalidateQueries(['posts']);
   }
 
   const handleDeletePost = async (postId) => {
@@ -97,11 +44,9 @@ export default function Feed({ user }) {
 
     try {
       await api.delete(`/posts/${postId}`);
-      setPosts(prev => prev.filter(p => p.id !== postId));
-      // toast.success("Post deleted successfully"); // Assuming toast is available
+      queryClient.invalidateQueries(['posts']);
     } catch (err) {
       console.error("Failed to delete post", err);
-      // toast.error("Failed to delete post");
     }
   };
 
@@ -120,7 +65,7 @@ export default function Feed({ user }) {
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">{feedType} Feed</h3>
             <span className="w-1 h-1 rounded-full bg-gray-400"></span>
-            <p className="text-xs text-gray-500">Latest updates</p>
+            <p className="text-xs text-gray-500">{isLoading ? 'Updating...' : 'Ready'}</p>
           </div>
         </div>
 
@@ -130,13 +75,13 @@ export default function Feed({ user }) {
             <PostCard key={p.id} post={p} currentUser={user} onDelete={handleDeletePost} />
           ))}
 
-          {loading && (
+          {(isLoading || isFetchingNextPage) && (
             <div className="text-center py-4 text-gray-500">
               <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
 
-          {!loading && posts.length === 0 && (
+          {!isLoading && posts.length === 0 && (
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 {feedType === "Following" ? (

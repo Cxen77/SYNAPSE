@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Logo from "../../assets/logo.png";
 import SearchBar from "./SearchBar";
 import NavItem from "./NavItem";
+import Avatar from "../common/Avatar";
 import NotificationDropdown from "../Notifications/NotificationDropdown";
 import api from "../../api/axios";
 
@@ -16,6 +19,7 @@ import {
 } from "react-icons/hi";
 
 function Navbar() {
+  const { currentUser } = useAuth();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef(null);
@@ -81,36 +85,44 @@ function Navbar() {
         <ul className="hidden md:flex items-center gap-1">
           <NavItem to="/" icon={HiHome} label="Home" />
           <NavItem to="/teams" icon={HiUserGroup} label="Teams" />
+          <NavItem to="/forums" icon={HiChatAlt2} label="Forums" />
           <NavItem to="/events" icon={HiCalendar} label="Events" />
           <NavItem to="/chat" icon={HiChatAlt2} label="Chat" />
-        </ul>
-
-        {/* Notification Bell */}
-        <div className="relative" ref={notifRef}>
-          <button
-            onClick={toggleNotifications}
-            className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-all duration-200 relative group"
-          >
-            <HiBell className="w-6 h-6" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-            )}
-            <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Notifications
-            </span>
-          </button>
-          <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
-        </div>
-
-        <ul className="hidden md:flex items-center gap-1">
           <NavItem to="/settings" icon={HiCog} label="Settings" />
         </ul>
 
         {/* Divider */}
-        <div className="h-8 w-px bg-gray-200 mx-2 hidden md:block"></div>
+        <div className="h-8 w-px bg-gray-200 mx-3 hidden md:block"></div>
 
-        {/* Profile */}
-        <NavItem to="/profile" icon={HiUserCircle} label="Me" end />
+        <div className="flex items-center gap-3">
+          {/* Notification Bell */}
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={toggleNotifications}
+              className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-all duration-200 relative group"
+            >
+              <HiBell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+              )}
+              {/* Tooltip */}
+              <span className="hidden md:block absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                Notifications
+              </span>
+            </button>
+            <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+          </div>
+
+          {/* Profile Picture */}
+          <Link to="/profile">
+            <Avatar
+              src={currentUser?.profilePic}
+              alt={currentUser?.name || "User"}
+              size="sm"
+              className="ring-2 ring-gray-100 hover:ring-blue-100 transition-all cursor-pointer"
+            />
+          </Link>
+        </div>
       </div>
     </nav>
   );

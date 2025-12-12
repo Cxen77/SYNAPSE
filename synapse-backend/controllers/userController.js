@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import { getOnlineUserIds } from '../socket/socketServer.js';
 
 // Helper function to format user response
 // Converts empty strings to undefined for cleaner frontend handling
@@ -266,6 +267,24 @@ const getRecommendedUsers = asyncHandler(async (req, res) => {
     res.json(users);
 });
 
+// @desc    Get online users
+// @route   GET /api/users/online
+// @access  Private
+const getOnlineUsers = asyncHandler(async (req, res) => {
+    const onlineIds = getOnlineUserIds();
+
+    if (onlineIds.length === 0) {
+        return res.json([]);
+    }
+
+    const onlineUsers = await User.find({
+        _id: { $in: onlineIds },
+        _id: { $ne: req.user._id } // Exclude self from list? User might want to see themselves, but usually not. Let's exclude.
+    }, 'name username profilePic');
+
+    res.json(onlineUsers);
+});
+
 export {
     getUserProfile,
     updateUserProfile,
@@ -276,5 +295,6 @@ export {
     searchUsers,
     getUserStats,
     deleteUser,
-    getRecommendedUsers
+    getRecommendedUsers,
+    getOnlineUsers
 };
