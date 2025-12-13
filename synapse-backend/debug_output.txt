@@ -1,0 +1,19 @@
+--- DEBUG REPORT ---
+Found 2 group chats.
+
+Group: test group (ID: 693d64d19c702e25ad214f1c)
+Admin: 692f3a247d5c64db76b06993
+    - Participant ID: 692f3a247d5c64db76b06993 [Type: object (ObjectId)]
+    - Participant ID: 69248427f952a8633d80f2ba [Type: object (ObjectId)]
+    - Participant ID: 692f3a247d5c64db76b06993 [Type: object (ObjectId)]
+
+Group: test group (ID: 693d668b969bfb82cc971038)
+Admin: 6929da3af53cc99cb668ef9b
+    - Participant ID: 6929da3af53cc99cb668ef9b [Type: object (ObjectId)]
+    - Participant ID: 69248427f952a8633d80f2ba [Type: object (ObjectId)]
+
+--- USERS ---
+Test User: 69248427f952a8633d80f2ba
+Dev chandra prasad yadav: 6929da3af53cc99cb668ef9b
+synapse: 692f3a127d5c64db76b06989
+Xelloyello: 692f3a247d5c64db76b06993

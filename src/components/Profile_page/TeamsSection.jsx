@@ -7,13 +7,15 @@ const TeamsSection = ({ user }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="p-5 bg-gradient-to-r from-orange-50 to-white border-b border-gray-200 flex items-center gap-3">
-                <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
-                    <Briefcase className="w-5 h-5" />
-                </div>
-                <div>
-                    <h3 className="text-xl font-bold text-gray-900">Teams</h3>
-                    <p className="text-sm text-gray-600">Member of {teams.length} teams</p>
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-blue-600 rounded-full block"></span>
+                        Teams
+                    </h3>
+                    <span className="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-bold border border-gray-200">
+                        {teams.length}
+                    </span>
                 </div>
             </div>
 

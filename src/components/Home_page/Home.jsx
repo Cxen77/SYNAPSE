@@ -46,7 +46,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-6">
             {/* Left Sidebar */}
             <div className="hidden lg:block sticky top-24 h-fit">
-              <ProfileCard user={displayUser} loading={loading && !displayUser} />
+              <ProfileCard user={displayUser} loading={loading} />
             </div>
 
             {/* Middle Feed */}

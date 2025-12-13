@@ -35,60 +35,44 @@ const ProfileScore = ({ user }) => {
     };
 
     const progressColor = getProgressColor(score);
+    const textColor = progressColor.replace('bg-', 'text-');
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="p-5 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">Profile Strength</h3>
-                <p className="text-sm text-gray-600 mt-1">Complete your profile to stand out</p>
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-blue-600 rounded-full block"></span>
+                    Profile Strength
+                </h3>
+                <span className={`text-lg font-bold ${textColor}`}>{score}%</span>
             </div>
 
             <div className="p-6">
                 {/* Progress Bar */}
-                <div className="mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold text-gray-700">Profile Completeness</span>
-                        <span className={`text-2xl font-bold ${progressColor.replace('bg-', 'text-')}`}>{score}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div className="mb-6 relative pt-1">
+                    <div className="overflow-hidden h-2.5 mb-2 text-xs flex rounded-full bg-gray-100">
                         <div
-                            className={`h-4 rounded-full transition-all duration-1000 ease-out ${progressColor}`}
                             style={{ width: `${score}%` }}
-                        />
+                            className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${progressColor} transition-all duration-1000 ease-out`}
+                        ></div>
                     </div>
                 </div>
 
-                {/* Completed Items */}
-                {completed.length > 0 && (
-                    <div className="mb-4">
-                        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <FaCheckCircle className="text-green-500" />
-                            Completed
-                        </h4>
-                        <div className="space-y-2">
-                            {completed.map((item, index) => (
-                                <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                                    <FaCheckCircle className="text-green-500 w-4 h-4 flex-shrink-0" />
-                                    <span>{item}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Pending Items */}
+                {/* Pending Items (Priority) */}
                 {pending.length > 0 && (
-                    <div>
+                    <div className="mb-6">
                         <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <FaCircle className="text-gray-400" />
-                            To Complete
+                            <FaCircle className="text-orange-500 w-3 h-3" />
+                            Action Items
                         </h4>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {pending.map((item, index) => (
-                                <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                                    <FaCircle className="text-gray-400 w-3 h-3 flex-shrink-0" />
-                                    <span>{item}</span>
+                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
+                                    <span className="text-sm font-medium text-gray-700">{item}</span>
+                                    <button className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Add
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -96,9 +80,9 @@ const ProfileScore = ({ user }) => {
                 )}
 
                 {/* Call to Action */}
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-900 font-medium">
-                        Complete your profile to increase visibility and get better team matches!
+                <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                    <p className="text-sm text-blue-900 font-medium leading-relaxed">
+                        Complete your profile to increase visibility by <span className="font-bold">3x</span>!
                     </p>
                 </div>
             </div>

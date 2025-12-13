@@ -4,6 +4,11 @@ import { FaUser } from 'react-icons/fa';
 const Avatar = ({ src, alt, size = "md", className = "" }) => {
     const [error, setError] = useState(false);
 
+    // Reset error when src changes
+    React.useEffect(() => {
+        setError(false);
+    }, [src]);
+
     // Size mapping
     const sizeClasses = {
         sm: "w-8 h-8",

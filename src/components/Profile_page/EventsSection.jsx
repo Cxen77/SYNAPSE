@@ -32,9 +32,16 @@ const EventsSection = () => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="p-5 bg-gradient-to-r from-teal-50 to-white border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">Events & Hackathons</h3>
-                <p className="text-sm text-gray-600 mt-1">{userData.events.length} events</p>
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-blue-600 rounded-full block"></span>
+                        Events & Hackathons
+                    </h3>
+                    <span className="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-bold border border-gray-200">
+                        {userData.events.length}
+                    </span>
+                </div>
             </div>
 
             <div className="p-6">

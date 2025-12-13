@@ -41,10 +41,13 @@ export const useChats = () => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleNewMessage = (newMessage) => {
+        const handleNewMessage = async (newMessage) => {
+            // Normalize chatId
+            const msgChatId = newMessage.chatId._id || newMessage.chatId;
+
             // Update chat list order and last message
             setChats(prev => {
-                const chatIndex = prev.findIndex(c => c._id === newMessage.chatId);
+                const chatIndex = prev.findIndex(c => c._id === msgChatId);
                 if (chatIndex > -1) {
                     const updatedChat = {
                         ...prev[chatIndex],
@@ -56,10 +59,26 @@ export const useChats = () => {
                     newChats.splice(chatIndex, 1);
                     return [updatedChat, ...newChats];
                 }
-                // If chat not in list (new chat), simple re-fetch or manual add if we have full chat data
-                // For now, simpler to refetch if not found to get full structure
                 return prev;
             });
+
+            // If chat was not found in the sync update above, fetch it
+            // If chat was not found in the sync update above, fetch it
+            // We do this check outside the setChats updater to allow async fetch
+            // We do this check outside the setChats updater to allow async fetch
+            const chatExists = chats.find(c => c._id === msgChatId);
+            if (!chatExists) {
+                try {
+                    const { data } = await api.get(`/chat/${msgChatId}`);
+                    setChats(prev => {
+                        // Double check existence to prevent race conditions
+                        if (prev.find(c => c._id === data._id)) return prev;
+                        return [data, ...prev];
+                    });
+                } catch (err) {
+                    console.error("Failed to fetch new chat", err);
+                }
+            }
         };
 
         socket.on('message:new', handleNewMessage);
@@ -117,7 +136,11 @@ export const useChatHistory = (chatId) => {
 
         const handleNewMessage = (msg) => {
             console.log('[useChat] Received message:new event:', msg);
-            if (msg.chatId === chatId) {
+
+            // Handle both string and populated object chatId
+            const msgChatId = msg.chatId._id || msg.chatId;
+
+            if (msgChatId === chatId) {
                 console.log('[useChat] Message matches current chat, adding to state');
                 setMessages(prev => {
                     // Check for duplicates
@@ -130,7 +153,7 @@ export const useChatHistory = (chatId) => {
                 // Mark read immediately if we see it
                 api.post('/chat/read', { chatId });
             } else {
-                console.log('[useChat] Message is for different chat:', msg.chatId);
+                console.log('[useChat] Message is for different chat:', msgChatId);
             }
         };
 
@@ -150,6 +173,7 @@ export const useChatHistory = (chatId) => {
 
         return () => {
             console.log('[useChat] Cleaning up socket listeners');
+            socket.emit('leave:chat', chatId);
             socket.off('message:new', handleNewMessage);
             socket.off('user:typing', handleTyping);
         };

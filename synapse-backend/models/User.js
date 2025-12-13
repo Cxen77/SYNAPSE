@@ -10,7 +10,9 @@ const userSchema = mongoose.Schema({
     profilePic: { type: String, default: '' },
     bannerPic: { type: String, default: '' },
     course: { type: String, default: '' },
+    college: { type: String, default: '' },
     year: { type: String, default: '' },
+    pushToken: { type: String, default: '' }, // FCM Token
     bio: { type: String, default: '' },
     skills: [{ type: String }],
     socials: {

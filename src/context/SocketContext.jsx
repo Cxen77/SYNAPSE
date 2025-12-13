@@ -32,8 +32,8 @@ export const SocketProvider = ({ children }) => {
                     console.log('[Socket] Connected:', newSocket.id);
                 });
 
-                newSocket.on('disconnect', () => {
-                    console.log('[Socket] Disconnected');
+                newSocket.on('disconnect', (reason) => {
+                    console.log('[Socket] Disconnected:', reason);
                 });
 
                 newSocket.on('connect_error', (err) => {

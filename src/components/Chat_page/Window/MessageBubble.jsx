@@ -12,15 +12,27 @@ function MessageBubble({
 }) {
   return (
     <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+
+      {/* Sender Name/Avatar for Group Chats (Incoming only) */}
+      {!isMe && msg.sender && (
+        <div className="flex items-center gap-2 mb-1 ml-1">
+          <img
+            src={msg.sender.profilePic || "https://via.placeholder.com/30"}
+            alt={msg.sender.name}
+            className="w-5 h-5 rounded-full object-cover"
+          />
+          <span className="text-[10px] text-gray-500 font-semibold">{msg.sender.name}</span>
+        </div>
+      )}
+
       <div className="group relative max-w-md">
 
         {/* MESSAGE BUBBLE */}
         <div
-          className={`px-4 py-2.5 rounded-2xl shadow-sm ${
-            isMe
+          className={`px-4 py-2.5 rounded-2xl shadow-sm ${isMe
               ? "bg-blue-600 text-white rounded-br-md"
               : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
-          }`}
+            }`}
         >
           <span className="break-words text-sm">{msg.text}</span>
         </div>
@@ -38,9 +50,8 @@ function MessageBubble({
 
         {/* HOVER ACTIONS — REACT, MORE */}
         <div
-          className={`absolute top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition ${
-            isMe ? "-left-20" : "-right-20"
-          }`}
+          className={`absolute top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition ${isMe ? "-left-20" : "-right-20"
+            }`}
         >
           {/* React button */}
           <button

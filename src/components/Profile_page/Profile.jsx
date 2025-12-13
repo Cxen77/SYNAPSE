@@ -208,8 +208,8 @@ const Profile = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-            <div className="container mx-auto px-0 md:px-4 py-0 md:py-6 max-w-7xl">
+        <div className="min-h-screen bg-gray-50/50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <ProfileHero
                     user={user}
                     isOwner={showOwnerControls}
@@ -222,15 +222,15 @@ const Profile = () => {
                 />
 
                 {/* Tab Navigation */}
-                <div className="sticky top-16 z-10 bg-white border-b border-gray-200 shadow-sm mt-0 md:mt-6 md:rounded-xl overflow-x-auto">
-                    <div className="flex px-4 md:px-6">
+                <div className="sticky top-16 z-20 bg-gray-50 pt-6 pb-4">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 flex overflow-x-auto no-scrollbar">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
-                                    ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                className={`flex-1 px-6 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id
+                                    ? 'bg-gray-900 text-white shadow-md'
+                                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                                     }`}
                             >
                                 {tab.label}
@@ -239,7 +239,7 @@ const Profile = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 px-4 md:px-0">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Main Content Area */}
                     <div className="lg:col-span-8 space-y-6">
                         {activeTab === 'overview' && (

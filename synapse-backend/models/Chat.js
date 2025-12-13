@@ -15,7 +15,18 @@ const chatSchema = new mongoose.Schema({
         type: Map,
         of: Number,
         default: {}
-    }
+    },
+    // Group Chat Fields
+    isGroupChat: { type: Boolean, default: false },
+    chatName: { type: String, trim: true },
+    groupAdmin: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    deletedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 }, {
     timestamps: true
 });

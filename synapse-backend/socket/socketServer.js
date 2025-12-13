@@ -18,17 +18,22 @@ export const initSocket = (httpServer) => {
         try {
             const token = socket.handshake.auth.token;
             if (!token) {
+                console.error('[Socket Auth] No token provided in handshake');
                 return next(new Error('Authentication error: No token provided'));
             }
 
+            console.log('[Socket Auth] Verifying token...');
             const decodedToken = await admin.auth().verifyIdToken(token);
             socket.user = decodedToken; // { uid, email, etc. }
+            console.log('[Socket Auth] Token verified for UID:', decodedToken.uid);
 
             // Fetch full user from Mongo to get _id
             const user = await User.findOne({ firebaseUid: decodedToken.uid });
             if (!user) {
+                console.error('[Socket Auth] User not found in MongoDB for UID:', decodedToken.uid);
                 return next(new Error('User not found in database'));
             }
+            console.log('[Socket Auth] User found in MongoDB:', user._id);
             socket.mongoUser = user;
 
             next();
@@ -58,6 +63,11 @@ export const initSocket = (httpServer) => {
         socket.on('join:chat', (chatId) => {
             socket.join(`chat:${chatId}`);
             // Could mark read here if window is focused
+        });
+
+        // Handle leaving a chat room
+        socket.on('leave:chat', (chatId) => {
+            socket.leave(`chat:${chatId}`);
         });
 
         // Handle typing
@@ -91,3 +101,6 @@ export const getIO = () => {
 
 // Helper to get online users for API
 export const getOnlineUserIds = () => Array.from(onlineUsers.keys());
+
+// Helper to check if specific user is online
+export const isUserOnline = (userId) => onlineUsers.has(userId.toString());

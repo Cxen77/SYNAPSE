@@ -14,6 +14,7 @@ import {
     getRecommendedUsers,
     getOnlineUsers
 } from '../controllers/userController.js';
+import { updatePushToken } from '../controllers/notificationController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -58,6 +59,8 @@ router.route('/profile')
 router.get('/me', protect, (req, res) => {
     res.json(req.user);
 });
+
+router.put('/pushtoken', protect, updatePushToken);
 
 router.put('/profile-pic', protect, upload.single('profilePic'), updateProfilePic);
 router.put('/banner-pic', protect, upload.single('bannerPic'), updateBannerPic);

@@ -10,6 +10,8 @@ import ChatSearch from "./Sidebar/ChatSearch";
 import Stories from "./Sidebar/Stories";
 import Tabs from "./Sidebar/Tabs";
 import ChatList from "./Sidebar/ChatList";
+import GroupChatModal from "./GroupChatModal"; // [Import GroupModal]
+import { FaPlus } from "react-icons/fa"; // [Import Plus Icon]
 
 // CHAT WINDOW
 import ChatHeader from "./Window/ChatHeader";
@@ -24,7 +26,11 @@ function Chat() {
     const { currentUser } = useAuth();
 
     // FETCH CHATS LIST
-    const { chats, loading: chatsLoading, accessChat } = useChats();
+    const { chats, loading: chatsLoading, accessChat, refetchChats } = useChats(); // [Include refetchChats if available or trigger custom refetch]
+
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false); // [Group Modal State]
+
+    // ... (rest of state)
 
     // TEAMS TAB STATE
     const [activeTab, setActiveTab] = useState('messages');
@@ -74,6 +80,23 @@ function Chat() {
 
     // Transform API chats to UI shape
     const mappedChats = chats.map(c => {
+        // [GROUP CHAT LOGIC]
+        if (c.isGroupChat) {
+            return {
+                id: c._id,
+                _id: c._id,
+                name: c.chatName,
+                avatar: "https://ui-avatars.com/api/?name=" + c.chatName + "&background=random", // Generative avatar for groups
+                status: c.participants.length + " members",
+                note: "Group Chat",
+                messages: [],
+                lastMessage: c.lastMessage,
+                createdAt: c.createdAt,
+                isGroupChat: true,
+                groupAdmin: c.groupAdmin
+            };
+        }
+
         const other = c.participants.find(p => p._id !== currentUser._id) || {};
         return {
             id: c._id,
@@ -84,7 +107,8 @@ function Chat() {
             note: "Active " + (other.lastSeen ? new Date(other.lastSeen).toLocaleTimeString() : "recently"),
             messages: [],
             lastMessage: c.lastMessage,
-            createdAt: c.createdAt
+            createdAt: c.createdAt,
+            isGroupChat: false
         };
     });
 
@@ -106,6 +130,24 @@ function Chat() {
 
     const activeChat = activeChatRaw ? (() => {
         const c = activeChatRaw;
+        // [GROUP CHAT LOGIC FOR ACTIVE]
+        if (c.isGroupChat) {
+            return {
+                id: c._id,
+                _id: c._id,
+                name: c.chatName,
+                avatar: "https://ui-avatars.com/api/?name=" + c.chatName + "&background=random",
+                status: c.participants.length + " members",
+                note: "Group Chat",
+                messages: [],
+                lastMessage: c.lastMessage,
+                createdAt: c.createdAt,
+                isGroupChat: true,
+                groupAdmin: c.groupAdmin,
+                participants: c.participants
+            };
+        }
+
         const other = c.participants.find(p => p._id !== currentUser._id) || {};
         return {
             id: c._id,
@@ -116,7 +158,9 @@ function Chat() {
             note: "Active " + (other.lastSeen ? new Date(other.lastSeen).toLocaleTimeString() : "recently"),
             messages: [],
             lastMessage: c.lastMessage,
-            createdAt: c.createdAt
+            createdAt: c.createdAt,
+            isGroupChat: false,
+            participants: c.participants
         };
     })() : null;
 
@@ -130,6 +174,10 @@ function Chat() {
         sendTyping,
         typingUsers
     } = useChatHistory(id);
+
+    useEffect(() => {
+        console.log('[Chat.jsx] historyMessages updated:', historyMessages.length, historyMessages[historyMessages.length - 1]);
+    }, [historyMessages]);
 
     // Auto-scroll
     useEffect(() => {
@@ -187,7 +235,8 @@ function Chat() {
             status: typingUsers.length > 0 ? "Typing..." : activeChat.status,
             messages: historyMessages.map(m => ({
                 id: m._id,
-                from: m.senderId === currentUser._id || m.senderId._id === currentUser._id ? "me" : "them",
+                from: m.senderId === currentUser._id || m.senderId._id === currentUser._id ? "me" : "them", // [Handle Populated vs ID]
+                sender: m.senderId, // [Pass sender info for group chats]
                 text: m.text,
                 timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 reactions: [],
@@ -198,9 +247,35 @@ function Chat() {
 
     return (
         <div className={`bg-gray-50 absolute inset-x-0 top-0 ${activeChat ? 'bottom-0' : 'bottom-16'} md:top-16 md:bottom-0 flex md:p-6 gap-6`}>
+
+            {/* [Group Chat Modal] */}
+            <GroupChatModal
+                isOpen={isGroupModalOpen}
+                onClose={() => setIsGroupModalOpen(false)}
+                onGroupCreated={() => {
+                    // Ideally trigger a refresh of chats here.
+                    // Since useChats is a hook, we might need to rely on the socket or manual refresh.
+                    // For now, we assume the user might need to refresh or we add a dependency.
+                    // Actually, inserting into local state or reloading window is easiest if we don't expose refetch.
+                    window.location.reload(); // Simple refetch for now or we expose refetch from hook
+                }}
+            />
+
             {/* LEFT SIDEBAR */}
             <div className={`${activeChat ? 'hidden' : 'flex'} md:flex w-full md:w-96 flex-col bg-white md:border border-gray-200 md:rounded-2xl shadow-sm overflow-hidden h-full`}>
-                <ChatSearch search={search} setSearch={setSearch} />
+                <div className="flex items-center gap-2 p-4 pb-0">
+                    <div className="flex-1">
+                        <ChatSearch search={search} setSearch={setSearch} />
+                    </div>
+                    <button
+                        onClick={() => setIsGroupModalOpen(true)}
+                        className="bg-gray-100 p-3 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all shadow-sm"
+                        title="Create Group Chat"
+                    >
+                        <FaPlus />
+                    </button>
+                </div>
+
                 <Stories />
                 <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
 

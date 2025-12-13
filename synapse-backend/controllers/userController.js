@@ -15,6 +15,7 @@ const formatUserResponse = (user) => {
         profilePic: user.profilePic || undefined,
         bannerPic: user.bannerPic || undefined,
         course: user.course,
+        college: user.college,
         year: user.year,
         bio: user.bio,
         skills: user.skills,
@@ -60,6 +61,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     if (user) {
         user.name = req.body.name || user.name;
         user.course = req.body.course || user.course;
+        user.college = req.body.college || user.college;
         user.year = req.body.year || user.year;
         user.bio = req.body.bio || user.bio;
         user.skills = req.body.skills || user.skills;

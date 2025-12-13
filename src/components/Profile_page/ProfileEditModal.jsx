@@ -7,6 +7,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
         name: user.name || '',
         bio: user.bio || '',
         course: user.course || '',
+        college: user.college || '',
         year: user.year || '',
         skills: user.skills?.join(', ') || '',
         socials: {
@@ -53,6 +54,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                 name: formData.name,
                 bio: formData.bio,
                 course: formData.course,
+                college: formData.college,
                 year: formData.year,
                 skills: skillsArray,
                 socials: formData.socials
@@ -135,6 +137,20 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                                 onChange={handleChange}
                                 rows={4}
                                 placeholder="Tell us about yourself..."
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                College / University
+                            </label>
+                            <input
+                                type="text"
+                                name="college"
+                                value={formData.college}
+                                onChange={handleChange}
+                                placeholder="e.g., Stanford University"
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                         </div>

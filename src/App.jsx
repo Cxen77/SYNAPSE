@@ -71,61 +71,119 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+import useNotifications from './hooks/useNotifications';
+import { useSocket } from './context/SocketContext';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
+
 function App() {
   const location = useLocation();
   const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password'].includes(location.pathname);
   const isChatPage = location.pathname.startsWith('/chat');
   const isChatConversation = location.pathname.match(/^\/chat\/[^/]+$/);
 
-  return (
-    <AuthProvider>
-      <SocketProvider>
-        <div className="min-h-screen bg-gray-50 text-gray-900">
-          <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-          {!isAuthPage && (
-            <div className={isChatPage ? "hidden md:block" : ""}>
-              <Navbar />
+  // Notifications
+  useNotifications();
+  const { socket } = useSocket();
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (newMessage) => {
+      // If we are NOT in the chat page, show toast
+      // Or if we are in chat page but different chat (harder to know active chat here without context, 
+      // but simplistic approach: if not startswith /chat, show toast)
+
+      const currentPath = window.location.pathname;
+      const msgChatId = newMessage.chatId._id || newMessage.chatId;
+
+      // Check if we are in the specific chat
+      const isChatActive = currentPath.startsWith(`/chat/${msgChatId}`);
+
+      if (!isChatActive) {
+        // Prevent self-notification
+        if (newMessage.senderId._id === currentUser._id || newMessage.senderId === currentUser._id) {
+          return;
+        }
+
+        // Deduplication: Dismiss existing toast for same chat if needed, or rely on key?
+        // Actually, react-hot-toast creates unique IDs.
+        // If we get double events, we get double toasts.
+
+        // Simple dedupe by timestamp check or just rely on the fact that if we are in chat room, we shouldn't get here?
+        // If we are in the chat room (on backend), but not on frontend route (unlikely for "in dm" duplicate case), 
+        // the "isChatActive" check above covers the "in DM" case.
+
+        toast((t) => (
+          <div onClick={() => {
+            toast.dismiss(t.id);
+            window.location.href = `/chat/${msgChatId}`;
+          }} className="cursor-pointer flex items-center gap-3 min-w-[200px]">
+            {/* Avatar */}
+            <img
+              src={newMessage.senderId.profilePic || "https://via.placeholder.com/40"}
+              alt=""
+              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 truncate">{newMessage.senderId.name}</p>
+              <p className="text-sm text-gray-500 truncate">{newMessage.text}</p>
             </div>
-          )}
+          </div>
+        ), { duration: 4000, style: { borderRadius: '12px', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } });
+      }
+    };
 
-          <main className={
-            isAuthPage ? "" :
-              isChatPage ? "h-screen overflow-hidden" :
-                "pt-16 pb-16 md:pb-0"
-          }>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
+    socket.on('message:new', handleNewMessage);
+    return () => socket.off('message:new', handleNewMessage);
+  }, [socket, currentUser]);
 
-                {/* Protected Routes */}
-                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-                <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-                <Route path="/events/:id" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
-                <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-
-                {/* Forum Routes */}
-                <Route path="/forums" element={<ProtectedRoute><ForumLayout /></ProtectedRoute>}>
-                  <Route index element={<ForumHome />} />
-                  <Route path="post/:id" element={<ThreadPage />} />
-                  <Route path=":id" element={<ForumDetails />} />
-                </Route>
-              </Routes>
-            </Suspense>
-          </main>
-
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+      {!isAuthPage && (
+        <div className={isChatPage ? "hidden md:block" : ""}>
+          <Navbar />
         </div>
-        {!isAuthPage && !isChatConversation && <BottomNav />}
-      </SocketProvider>
-    </AuthProvider>
+      )}
+
+      <main className={
+        isAuthPage ? "" :
+          isChatPage ? "h-screen overflow-hidden" :
+            "pt-16 pb-16 md:pb-0"
+      }>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+
+            {/* Protected Routes */}
+            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+            <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+            {/* Forum Routes */}
+            <Route path="/forums" element={<ProtectedRoute><ForumLayout /></ProtectedRoute>}>
+              <Route index element={<ForumHome />} />
+              <Route path="post/:id" element={<ThreadPage />} />
+              <Route path=":id" element={<ForumDetails />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </main>
+
+      {!isAuthPage && !isChatConversation && <BottomNav />}
+    </div>
   );
 }
 

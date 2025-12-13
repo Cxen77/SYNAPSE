@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
-import Avatar from '../common/Avatar';
 import PostCard from '../Home_page/PostCard';
 import toast from 'react-hot-toast';
+import CreatePost from '../Home_page/CreatePost';
 
 const PostsSection = ({ isOwner, user, currentUser }) => {
     const [posts, setPosts] = useState([]);
@@ -17,12 +17,19 @@ const PostsSection = ({ isOwner, user, currentUser }) => {
     const fetchPosts = async () => {
         try {
             const res = await api.get(`/posts?userId=${user._id}`);
-            setPosts(res.data.posts);
+            // Ensure posts is an array before setting
+            setPosts(Array.isArray(res.data.posts) ? res.data.posts : []);
         } catch (err) {
             console.error("Failed to fetch user posts", err);
+            setPosts([]);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePostCreated = (newPost) => {
+        setPosts(prev => [newPost, ...prev]);
+        toast.success("Post created!");
     };
 
     const handleDeletePost = async (postId) => {
@@ -43,23 +50,11 @@ const PostsSection = ({ isOwner, user, currentUser }) => {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {/* Create Post Card - Only visible to owner */}
             {isOwner && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="p-4">
-                        <div className="flex items-center gap-3">
-                            <Avatar
-                                src={user.profilePic}
-                                alt={user.name}
-                                size="md"
-                                className="object-cover"
-                            />
-                            <button className="flex-1 text-left px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition">
-                                What's on your mind, {user.name.split(' ')[0]}?
-                            </button>
-                        </div>
-                    </div>
+                    <CreatePost user={currentUser} onPostCreated={handlePostCreated} />
                 </div>
             )}
 

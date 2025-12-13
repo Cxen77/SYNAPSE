@@ -1,20 +1,28 @@
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
-import { getIO } from '../socket/socketServer.js'; // Helper to get IO instance if needed later, or emit directly
+import { getIO, isUserOnline } from '../socket/socketServer.js';
+import { admin } from '../config/firebaseAdmin.js';
 
 // @desc    Get all chats for current user
 // @route   GET /api/chat
 // @access  Private
 export const getChats = async (req, res) => {
     try {
+        console.log("getChats Request User:", req.user._id, "(Type:", typeof req.user._id, ")");
+
+        // Standard query - Mongoose casts query to Schema Type (ObjectId)
+        // If req.user._id is string or ObjectId, it should work.
         const chats = await Chat.find({ participants: req.user._id })
             .populate('participants', 'name email profilePic status lastSeen')
             .populate('lastMessage')
+            .populate('groupAdmin', 'name profilePic')
             .sort({ updatedAt: -1 });
 
+        console.log(`Found ${chats.length} chats for user ${req.user._id}`);
         res.json(chats);
     } catch (error) {
+        console.error("getChats Error:", error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -93,69 +101,100 @@ export const getChatHistory = async (req, res) => {
 // @route   POST /api/chat/send
 // @access  Private
 export const sendMessage = async (req, res) => {
+    const { chatId, text, attachments } = req.body;
+
+    if (!chatId || !text) {
+        return res.status(400).json({ message: "Invalid data passed into request" });
+    }
+
     try {
-        const { chatId, text, attachments, recipientId } = req.body;
-        const senderId = req.user._id;
-
-        let chat;
-
-        // Convert chatId "new" logic if needing to create a new chat by recipientId
-        if (chatId === 'new' && recipientId) {
-            // Check if chat exists
-            chat = await Chat.findOne({
-                participants: { $all: [senderId, recipientId] }
-            });
-
-            if (!chat) {
-                chat = await Chat.create({
-                    participants: [senderId, recipientId],
-                    unreadCounts: {
-                        [recipientId]: 0,
-                        [senderId]: 0
-                    }
-                });
-            }
-        } else {
-            chat = await Chat.findById(chatId);
-            if (!chat) return res.status(404).json({ message: "Chat not found" });
-        }
-
-        const newMessage = await Message.create({
-            chatId: chat._id,
-            senderId,
+        let message = await Message.create({
+            senderId: req.user._id,
             text,
-            attachments,
-            readBy: [senderId]
+            chatId,
+            attachments: attachments || [],
+            readBy: [req.user._id]
+        });
+
+        // Populate sender info for immediate UI update
+        message = await message.populate("senderId", "name profilePic");
+        message = await message.populate("chatId");
+
+        // Populate participants in the chat object inside message
+        message = await User.populate(message, {
+            path: "chatId.participants",
+            select: "name profilePic email status pushToken",
+        });
+
+        // Verify chat exists and update lastMessage
+        // KEY CHANGE: Revive chat for anyone who "deleted" it
+        await Chat.findByIdAndUpdate(chatId, {
+            lastMessage: message,
+            $set: { deletedBy: [] } // Simple revive for everyone
         });
 
         // Update Chat: lastMessage and increment unread count for OTHERS
-        const updates = { lastMessage: newMessage._id, updatedAt: Date.now() };
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ message: "Chat not found" });
 
         // Increment unread for all participants except sender
         chat.participants.forEach(p => {
-            if (p.toString() !== senderId.toString()) {
+            if (p.toString() !== req.user._id.toString()) {
                 const currentUnread = chat.unreadCounts.get(p.toString()) || 0;
                 chat.unreadCounts.set(p.toString(), currentUnread + 1);
             }
         });
-
         await chat.save(); // Save unread counts
-        await Chat.findByIdAndUpdate(chat._id, { lastMessage: newMessage._id }); // Ensure atomic update if needed
 
-        // Populate sender for frontend
-        await newMessage.populate('senderId', 'name profilePic');
-
-        res.status(201).json({ message: newMessage, chat });
+        res.status(201).json({ message });
 
         // Emit socket event to all participants
         const io = getIO();
         console.log(`[Socket] Emitting 'message:new' to chat room: chat:${chat._id}`);
-        io.to(`chat:${chat._id}`).emit('message:new', newMessage);
+        io.to(`chat:${chat._id}`).emit('message:new', message);
 
-        chat.participants.forEach(participantId => {
-            console.log(`[Socket] Emitting 'message:new' to user room: user:${participantId.toString()}`);
-            io.to(`user:${participantId.toString()}`).emit('message:new', newMessage);
+        chat.participants.forEach(async (participantId) => {
+            const partIdStr = participantId.toString();
+
+            // Emit to User Room (for In-App Toasts)
+            // Skip sender to avoid self-toast (handled on frontend too, but good for bandwidth)
+            if (partIdStr !== req.user._id.toString()) {
+                io.to(`user:${partIdStr}`).emit('message:new', message);
+            }
+
+            // PUSH NOTIFICATION LOGIC
+            if (partIdStr !== req.user._id.toString()) {
+                const isOnline = isUserOnline(partIdStr);
+
+                // Fetch full participant to get pushToken
+                // We could have populated it in the loop above or fetched here
+                // Optimization: fetch token only if offline
+                if (!isOnline) {
+                    try {
+                        const user = await User.findById(participantId).select('pushToken name');
+                        if (user && user.pushToken) {
+                            console.log(`[Push] User ${user.name} is OFFLINE. Sending Push...`);
+                            await admin.messaging().send({
+                                token: user.pushToken,
+                                notification: {
+                                    title: req.user.name,
+                                    body: text.length > 50 ? text.substring(0, 50) + "..." : text,
+                                },
+                                data: {
+                                    type: 'MESSAGE',
+                                    chatId: chat._id.toString(),
+                                    senderId: req.user._id.toString()
+                                }
+                            });
+                            console.log(`[Push] Sent to ${user.name}`);
+                        }
+                    } catch (pushErr) {
+                        console.error(`[Push Error] Failed to send to user ${partIdStr}:`, pushErr.message);
+                    }
+                }
+            }
         });
+
     } catch (error) {
         console.error("[SendMessage Error]", error);
         res.status(500).json({ message: error.message });
@@ -210,4 +249,157 @@ export const getChatById = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+// @desc    Create Group Chat
+// @route   POST /api/chat/group
+// @access  Private
+export const createGroupChat = async (req, res) => {
+    if (!req.body.users || !req.body.name) {
+        return res.status(400).send({ message: "Please fill all the fields" });
+    }
+
+    var users = JSON.parse(req.body.users);
+
+    if (users.length < 2) {
+        return res
+            .status(400)
+            .send("More than 2 users are required to form a group chat");
+    }
+
+    // Ensure we only store IDs and unique ones
+    const adminId = req.user._id.toString();
+    const uniqueUsers = [...new Set([...users, adminId])];
+
+    try {
+        const groupChat = await Chat.create({
+            chatName: req.body.name,
+            users: uniqueUsers,
+            isGroupChat: true,
+            groupAdmin: req.user._id,
+            participants: uniqueUsers,
+            unreadCounts: uniqueUsers.reduce((acc, userId) => ({ ...acc, [userId]: 0 }), {})
+        });
+
+        const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
+            .populate("participants", "-password")
+            .populate("groupAdmin", "-password");
+
+        res.status(200).json(fullGroupChat);
+    } catch (error) {
+        res.status(400);
+        throw new Error(error.message);
+    }
+};
+
+// @desc    Rename Group
+// @route   PUT /api/chat/rename
+// @access  Private
+export const renameGroup = async (req, res) => {
+    const { chatId, chatName } = req.body;
+
+    const updatedChat = await Chat.findByIdAndUpdate(
+        chatId,
+        { chatName },
+        { new: true }
+    )
+        .populate("participants", "-password")
+        .populate("groupAdmin", "-password");
+
+    if (!updatedChat) {
+        res.status(404);
+        throw new Error("Chat Not Found");
+    } else {
+        res.json(updatedChat);
+    }
+};
+
+// @desc    Add user to Group
+// @route   PUT /api/chat/groupadd
+// @access  Private
+export const addToGroup = async (req, res) => {
+    const { chatId, userId } = req.body;
+
+    const added = await Chat.findByIdAndUpdate(
+        chatId,
+        {
+            $push: { participants: userId },
+        },
+        { new: true }
+    )
+        .populate("participants", "-password")
+        .populate("groupAdmin", "-password");
+
+    if (!added) {
+        res.status(404);
+        throw new Error("Chat Not Found");
+    } else {
+        res.json(added);
+    }
+};
+
+// @desc    Remove user from Group
+// @route   PUT /api/chat/groupremove
+// @access  Private
+export const removeFromGroup = async (req, res) => {
+    const { chatId, userId } = req.body;
+
+    const removed = await Chat.findByIdAndUpdate(
+        chatId,
+        {
+            $pull: { participants: userId },
+            $unset: { [`unreadCounts.${userId}`]: "" }
+        },
+        { new: true }
+    )
+        .populate("participants", "-password")
+        .populate("groupAdmin", "-password");
+
+    if (!removed) {
+        res.status(404);
+        throw new Error("Chat Not Found");
+    } else {
+        res.json(removed);
+    }
+};
+
+
+// @desc    Leave Group (User removes self)
+// @route   PUT /api/chat/leave
+// @access  Private
+export const leaveGroup = async (req, res) => {
+    const { chatId } = req.body;
+
+    // remove self from participants
+    const removed = await Chat.findByIdAndUpdate(
+        chatId,
+        { $pull: { participants: req.user._id } },
+        { new: true }
+    );
+
+    if (!removed) {
+        res.status(404);
+        throw new Error("Chat Not Found");
+    }
+
+    res.json({ message: "Left Group Successfully", chatId });
+};
+
+// @desc    Delete Chat (Hide from user)
+// @route   PUT /api/chat/delete
+// @access  Private
+export const deleteChat = async (req, res) => {
+    const { chatId } = req.body;
+
+    const hidden = await Chat.findByIdAndUpdate(
+        chatId,
+        { $addToSet: { deletedBy: req.user._id } },
+        { new: true }
+    );
+
+    if (!hidden) {
+        res.status(404);
+        throw new Error("Chat Not Found");
+    }
+
+    res.json({ message: "Chat Deleted (Hidden)", chatId });
 };

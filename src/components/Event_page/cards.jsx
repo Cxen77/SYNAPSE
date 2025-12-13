@@ -23,6 +23,14 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     return attendees.some(att => (att._id || att) === currentUserId);
   });
   const [loading, setLoading] = useState(false);
+  const [isQueued, setIsQueued] = useState(false); // New state for Auto-Team
+
+  const handleAutoTeam = (e) => {
+    e.stopPropagation();
+    if (isJoined || isQueued) return;
+    setIsQueued(true);
+    // In a real app, you'd make an API call here
+  };
 
   const organizerId = organizer?._id || organizer;
   const isOrganizer = currentUserId && organizerId === currentUserId;
@@ -128,22 +136,47 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
             )}
           </div>
 
-          <button
-            onClick={handleJoin}
-            disabled={loading || isJoined}
-            className={`px-5 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-2 ${isJoined
+          {/* Auto-Team Button with Tooltip */}
+          <div className="flex gap-2">
+            {/* Auto-Team Button */}
+            {!isJoined && (
+              <div className="relative group/tooltip">
+                <button
+                  onClick={handleAutoTeam}
+                  disabled={loading || isQueued}
+                  className={`px-4 py-2 text-sm rounded-xl font-bold transition-all shadow-sm border ${isQueued
+                      ? "bg-purple-50 text-purple-700 border-purple-200 cursor-default"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:text-blue-600 hover:-translate-y-0.5"
+                    }`}
+                >
+                  {isQueued ? "Queued" : "Auto-Team"}
+                </button>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none text-center shadow-xl z-20">
+                  Join solo and get automatically grouped with others.
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            )}
+
+            {/* Join Button */}
+            <button
+              onClick={handleJoin}
+              disabled={loading || isJoined || isQueued}
+              className={`px-5 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-2 ${isJoined
                 ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
                 : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
-              }`}
-          >
-            {loading ? (
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : isJoined ? (
-              <><span>Joined</span><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></>
-            ) : (
-              "Join Event"
-            )}
-          </button>
+                }`}
+            >
+              {loading ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : isJoined ? (
+                <><span>Joined</span><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></>
+              ) : (
+                "Join Event"
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

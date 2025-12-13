@@ -45,9 +45,11 @@ const SuggestedConnections = () => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="p-5 bg-gradient-to-r from-indigo-50 to-white border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">People You Might Know</h3>
-                <p className="text-sm text-gray-600 mt-1">Based on your interests</p>
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-blue-600 rounded-full block"></span>
+                    People You Might Know
+                </h3>
             </div>
 
             <div className="p-4">

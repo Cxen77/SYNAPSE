@@ -34,13 +34,15 @@ const AchievementsSection = ({ user }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
-            <div className="p-5 bg-gradient-to-r from-yellow-50 to-white border-b border-gray-200 flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg">
-                    <Trophy className="w-5 h-5" />
-                </div>
-                <div>
-                    <h3 className="text-xl font-bold text-gray-900">Achievements</h3>
-                    <p className="text-sm text-gray-600">{achievements.length} badges earned</p>
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-blue-600 rounded-full block"></span>
+                        Achievements
+                    </h3>
+                    <span className="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-bold border border-gray-200">
+                        {achievements.length}
+                    </span>
                 </div>
             </div>
 

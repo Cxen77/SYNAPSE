@@ -195,11 +195,15 @@ const ForumHome = () => {
             <div className="hidden lg:block lg:col-span-4 space-y-4 sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto no-scrollbar">
                 {/* Forum Home Card */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative group">
-                    <div className="h-20 bg-gradient-to-br from-gray-900 to-gray-800 relative">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                        <div className="absolute bottom-[-20px] left-5">
+                    {/* Dark Theme Hero Background */}
+                    <div className="h-24 bg-gray-900 relative overflow-hidden">
+                        {/* Animated Blobs */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+                        <div className="absolute -bottom-8 left-0 w-32 h-32 bg-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+
+                        <div className="absolute bottom-[-24px] left-5">
                             <div className="w-14 h-14 bg-white rounded-2xl p-1 shadow-lg transform rotate-3 transition-transform group-hover:rotate-0">
-                                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                                <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl flex items-center justify-center">
                                     <HiHome className="w-7 h-7 text-white" />
                                 </div>
                             </div>
@@ -231,12 +235,12 @@ const ForumHome = () => {
 
                 {/* Trending Communities */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                         <div className="flex items-center gap-2">
-                            <div className="p-1 bg-orange-100 rounded-md">
-                                <HiFire className="w-4 h-4 text-orange-500" />
-                            </div>
-                            <h3 className="font-bold text-sm text-gray-900">Trending Now</h3>
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                <span className="w-1 h-4 bg-blue-600 rounded-full block"></span>
+                                Trending Now
+                            </h3>
                         </div>
                         <Link to="/forums/explore" className="text-[10px] font-bold text-blue-600 hover:underline">
                             View All

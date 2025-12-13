@@ -99,13 +99,19 @@ const ForumDetails = () => {
         <div>
             {/* Hero Header */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                {/* Banner */}
-                <div className="h-48 relative">
+                {/* Banner - Dark Theme with Blobs */}
+                <div className="h-48 relative bg-gray-900 overflow-hidden">
                     {forum.banner ? (
-                        <img src={forum.banner} alt="" className="w-full h-full object-cover" />
+                        <>
+                            <img src={forum.banner} alt="" className="w-full h-full object-cover opacity-60" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+                        </>
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-black/10"></div>
+                        <div className="absolute inset-0">
+                            {/* Animated Blobs */}
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+                            <div className="absolute -bottom-8 left-0 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
                         </div>
                     )}
                 </div>
@@ -214,8 +220,11 @@ const ForumDetails = () => {
                 <div className="lg:col-span-4 space-y-6">
                     {/* About Community */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
-                        <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                            <span className="font-bold text-gray-900 text-sm">About Community</span>
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                <span className="w-1 h-4 bg-blue-600 rounded-full block"></span>
+                                About Community
+                            </h3>
                             <HiInformationCircle className="w-5 h-5 text-gray-400" />
                         </div>
                         <div className="p-5">
@@ -249,8 +258,11 @@ const ForumDetails = () => {
                     {/* Rules */}
                     {forum.rules && forum.rules.length > 0 && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="p-4 bg-gray-50 border-b border-gray-100 font-bold text-sm text-gray-900">
-                                r/{forum.name} Rules
+                            <div className="p-4 border-b border-gray-100">
+                                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                    <span className="w-1 h-4 bg-blue-600 rounded-full block"></span>
+                                    r/{forum.name} Rules
+                                </h3>
                             </div>
                             <div className="divide-y divide-gray-100">
                                 {forum.rules.map((rule, index) => (
