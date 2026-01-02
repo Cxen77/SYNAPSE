@@ -64,6 +64,10 @@ function ChatHeader({ chat, onBack }) {
                         alt={chat.name}
                         className="w-10 h-10 rounded-full object-cover border border-gray-200"
                     />
+                    {/* Status Dot */}
+                    {!chat.isGroupChat && (
+                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${chat.status === 'Online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                    )}
                 </div>
                 <div>
                     <h3 className="font-semibold text-gray-900">{chat.name}</h3>

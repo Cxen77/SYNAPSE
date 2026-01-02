@@ -1,10 +1,16 @@
 import React, { useState, useRef } from "react";
+import PropTypes from 'prop-types';
 import { HiThumbUp, HiOutlineThumbUp, HiChatAlt, HiShare, HiDotsHorizontal, HiPaperAirplane, HiTrash } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
+import useIsMobile from "../../hooks/useIsMobile";
+import MobileCommentsSheet from "./MobileCommentsSheet";
+import CommentItem from "./CommentItem";
 
-export default function PostCard({ post, currentUser, onDelete }) {
+export default function PostCard({ post, currentUser = {}, onDelete }) {
+  const isMobile = useIsMobile();
+
   // Normalize data to handle both frontend mock and backend data formats
   const displayPost = {
     id: post.id || post._id,
@@ -37,7 +43,13 @@ export default function PostCard({ post, currentUser, onDelete }) {
   const handleReply = (commentId, username) => {
     setReplyingTo({ id: commentId, username });
     setNewComment(`@${username} `);
-    inputRef.current?.focus();
+
+    // Focus appropriate input
+    if (isMobile) {
+      // Mobile sheet handles focus internally via prop/effect
+    } else {
+      inputRef.current?.focus();
+    }
   };
 
   const cancelReply = () => {
@@ -86,80 +98,17 @@ export default function PostCard({ post, currentUser, onDelete }) {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`Check out this post on Synapse: ${window.location.origin}/post/${displayPost.id}`);
-    alert("Link copied to clipboard!");
-  };
-
-  // Helper to check if a comment mentions the current user
-  const isMentioningMe = (text) => {
-    if (!currentUser?.username) return false;
-    return text.includes(`@${currentUser.username}`);
-  };
-
-  const CommentItem = ({ comment, isReply = false, parentId = null }) => {
-    const isMention = isMentioningMe(comment.text);
-    const [showReplies, setShowReplies] = useState(false);
-    const hasReplies = !isReply && comment.replies && comment.replies.length > 0;
-
-    return (
-      <div className={`flex gap-3 group ${isReply ? 'mt-3' : ''}`}>
-        <div className="flex-shrink-0 flex flex-col items-center">
-          <Avatar
-            src={comment.user?.profilePic}
-            alt={comment.user?.name || 'User'}
-            size={isReply ? "xs" : "sm"}
-            className="mt-1"
-          />
-          {hasReplies && showReplies && (
-            <div className="w-0.5 flex-1 bg-gray-200 my-1 rounded-full group-hover:bg-gray-300 transition-colors"></div>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className={`rounded-2xl px-3 py-2 inline-block ${isMention ? 'bg-blue-50 border border-blue-100' : 'bg-gray-100'}`}>
-            <h5 className="font-bold text-xs text-gray-900 hover:underline cursor-pointer">
-              {comment.user?.name || 'Unknown User'}
-            </h5>
-            <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
-              {comment.text.split(' ').map((word, i) => (
-                word.startsWith('@') ? <span key={i} className="text-blue-600 font-medium">{word} </span> : word + ' '
-              ))}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 mt-1 ml-1 text-xs text-gray-500 font-medium">
-            <span>{new Date(comment.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            <button className="hover:text-blue-600 transition">Like</button>
-            <button
-              onClick={() => handleReply(parentId || comment._id, comment.user?.username || 'user')}
-              className="hover:text-blue-600 transition"
-            >
-              Reply
-            </button>
-          </div>
-
-          {/* View Replies Toggle */}
-          {hasReplies && (
-            <button
-              onClick={() => setShowReplies(!showReplies)}
-              className="text-xs text-gray-500 font-semibold mt-2 ml-1 hover:underline flex items-center gap-2"
-            >
-              <div className="w-6 h-[1px] bg-gray-300"></div>
-              {showReplies ? "Hide replies" : `View ${comment.replies.length} more replies`}
-            </button>
-          )}
-
-          {/* Render Replies */}
-          {hasReplies && showReplies && (
-            <div className="mt-2">
-              {comment.replies.map((reply, idx) => (
-                <CommentItem key={idx} comment={reply} isReply={true} parentId={comment._id} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    const url = `${window.location.origin}/post/${displayPost.id}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `Post by ${displayPost.author}`,
+        text: `Check out this post on Synapse!`,
+        url: url
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!");
+    }
   };
 
   return (
@@ -298,49 +247,77 @@ export default function PostCard({ post, currentUser, onDelete }) {
       </div>
 
       {/* Comments Section */}
-      {showComments && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
-          <div className="space-y-6 mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-            {comments.map((comment, index) => (
-              <CommentItem key={index} comment={comment} />
-            ))}
-          </div>
-
-          <div className="flex gap-3 items-start pt-2 border-t border-gray-100">
-            <Avatar
-              src={currentUser?.profilePic}
-              alt="You"
-              size="sm"
-              className="flex-shrink-0"
-            />
-            <div className="flex-1">
-              {replyingTo && (
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-1 ml-1">
-                  <span>Replying to <span className="font-bold text-blue-600">@{replyingTo.username}</span></span>
-                  <button onClick={cancelReply} className="hover:text-red-500">Cancel</button>
-                </div>
-              )}
-              <form onSubmit={handleCommentSubmit} className="relative">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
-                  className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none transition-all ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
+      {isMobile ? (
+        <MobileCommentsSheet
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          comments={comments}
+          currentUser={currentUser}
+          onReply={handleReply}
+          onSubmit={handleCommentSubmit}
+          newComment={newComment}
+          setNewComment={setNewComment}
+          replyingTo={replyingTo}
+          cancelReply={cancelReply}
+          submitting={submittingComment}
+        />
+      ) : (
+        /* Desktop Inline Comments */
+        showComments && (
+          <div className="px-4 pb-4 pt-2 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
+            <div className="space-y-6 mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              {comments.map((comment, index) => (
+                <CommentItem
+                  key={index}
+                  comment={comment}
+                  onReply={handleReply}
+                  currentUser={currentUser}
                 />
-                <button
-                  type="submit"
-                  disabled={!newComment.trim() || submittingComment}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <HiPaperAirplane size={16} className="rotate-90" />
-                </button>
-              </form>
+              ))}
+            </div>
+
+            <div className="flex gap-3 items-start pt-2 border-t border-gray-100">
+              <Avatar
+                src={currentUser?.profilePic}
+                alt="You"
+                size="sm"
+                className="flex-shrink-0"
+              />
+              <div className="flex-1">
+                {replyingTo && (
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1 ml-1">
+                    <span>Replying to <span className="font-bold text-blue-600">@{replyingTo.username}</span></span>
+                    <button onClick={cancelReply} className="hover:text-red-500">Cancel</button>
+                  </div>
+                )}
+                <form onSubmit={handleCommentSubmit} className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
+                    className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none transition-all ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || submittingComment}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <HiPaperAirplane size={16} className="rotate-90" />
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        )
       )}
     </article>
   );
 }
+
+PostCard.propTypes = {
+  post: PropTypes.object.isRequired,
+  currentUser: PropTypes.object,
+  onDelete: PropTypes.func
+};

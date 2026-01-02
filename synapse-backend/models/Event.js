@@ -13,7 +13,8 @@ const eventSchema = mongoose.Schema({
     prize: { type: String },
     imageUrl: { type: String },
     organizer: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    maxTeamSize: { type: Number, default: 4 }
 }, {
     timestamps: true
 });

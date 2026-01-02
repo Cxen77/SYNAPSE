@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
 import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import AutoTeamModal from './AutoTeamModal'; // Import Modal
+import { useAuth } from '../../context/AuthContext'; // Need current user profile for modal
 
 const Cards = ({ eventData, onEdit, currentUserId }) => {
+  const { user: currentUserProfile } = useAuth(); // Get full profile for matching
   const {
     _id,
     organizerName,
@@ -23,13 +28,17 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     return attendees.some(att => (att._id || att) === currentUserId);
   });
   const [loading, setLoading] = useState(false);
-  const [isQueued, setIsQueued] = useState(false); // New state for Auto-Team
+  const [isQueued, setIsQueued] = useState(false);
+  const [showAutoTeamModal, setShowAutoTeamModal] = useState(false); // Modal State
 
-  const handleAutoTeam = (e) => {
+  const handleAutoTeamClick = (e) => {
     e.stopPropagation();
     if (isJoined || isQueued) return;
+    setShowAutoTeamModal(true);
+  };
+
+  const handleQueueSuccess = () => {
     setIsQueued(true);
-    // In a real app, you'd make an API call here
   };
 
   const organizerId = organizer?._id || organizer;
@@ -53,134 +62,165 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
 
   const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : null;
 
+  const navigate = useNavigate();
+
   return (
-    <div
-      className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full hover:-translate-y-1 cursor-pointer"
-      onClick={() => window.location.href = `/events/${_id}`}
-    >
-      {/* Image Section */}
-      <div className="relative h-48 overflow-hidden bg-gray-100">
-        {eventImageUrl ? (
-          <img
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-            src={eventImageUrl}
-            alt={eventName}
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">
-            <FaCalendarAlt className="text-blue-200 text-4xl" />
-          </div>
-        )}
-
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-
-        {/* Date Badge */}
-        {formattedDate && (
-          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold text-gray-900 shadow-sm">
-            {formattedDate}
-          </div>
-        )}
-
-        {/* Edit Button */}
-        {isOrganizer && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(eventData); }}
-            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-          </button>
-        )}
-      </div>
-
-      {/* Content Section */}
-      <div className="p-5 flex flex-col flex-1">
-        {/* Organizer */}
-        <div className="flex items-center space-x-2 mb-3">
-          <Avatar src={organizerAvatar} alt={organizerName} size="xs" className="ring-2 ring-white" />
-          <span className="text-xs font-medium text-gray-500 truncate">{organizerName}</span>
-        </div>
-
-        {/* Title */}
-        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
-          {eventName}
-        </h3>
-
-        {/* Prize / Info */}
-        <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-          {eventPrize && (
-            <div className="flex items-center gap-1.5 text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-md">
-              <FaTrophy className="text-xs" />
-              <span>{eventPrize}</span>
+    <>
+      {showAutoTeamModal && (
+        <AutoTeamModal
+          eventId={_id}
+          user={currentUserProfile || {}}
+          onClose={() => setShowAutoTeamModal(false)}
+          onJoined={handleQueueSuccess}
+        />
+      )}
+      <div
+        className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full hover:-translate-y-1 cursor-pointer"
+        onClick={() => navigate(`/events/${_id}`)}
+      >
+        {/* Image Section */}
+        <div className="relative h-48 overflow-hidden bg-gray-100">
+          {eventImageUrl ? (
+            <img
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+              src={eventImageUrl}
+              alt={eventName}
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">
+              <FaCalendarAlt className="text-blue-200 text-4xl" />
             </div>
+          )}
+
+          {/* Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+
+          {/* Date Badge */}
+          {formattedDate && (
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold text-gray-900 shadow-sm">
+              {formattedDate}
+            </div>
+          )}
+
+          {/* Edit Button */}
+          {isOrganizer && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(eventData); }}
+              className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </button>
           )}
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-gray-500 line-clamp-2 mb-6 flex-1">
-          {eventDescription}
-        </p>
+        {/* Content Section */}
+        <div className="p-5 flex flex-col flex-1">
+          {/* Organizer */}
+          <div className="flex items-center space-x-2 mb-3">
+            <Avatar src={organizerAvatar} alt={organizerName} size="xs" className="ring-2 ring-white" />
+            <span className="text-xs font-medium text-gray-500 truncate">{organizerName}</span>
+          </div>
 
-        {/* Footer Action */}
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
-          <div className="flex -space-x-2">
-            {attendees.slice(0, 3).map((att, i) => (
-              <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-                <img src={att.profilePic || `https://ui-avatars.com/api/?name=${att.name || 'U'}`} alt="" className="w-full h-full object-cover" />
-              </div>
-            ))}
-            {attendees.length > 3 && (
-              <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center text-[10px] text-gray-500 font-medium">
-                +{attendees.length - 3}
+          {/* Title */}
+          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+            {eventName}
+          </h3>
+
+          {/* Prize / Info */}
+          <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
+            {eventPrize && (
+              <div className="flex items-center gap-1.5 text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-md">
+                <FaTrophy className="text-xs" />
+                <span>{eventPrize}</span>
               </div>
             )}
           </div>
 
-          {/* Auto-Team Button with Tooltip */}
-          <div className="flex gap-2">
-            {/* Auto-Team Button */}
-            {!isJoined && (
-              <div className="relative group/tooltip">
-                <button
-                  onClick={handleAutoTeam}
-                  disabled={loading || isQueued}
-                  className={`px-4 py-2 text-sm rounded-xl font-bold transition-all shadow-sm border ${isQueued
+          {/* Description */}
+          <p className="text-sm text-gray-500 line-clamp-2 mb-6 flex-1">
+            {eventDescription}
+          </p>
+
+          {/* Footer Action */}
+          <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+            <div className="flex -space-x-2">
+              {attendees.slice(0, 3).map((att, i) => (
+                <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
+                  <img src={att.profilePic || `https://ui-avatars.com/api/?name=${att.name || 'U'}`} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+              {attendees.length > 3 && (
+                <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center text-[10px] text-gray-500 font-medium">
+                  +{attendees.length - 3}
+                </div>
+              )}
+            </div>
+
+            {/* Auto-Team Button with Tooltip */}
+            <div className="flex gap-2">
+              {/* Auto-Team Button */}
+              {!isJoined && (
+                <div className="relative group/tooltip">
+                  <button
+                    onClick={handleAutoTeamClick}
+                    disabled={loading || isQueued}
+                    className={`px-4 py-2 text-sm rounded-xl font-bold transition-all shadow-sm border ${isQueued
                       ? "bg-purple-50 text-purple-700 border-purple-200 cursor-default"
                       : "bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:text-blue-600 hover:-translate-y-0.5"
-                    }`}
-                >
-                  {isQueued ? "Queued" : "Auto-Team"}
-                </button>
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none text-center shadow-xl z-20">
-                  Join solo and get automatically grouped with others.
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      }`}
+                  >
+                    {isQueued ? "Queued" : "Auto-Team"}
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none text-center shadow-xl z-20">
+                    Join solo and get automatically grouped with others.
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Join Button */}
-            <button
-              onClick={handleJoin}
-              disabled={loading || isJoined || isQueued}
-              className={`px-5 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-2 ${isJoined
-                ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
-                : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
-                }`}
-            >
-              {loading ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : isJoined ? (
-                <><span>Joined</span><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></>
-              ) : (
-                "Join Event"
               )}
-            </button>
+
+              {/* Join Button */}
+              <button
+                onClick={handleJoin}
+                disabled={loading || isJoined || isQueued}
+                className={`px-5 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-2 ${isJoined
+                  ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
+                  : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
+                  }`}
+              >
+                {loading ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : isJoined ? (
+                  <><span>Joined</span><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></>
+                ) : (
+                  "Join Event"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
+};
+
+Cards.propTypes = {
+  eventData: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    organizerName: PropTypes.string,
+    organizerTitle: PropTypes.string,
+    organizerAvatar: PropTypes.string,
+    eventImageUrl: PropTypes.string,
+    eventName: PropTypes.string,
+    eventPrize: PropTypes.string,
+    eventDescription: PropTypes.string,
+    organizer: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    attendees: PropTypes.array,
+    date: PropTypes.string,
+    location: PropTypes.string
+  }).isRequired,
+  onEdit: PropTypes.func.isRequired,
+  currentUserId: PropTypes.string
 };
 
 export default Cards;

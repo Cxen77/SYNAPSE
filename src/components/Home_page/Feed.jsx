@@ -35,7 +35,25 @@ export default function Feed({ user }) {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   function handleCreatePost(newPost) {
-    // Invalidate queries to refresh feed
+    // Instantly update the cache (Optimistic-like)
+    queryClient.setQueryData(['posts', feedType], (oldData) => {
+      if (!oldData) return oldData;
+
+      // Deep clone pages to avoid mutation issues
+      const newPages = oldData.pages.map(page => ({ ...page }));
+
+      // Prepend to the first page's posts array
+      if (newPages.length > 0) {
+        newPages[0].posts = [newPost, ...newPages[0].posts];
+      }
+
+      return {
+        ...oldData,
+        pages: newPages
+      };
+    });
+
+    // Also invalidate to ensure eventual consistency (background refetch)
     queryClient.invalidateQueries(['posts']);
   }
 

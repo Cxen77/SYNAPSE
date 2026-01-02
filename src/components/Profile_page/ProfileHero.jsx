@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import Avatar from '../common/Avatar';
@@ -206,7 +207,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                 )}
                                 <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
                                     <MapPin className="w-4 h-4" />
-                                    University
+                                    {user.location || "Add Location"}
                                 </div>
                                 <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
                                     <Calendar className="w-4 h-4" />
@@ -216,7 +217,8 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         </div>
 
                         {/* Stats Bar (Unified) */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        {/* Stats Bar (Instagram Style) */}
+                        <div className="flex items-center justify-around sm:justify-start sm:gap-12 py-4 border-t border-b border-gray-100 md:border-0 md:bg-gray-50 md:p-4 md:rounded-2xl">
                             {[
                                 { label: 'Followers', value: user.followers?.length || 0, icon: Users, color: 'text-blue-600' },
                                 { label: 'Following', value: user.following?.length || 0, icon: UserPlus, color: 'text-green-600' },
@@ -226,14 +228,14 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                 <div
                                     key={i}
                                     onClick={stat.action}
-                                    className={`flex items-center gap-3 p-2 rounded-xl transition-all ${stat.action ? 'cursor-pointer hover:bg-white hover:shadow-sm' : ''}`}
+                                    className={`flex flex-col items-center md:flex-row md:gap-3 transition-all ${stat.action ? 'cursor-pointer hover:opacity-80' : ''}`}
                                 >
-                                    <div className={`p-2 bg-white rounded-lg shadow-sm ${stat.color}`}>
+                                    <div className={`hidden md:block p-2 bg-white rounded-lg shadow-sm ${stat.color}`}>
                                         <stat.icon className="w-5 h-5" />
                                     </div>
-                                    <div>
-                                        <div className="text-xl font-bold text-gray-900 leading-none">{stat.value}</div>
-                                        <div className="text-xs text-gray-500 font-bold uppercase tracking-wide mt-1">{stat.label}</div>
+                                    <div className="text-center md:text-left">
+                                        <div className="text-lg sm:text-xl font-bold text-gray-900 leading-none">{stat.value}</div>
+                                        <div className="text-xs text-gray-500 font-medium mt-1">{stat.label}</div>
                                     </div>
                                 </div>
                             ))}
@@ -252,6 +254,30 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
             )}
         </div>
     );
+};
+
+ProfileHero.propTypes = {
+    user: PropTypes.shape({
+        _id: PropTypes.string,
+        name: PropTypes.string,
+        username: PropTypes.string,
+        profilePic: PropTypes.string,
+        bannerPic: PropTypes.string,
+        bio: PropTypes.string,
+        location: PropTypes.string,
+        course: PropTypes.string,
+        followers: PropTypes.array,
+        following: PropTypes.array,
+        teams: PropTypes.array,
+        projects: PropTypes.array
+    }),
+    isOwner: PropTypes.bool,
+    isOwnProfile: PropTypes.bool,
+    isFollowing: PropTypes.bool,
+    onFollow: PropTypes.func,
+    onInvite: PropTypes.func,
+    onToggleView: PropTypes.func,
+    onProfileUpdate: PropTypes.func
 };
 
 export default ProfileHero;

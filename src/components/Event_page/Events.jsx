@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FaPlus, FaFilter, FaCalendarCheck, FaSearch } from "react-icons/fa";
 import Cards from "./cards";
 import Slider from "./Slider";
@@ -10,6 +11,7 @@ import { useEvents } from "../../hooks/useEvents";
 
 function Events() {
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const { events, loading, refetch, error } = useEvents(); // Get error
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -18,15 +20,18 @@ function Events() {
   const [selectedDate, setSelectedDate] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [eventToEdit, setEventToEdit] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
 
-  useEffect(() => {
-    if (currentUser) setCurrentUserId(currentUser.uid);
-  }, [currentUser]);
 
-  const handleEventCreated = () => {
-    // Event created/edited externally (in modal), so we just invalidate cache
-    refetch();
+  const handleEventCreated = (newEvent, isEdit) => {
+    // Optimistic / Instant Update
+    if (!isEdit && newEvent) {
+      queryClient.setQueryData(['events'], (oldEvents) => {
+        return oldEvents ? [newEvent, ...oldEvents] : [newEvent];
+      });
+    } else {
+      // For edits, it's safer to refetch or find-and-replace
+      refetch();
+    }
   };
 
   const handleEditEvent = (event) => {
@@ -44,38 +49,30 @@ function Events() {
       event.description?.toLowerCase().includes(searchText.toLowerCase());
     const matchesCategory = activeCategory ? event.category === activeCategory : true;
 
+    // Helper to normalize date to YYYY-MM-DD
+    const getDateStr = (d) => {
+      if (!d) return null;
+      try {
+        return new Date(d).toISOString().split('T')[0];
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const eventDate = getDateStr(event.date);
+
     let matchesDate = true;
     if (selectedDate) {
-      if (!event.date) {
-        matchesDate = false;
-      } else {
-        try {
-          const eventDate = new Date(event.date).toISOString().split('T')[0];
-          matchesDate = eventDate === selectedDate;
-        } catch (e) {
-          matchesDate = false;
-        }
-      }
+      matchesDate = eventDate === selectedDate;
     }
 
     let matchesType = true;
     const today = new Date().toISOString().split('T')[0];
 
-    if (filterType === "All") {
-      matchesType = true;
-    } else if (event.date) {
-      try {
-        const eventDate = new Date(event.date).toISOString().split('T')[0];
-        if (filterType === "Upcoming") {
-          matchesType = eventDate > today;
-        } else if (filterType === "Ongoing") {
-          matchesType = eventDate >= today;
-        }
-      } catch (e) {
-        matchesType = false;
-      }
-    } else {
-      matchesType = false;
+    if (filterType !== "All") {
+      if (!eventDate) matchesType = false;
+      else if (filterType === "Upcoming") matchesType = eventDate > today;
+      else if (filterType === "Ongoing") matchesType = eventDate >= today;
     }
 
     return matchesSearch && matchesCategory && matchesDate && matchesType;
@@ -118,17 +115,17 @@ function Events() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 min-w-[140px]">
+            <div className="flex flex-row sm:flex-col gap-3 min-w-[140px] w-full sm:w-auto mt-4 sm:mt-0">
               <button
                 onClick={handleCreateEvent}
-                className="flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition hover:scale-105 active:scale-95 shadow-lg"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition hover:scale-105 active:scale-95 shadow-lg"
               >
                 <FaPlus className="text-blue-600" />
-                Host Event
+                <span className="whitespace-nowrap">Host Event</span>
               </button>
               <button
                 onClick={() => setIsFilterOpen(true)}
-                className="lg:hidden flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 transition border border-gray-700"
+                className="lg:hidden flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 transition border border-gray-700"
               >
                 <FaFilter />
                 Filter
@@ -187,7 +184,7 @@ function Events() {
                             date: event.date
                           }}
                           onEdit={handleEditEvent}
-                          currentUserId={currentUserId}
+                          currentUserId={currentUser?.uid}
                         />
                       </div>
                     ))}

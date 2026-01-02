@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import Avatar from "../common/Avatar";
 
 function MemberCard({ member }) {
@@ -19,5 +20,14 @@ function MemberCard({ member }) {
     </div>
   );
 }
+
+MemberCard.propTypes = {
+  member: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    avatar: PropTypes.string,
+    img: PropTypes.string,
+    skill: PropTypes.string
+  }).isRequired
+};
 
 export default MemberCard;

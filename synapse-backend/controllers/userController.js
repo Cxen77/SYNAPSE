@@ -17,6 +17,7 @@ const formatUserResponse = (user) => {
         course: user.course,
         college: user.college,
         year: user.year,
+        location: user.location,
         bio: user.bio,
         skills: user.skills,
         followers: user.followers,
@@ -63,6 +64,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         user.course = req.body.course || user.course;
         user.college = req.body.college || user.college;
         user.year = req.body.year || user.year;
+        user.location = req.body.location || user.location;
         user.bio = req.body.bio || user.bio;
         user.skills = req.body.skills || user.skills;
         user.socials = req.body.socials || user.socials;

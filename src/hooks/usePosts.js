@@ -19,7 +19,7 @@ export const usePosts = (feedType) => {
         getNextPageParam: (lastPage) => {
             return lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined;
         },
-        staleTime: 60000, // 1 minute
+        staleTime: 0, // Always fetch fresh data on invalidation
     });
 
     // Flatten pages into a single list of posts

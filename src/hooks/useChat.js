@@ -131,21 +131,21 @@ export const useChatHistory = (chatId) => {
     useEffect(() => {
         if (!socket || !chatId) return;
 
-        console.log('[useChat] Joining chat room:', chatId);
+        // console.log('[useChat] Joining chat room:', chatId);
         socket.emit('join:chat', chatId);
 
         const handleNewMessage = (msg) => {
-            console.log('[useChat] Received message:new event:', msg);
+            // console.log('[useChat] Received message:new event:', msg);
 
             // Handle both string and populated object chatId
             const msgChatId = msg.chatId._id || msg.chatId;
 
             if (msgChatId === chatId) {
-                console.log('[useChat] Message matches current chat, adding to state');
+                // console.log('[useChat] Message matches current chat, adding to state');
                 setMessages(prev => {
                     // Check for duplicates
                     if (prev.some(m => m._id === msg._id)) {
-                        console.log('[useChat] Message already exists, skipping');
+                        // console.log('[useChat] Message already exists, skipping');
                         return prev;
                     }
                     return [...prev, msg];
@@ -153,12 +153,12 @@ export const useChatHistory = (chatId) => {
                 // Mark read immediately if we see it
                 api.post('/chat/read', { chatId });
             } else {
-                console.log('[useChat] Message is for different chat:', msgChatId);
+                // console.log('[useChat] Message is for different chat:', msgChatId);
             }
         };
 
         const handleTyping = ({ userId, isTyping }) => {
-            console.log('[useChat] Typing event:', { userId, isTyping });
+            // console.log('[useChat] Typing event:', { userId, isTyping });
             setTypingUsers(prev => {
                 const newSet = new Set(prev);
                 if (isTyping) newSet.add(userId);
@@ -167,12 +167,12 @@ export const useChatHistory = (chatId) => {
             });
         };
 
-        console.log('[useChat] Attaching socket listeners');
+        // console.log('[useChat] Attaching socket listeners');
         socket.on('message:new', handleNewMessage);
         socket.on('user:typing', handleTyping);
 
         return () => {
-            console.log('[useChat] Cleaning up socket listeners');
+            // console.log('[useChat] Cleaning up socket listeners');
             socket.emit('leave:chat', chatId);
             socket.off('message:new', handleNewMessage);
             socket.off('user:typing', handleTyping);
@@ -180,7 +180,7 @@ export const useChatHistory = (chatId) => {
     }, [socket, chatId]);
 
     const sendMessage = async (text, attachments = []) => {
-        console.log('[useChat] Sending message:', { chatId, text });
+        // console.log('[useChat] Sending message:', { chatId, text });
         try {
             const { data } = await api.post('/chat/send', {
                 chatId,
@@ -188,16 +188,16 @@ export const useChatHistory = (chatId) => {
                 attachments
             });
 
-            console.log('[useChat] Message sent successfully:', data.message);
+            // console.log('[useChat] Message sent successfully:', data.message);
 
             // Optimistically append the message to local state
             setMessages(prev => {
                 // Prevent duplicates if socket event already arrived
                 if (prev.some(m => m._id === data.message._id)) {
-                    console.log('[useChat] Optimistic update: message already exists');
+                    // console.log('[useChat] Optimistic update: message already exists');
                     return prev;
                 }
-                console.log('[useChat] Optimistically adding message to UI');
+                // console.log('[useChat] Optimistically adding message to UI');
                 return [...prev, data.message];
             });
 

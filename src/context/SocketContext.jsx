@@ -18,8 +18,8 @@ export const SocketProvider = ({ children }) => {
             if (currentUser) {
                 const token = await currentUser.getIdToken();
 
-                // For development, assume localhost:5000. In prod, use env var.
-                const SERVER_URL = 'http://localhost:5000';
+                // Use environment variable for production, fallback to localhost for dev
+                const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
                 newSocket = io(SERVER_URL, {
                     auth: { token },
@@ -29,18 +29,25 @@ export const SocketProvider = ({ children }) => {
                 });
 
                 newSocket.on('connect', () => {
-                    console.log('[Socket] Connected:', newSocket.id);
+                    // console.log('[Socket] Connected:', newSocket.id);
                 });
 
                 newSocket.on('disconnect', (reason) => {
-                    console.log('[Socket] Disconnected:', reason);
+                    // console.log('[Socket] Disconnected:', reason);
                 });
 
                 newSocket.on('connect_error', (err) => {
                     console.error('[Socket] Connection error:', err.message);
                 });
 
+                // INITIAL SYNC: Receive full list of online users
+                newSocket.on('online:users', (userIds) => {
+                    // console.log('[Socket] Received initial online users:', userIds.length);
+                    setOnlineUsers(new Set(userIds));
+                });
+
                 newSocket.on('user:presence', ({ userId, status }) => {
+                    // console.log(`[SocketContext] Presence Update: User ${userId} is now ${status}`);
                     setOnlineUsers(prev => {
                         const newSet = new Set(prev);
                         if (status === 'online') {
@@ -48,6 +55,7 @@ export const SocketProvider = ({ children }) => {
                         } else {
                             newSet.delete(userId);
                         }
+                        // console.log('[SocketContext] Updated Online Set:', [...newSet]);
                         return newSet;
                     });
                 });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaImage } from 'react-icons/fa';
+import { FaTimes, FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaImage, FaUsers } from 'react-icons/fa';
 import api from '../../api/axios';
 
 const CreateEventModal = ({ isOpen, onClose, onEventCreated, eventToEdit = null }) => {
@@ -10,7 +10,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated, eventToEdit = null 
         location: '',
         category: 'Hackathon',
         prize: '',
-        imageUrl: ''
+        imageUrl: '',
+        maxTeamSize: 4
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -24,7 +25,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated, eventToEdit = null 
                 location: eventToEdit.location || '',
                 category: eventToEdit.category || 'Hackathon',
                 prize: eventToEdit.prize || '',
-                imageUrl: eventToEdit.imageUrl || ''
+                imageUrl: eventToEdit.imageUrl || '',
+                maxTeamSize: eventToEdit.maxTeamSize || 4
             });
         } else {
             setFormData({
@@ -34,7 +36,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated, eventToEdit = null 
                 location: '',
                 category: 'Hackathon',
                 prize: '',
-                imageUrl: ''
+                imageUrl: '',
+                maxTeamSize: 4
             });
         }
     }, [eventToEdit, isOpen]);
@@ -143,6 +146,23 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated, eventToEdit = null 
                             </div>
                         </div>
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Team Size</label>
+                        <div className="relative">
+                            <FaUsers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="number"
+                                name="maxTeamSize"
+                                value={formData.maxTeamSize}
+                                onChange={handleChange}
+                                min="2"
+                                max="10"
+                                required
+                                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                            />
+                        </div>
+                    </div>
+
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -219,8 +239,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated, eventToEdit = null 
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

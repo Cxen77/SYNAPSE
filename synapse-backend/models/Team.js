@@ -5,6 +5,8 @@ const teamSchema = mongoose.Schema({
     description: { type: String, required: true },
     category: { type: String, required: true },
     visibility: { type: String, enum: ['public', 'private'], default: 'public' },
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+    isAutoCreated: { type: Boolean, default: false },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     admins: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     invites: [{

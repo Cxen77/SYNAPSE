@@ -21,6 +21,8 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import forumRoutes from './routes/forumRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
+import collegeRoutes from './routes/collegeRoutes.js';
+import autoTeamRoutes from './routes/autoTeamRoutes.js';
 
 import initDirectories from './utils/initDirectories.js';
 import { initializeFirebase } from './config/firebaseAdmin.js';
@@ -54,9 +56,23 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://fuseon.in',
+    'https://www.fuseon.in',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: clientUrl,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -91,17 +107,17 @@ app.use('/api/teams', teamRoutes);
 // app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/users', userRoutes);
 // app.use('/api/posts', apiLimiter, cacheMiddleware(60), postRoutes); // Cache 1 min
-app.use('/api/posts', cacheMiddleware(60), postRoutes);
-// app.use('/api/forums', apiLimiter, cacheMiddleware(120), forumRoutes); // Cache 2 min
-app.use('/api/forums', cacheMiddleware(120), forumRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/forums', forumRoutes);
 // app.use('/api/chat', apiLimiter, chatRoutes); // No cache (Real-time)
 app.use('/api/chat', chatRoutes);
 // app.use('/api/stories', apiLimiter, storyRoutes); // No cache (Ephemeral)
 app.use('/api/stories', storyRoutes);
 // app.use('/api/events', apiLimiter, cacheMiddleware(300), eventRoutes); // Cache 5 min
-app.use('/api/events', cacheMiddleware(300), eventRoutes);
-// app.use('/api/notifications', apiLimiter, notificationRoutes);
+app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/colleges', collegeRoutes);
+app.use('/api/autoteam', autoTeamRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -148,4 +164,5 @@ const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    console.log('Backend server restarted successfully.');
 });

@@ -5,8 +5,10 @@ import {
     joinEvent,
     leaveEvent,
     updateEvent,
-    getEventById
+    getEventById,
+    deleteEvent
 } from '../controllers/eventController.js';
+import { getEventTeams } from '../controllers/teamController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import validate from '../middleware/validate.js';
 import { eventSchema } from '../utils/validationSchemas.js';
@@ -19,9 +21,11 @@ router.route('/')
 
 router.route('/:id')
     .get(protect, getEventById)
-    .put(protect, validate(eventSchema), updateEvent);
+    .put(protect, validate(eventSchema), updateEvent)
+    .delete(protect, deleteEvent);
 
 router.put('/:id/join', protect, joinEvent);
 router.put('/:id/leave', protect, leaveEvent);
+router.get('/:id/teams', protect, getEventTeams);
 
 export default router;

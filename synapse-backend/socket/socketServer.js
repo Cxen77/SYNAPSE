@@ -3,12 +3,16 @@ import { admin } from '../config/firebaseAdmin.js';
 import User from '../models/User.js';
 
 let io;
-const onlineUsers = new Map(); // userId -> socketId (or Set of socketIds if multiple devices)
+const onlineUsers = new Map(); // userId -> Set<socketId>
 
 export const initSocket = (httpServer) => {
     io = new Server(httpServer, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: [
+                process.env.CLIENT_URL || "http://localhost:5173",
+                "https://fuseon.in",
+                "https://www.fuseon.in"
+            ],
             methods: ["GET", "POST"]
         }
     });
@@ -18,22 +22,22 @@ export const initSocket = (httpServer) => {
         try {
             const token = socket.handshake.auth.token;
             if (!token) {
-                console.error('[Socket Auth] No token provided in handshake');
+                // console.error('[Socket Auth] No token provided in handshake');
                 return next(new Error('Authentication error: No token provided'));
             }
 
-            console.log('[Socket Auth] Verifying token...');
+            // console.log('[Socket Auth] Verifying token...');
             const decodedToken = await admin.auth().verifyIdToken(token);
             socket.user = decodedToken; // { uid, email, etc. }
-            console.log('[Socket Auth] Token verified for UID:', decodedToken.uid);
+            // console.log('[Socket Auth] Token verified for UID:', decodedToken.uid);
 
             // Fetch full user from Mongo to get _id
             const user = await User.findOne({ firebaseUid: decodedToken.uid });
             if (!user) {
-                console.error('[Socket Auth] User not found in MongoDB for UID:', decodedToken.uid);
+                // console.error('[Socket Auth] User not found in MongoDB for UID:', decodedToken.uid);
                 return next(new Error('User not found in database'));
             }
-            console.log('[Socket Auth] User found in MongoDB:', user._id);
+            // console.log('[Socket Auth] User found in MongoDB:', user._id);
             socket.mongoUser = user;
 
             next();
@@ -49,15 +53,24 @@ export const initSocket = (httpServer) => {
         // Join user-specific room
         socket.join(`user:${userId}`);
 
-        // Mark online
-        onlineUsers.set(userId, {
-            ...onlineUsers.get(userId),
-            status: 'online',
-            lastSeen: new Date()
-        });
+        // Track Socket ID
+        if (!onlineUsers.has(userId)) {
+            onlineUsers.set(userId, new Set());
+        }
+        const userSockets = onlineUsers.get(userId);
+        userSockets.add(socket.id);
 
-        // Broadcast presence
-        io.emit('user:presence', { userId, status: 'online' });
+        // Send existing online users map to the new client (Initial Sync)
+        const activeUserIds = Array.from(onlineUsers.keys());
+        socket.emit('online:users', activeUserIds);
+
+        // If this is the FIRST connection for this user, broadcast Online
+        if (userSockets.size === 1) {
+            io.emit('user:presence', { userId, status: 'online' });
+            console.log(`User ${userId} came ONLINE`);
+        } else {
+            // console.log(`User ${userId} connected another tab (Active: ${userSockets.size})`);
+        }
 
         // Handle joining a chat room
         socket.on('join:chat', (chatId) => {
@@ -81,11 +94,27 @@ export const initSocket = (httpServer) => {
 
         // Handle disconnect
         socket.on('disconnect', async () => {
-            // Update last seen in DB
-            await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+            if (onlineUsers.has(userId)) {
+                const userSockets = onlineUsers.get(userId);
+                userSockets.delete(socket.id);
 
-            onlineUsers.delete(userId);
-            io.emit('user:presence', { userId, status: 'offline', lastSeen: new Date() });
+                // If NO connections remaining, mark as Offline
+                if (userSockets.size === 0) {
+                    onlineUsers.delete(userId);
+
+                    // Update last seen in DB
+                    try {
+                        await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+                    } catch (err) {
+                        console.error('Error updating lastSeen:', err);
+                    }
+
+                    io.emit('user:presence', { userId, status: 'offline', lastSeen: new Date() });
+                    console.log(`User ${userId} went OFFLINE`);
+                } else {
+                    // console.log(`User ${userId} closed a tab (Remaining: ${userSockets.size})`);
+                }
+            }
         });
     });
 

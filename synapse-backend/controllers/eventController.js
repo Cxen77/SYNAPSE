@@ -5,7 +5,7 @@ import Event from '../models/Event.js';
 // @route   POST /api/events
 // @access  Private
 const createEvent = asyncHandler(async (req, res) => {
-    const { title, description, date, location, category, prize, imageUrl } = req.body;
+    const { title, description, date, location, category, prize, imageUrl, maxTeamSize } = req.body;
 
     const event = await Event.create({
         title,
@@ -15,6 +15,7 @@ const createEvent = asyncHandler(async (req, res) => {
         category,
         prize,
         imageUrl,
+        maxTeamSize: maxTeamSize || 4,
         organizer: req.user._id,
         attendees: [req.user._id]
     });
@@ -97,6 +98,7 @@ const updateEvent = asyncHandler(async (req, res) => {
         event.category = category || event.category;
         event.prize = prize || event.prize;
         event.imageUrl = imageUrl || event.imageUrl;
+        event.maxTeamSize = req.body.maxTeamSize || event.maxTeamSize;
 
         const updatedEvent = await event.save();
         await updatedEvent.populate('organizer', 'name username profilePic');
@@ -123,4 +125,33 @@ const getEventById = asyncHandler(async (req, res) => {
     }
 });
 
-export { createEvent, getEvents, joinEvent, leaveEvent, updateEvent, getEventById };
+// @desc    Delete event
+// @route   DELETE /api/events/:id
+// @access  Private
+const deleteEvent = asyncHandler(async (req, res) => {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+        res.status(404);
+        throw new Error('Event not found');
+    }
+
+    // Check if user is organizer
+    if (event.organizer.toString() !== req.user._id.toString()) {
+        res.status(401);
+        throw new Error('Not authorized to delete this event');
+    }
+
+    await event.deleteOne();
+    res.json({ message: 'Event removed' });
+});
+
+export {
+    createEvent,
+    getEvents,
+    joinEvent,
+    leaveEvent,
+    updateEvent,
+    getEventById,
+    deleteEvent
+};

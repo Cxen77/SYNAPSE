@@ -117,11 +117,11 @@ function Teams() {
 
   return (
     <div className="bg-gray-50 min-h-screen w-full">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
         <SearchBar />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
 
           {/* Left Section */}
           <div className="lg:col-span-8 space-y-6">
@@ -134,10 +134,14 @@ function Teams() {
             />
 
             {loading ? (
-              <div className="text-center py-10 text-gray-500">Loading teams...</div>
+              <div className="space-y-4">
+                {[1, 2].map(n => (
+                  <div key={n} className="bg-white rounded-xl h-64 shadow-sm animate-pulse border border-gray-100" />
+                ))}
+              </div>
             ) : teams.length === 0 ? (
-              <div className="text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-200">
-                <p className="text-lg font-semibold">No teams yet</p>
+              <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
+                <p className="text-lg font-bold text-gray-900 mb-1">No teams yet</p>
                 <p className="text-sm">Create a team to get started!</p>
               </div>
             ) : (
@@ -152,15 +156,17 @@ function Teams() {
           </div>
 
           {/* Right Section */}
-          <div className="lg:col-span-4 space-y-6 lg:-mt-20 flex flex-col">
-            {invites.length > 0 && (
-              <PendingInvites
-                invites={invites}
-                onAccept={handleAcceptInvite}
-                onDecline={handleDeclineInvite}
-              />
-            )}
-            <Recommended people={recommendations} />
+          <div className="lg:col-span-4 space-y-6">
+            <div className="sticky top-20 space-y-6">
+              {invites.length > 0 && (
+                <PendingInvites
+                  invites={invites}
+                  onAccept={handleAcceptInvite}
+                  onDecline={handleDeclineInvite}
+                />
+              )}
+              <Recommended people={recommendations} />
+            </div>
           </div>
 
         </div>

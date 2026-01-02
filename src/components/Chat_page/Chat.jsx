@@ -19,16 +19,21 @@ import MessageList from "./Window/MessageList";
 import MessageInput from "./Window/MessageInput";
 import Skeleton from "../common/Skeleton";
 
+import { useSocket } from "../../context/SocketContext";
+import useVisualViewport from "../../hooks/useVisualViewport"; // [Import Viewport Hook]
+
 function Chat() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const { currentUser } = useAuth();
+    const { onlineUsers } = useSocket(); // [Get Online Users]
+    const viewport = useVisualViewport(); // [Moved to top]
 
     // FETCH CHATS LIST
-    const { chats, loading: chatsLoading, accessChat, refetchChats } = useChats(); // [Include refetchChats if available or trigger custom refetch]
+    const { chats, loading: chatsLoading, accessChat, refetchChats } = useChats();
 
-    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false); // [Group Modal State]
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
     // ... (rest of state)
 
@@ -66,9 +71,7 @@ function Chat() {
         }
     };
 
-    console.log("Chat Render. ID:", id);
-    console.log("Location State:", location.state);
-    console.log("Chats loaded:", chats.length);
+    // console.log("Chat Render. ID:", id);
 
     const [newMessage, setNewMessage] = useState("");
     const [search, setSearch] = useState("");
@@ -86,7 +89,7 @@ function Chat() {
                 id: c._id,
                 _id: c._id,
                 name: c.chatName,
-                avatar: "https://ui-avatars.com/api/?name=" + c.chatName + "&background=random", // Generative avatar for groups
+                avatar: "https://ui-avatars.com/api/?name=" + c.chatName + "&background=random",
                 status: c.participants.length + " members",
                 note: "Group Chat",
                 messages: [],
@@ -98,13 +101,22 @@ function Chat() {
         }
 
         const other = c.participants.find(p => p._id !== currentUser._id) || {};
+
+        // Force string comparison to avoid ObjectId mismatches
+        const otherIdStr = other._id ? other._id.toString() : "";
+        const isOnline = onlineUsers.has(otherIdStr) || onlineUsers.has(other._id);
+
+        // Debug logging for Xelloyello or specific user issues
+        // console.log(`[Chat Status] User: ${other.name} (${otherIdStr}) | Online: ${isOnline}`);
+
         return {
             id: c._id,
             _id: c._id,
             name: other.name || "User",
             avatar: other.profilePic || "https://via.placeholder.com/150",
-            status: other.status || "Offline",
-            note: "Active " + (other.lastSeen ? new Date(other.lastSeen).toLocaleTimeString() : "recently"),
+            status: isOnline ? "Online" : "Offline",
+            isOnline: isOnline,
+            note: isOnline ? "Active Now" : (other.lastSeen ? "Last seen " + new Date(other.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Offline"),
             messages: [],
             lastMessage: c.lastMessage,
             createdAt: c.createdAt,
@@ -116,9 +128,7 @@ function Chat() {
     const [fetchedChat, setFetchedChat] = useState(null);
     useEffect(() => {
         if (id && !chats.find(c => c._id === id)) {
-            console.log("Chat ID not in list. Fetching manually:", id);
             api.get(`/chat/${id}`).then(({ data }) => {
-                console.log("Fetched single chat:", data);
                 setFetchedChat(data);
             }).catch(e => console.error("Fetch single chat error:", e));
         } else {
@@ -149,13 +159,17 @@ function Chat() {
         }
 
         const other = c.participants.find(p => p._id !== currentUser._id) || {};
+        const otherIdStr = other._id ? other._id.toString() : "";
+        const isOnline = onlineUsers.has(otherIdStr) || onlineUsers.has(other._id);
+
         return {
             id: c._id,
             _id: c._id,
             name: other.name || "User",
             avatar: other.profilePic || "https://via.placeholder.com/150",
-            status: other.status || "Offline",
-            note: "Active " + (other.lastSeen ? new Date(other.lastSeen).toLocaleTimeString() : "recently"),
+            status: isOnline ? "Online" : "Offline",
+            isOnline: isOnline,
+            note: isOnline ? "Active Now" : (other.lastSeen ? "Last seen " + new Date(other.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Offline"),
             messages: [],
             lastMessage: c.lastMessage,
             createdAt: c.createdAt,
@@ -176,7 +190,7 @@ function Chat() {
     } = useChatHistory(id);
 
     useEffect(() => {
-        console.log('[Chat.jsx] historyMessages updated:', historyMessages.length, historyMessages[historyMessages.length - 1]);
+        // console.log('[Chat.jsx] historyMessages updated:', historyMessages.length, historyMessages[historyMessages.length - 1]);
     }, [historyMessages]);
 
     // Auto-scroll
@@ -185,6 +199,31 @@ function Chat() {
             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [historyMessages, historyLoading, activeChat]);
+
+    // [New] Scroll to bottom when keyboard opens
+    // [Scalable & Smooth] Sticky Bottom Logic
+    // Instead of a single timeout, we continuously anchor the scroll to the bottom during the keyboard transition.
+    // This creates the "smooth" effect where messages slide up perfectly with the keyboard.
+    useEffect(() => {
+        if (viewport.offset > 0) {
+            let frames = 0;
+            const maxFrames = 30; // approx 500ms (enough for most keyboard animations)
+
+            const animateScroll = () => {
+                if (chatEndRef.current) {
+                    chatEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+                }
+
+                frames++;
+                if (frames < maxFrames) {
+                    requestAnimationFrame(animateScroll);
+                }
+            };
+
+            // Start the scroll loop
+            requestAnimationFrame(animateScroll);
+        }
+    }, [viewport.offset, viewport.height]);
 
     // Typing debounce
     useEffect(() => {
@@ -240,24 +279,44 @@ function Chat() {
                 text: m.text,
                 timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 reactions: [],
-                seen: m.readBy.length > 1
             }))
         };
     }
 
-    return (
-        <div className={`bg-gray-50 absolute inset-x-0 top-0 ${activeChat ? 'bottom-0' : 'bottom-16'} md:top-16 md:bottom-0 flex md:p-6 gap-6`}>
 
-            {/* [Group Chat Modal] */}
+
+    // Mobile Keyboard Fix:
+    // When keyboard opens, viewport.height decreases.
+    // We want the chat container to be full height (window.innerHeight) but with padding-bottom matching the keyboard height (viewport.offset).
+    // This allows the input bar (flex bottom) to be pushed up.
+
+    const isMobile = window.innerWidth < 768;
+    const keyboardOpen = isMobile && activeChat && viewport.offset > 0;
+
+    // [Debounced Loading State]
+    // Prevents "flash" of skeletons on fast connections.
+    const [showLoaders, setShowLoaders] = useState(false);
+    useEffect(() => {
+        let timer;
+        if (historyLoading) {
+            timer = setTimeout(() => setShowLoaders(true), 200); // Only show after 200ms
+        } else {
+            setShowLoaders(false);
+        }
+        return () => clearTimeout(timer);
+    }, [historyLoading]);
+
+    return (
+        // Main Container
+        <div className={`bg-gray-50 absolute inset-x-0 top-0 md:top-16 md:bottom-0 flex md:p-6 gap-6`}>
+
+            {/* ... (sidebar omitted for brevity) ... */}
+
             <GroupChatModal
                 isOpen={isGroupModalOpen}
                 onClose={() => setIsGroupModalOpen(false)}
                 onGroupCreated={() => {
-                    // Ideally trigger a refresh of chats here.
-                    // Since useChats is a hook, we might need to rely on the socket or manual refresh.
-                    // For now, we assume the user might need to refresh or we add a dependency.
-                    // Actually, inserting into local state or reloading window is easiest if we don't expose refetch.
-                    window.location.reload(); // Simple refetch for now or we expose refetch from hook
+                    window.location.reload();
                 }}
             />
 
@@ -351,13 +410,17 @@ function Chat() {
                 )}
             </div>
 
-            {/* RIGHT CHAT WINDOW */}
-            <div className={`${activeChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-white min-h-0 md:rounded-2xl shadow-sm md:border border-gray-200 overflow-hidden fixed inset-0 md:static z-20`}>
+            {/* RIGHT CHAT WINDOW - KEYBOARD FIX APPLIED HERE */}
+            {/* Native approach: interactive-widget=resizes-content in index.html handles the resize. */}
+            <div
+                className={`${activeChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-white min-h-0 md:rounded-2xl shadow-sm md:border border-gray-200 overflow-hidden fixed inset-0 md:static z-20`}
+            // No manual style needed. The browser now resizing the viewport natively.
+            >
                 {windowChat ? (
                     <>
                         <ChatHeader chat={windowChat} onBack={() => navigate('/chat')} />
 
-                        {(historyLoading && historyMessages.length === 0) ? (
+                        {(showLoaders && historyMessages.length === 0) ? (
                             <div className="flex-1 p-6 space-y-4">
                                 <Skeleton variant="rectangular" className="h-10 w-2/3 rounded-xl" />
                                 <Skeleton variant="rectangular" className="h-10 w-1/2 rounded-xl self-end" />

@@ -10,7 +10,7 @@ function MessageList({
   isReplying
 }) {
   return (
-    <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-50 min-h-0">
+    <div className="flex-1 p-4 overflow-y-auto overscroll-contain flex flex-col gap-3 bg-gray-50 min-h-0">
       <div className="text-center text-gray-500 text-xs">Fri 23:07</div>
 
       {chat.messages.map((msg) => (

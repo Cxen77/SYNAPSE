@@ -7,6 +7,7 @@ import NavItem from "./NavItem";
 import Avatar from "../common/Avatar";
 import NotificationDropdown from "../Notifications/NotificationDropdown";
 import api from "../../api/axios";
+import { useSocket } from "../../context/SocketContext";
 
 import {
   HiHome,
@@ -20,6 +21,7 @@ import {
 
 function Navbar() {
   const { currentUser } = useAuth();
+  const { socket } = useSocket();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef(null);
@@ -30,6 +32,16 @@ function Navbar() {
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // Listen for real-time notifications to update badge
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewNotification = (notif) => {
+      setUnreadCount(prev => prev + 1);
+    };
+    socket.on('notification:new', handleNewNotification);
+    return () => socket.off('notification:new', handleNewNotification);
+  }, [socket]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

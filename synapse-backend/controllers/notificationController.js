@@ -34,7 +34,8 @@ export const getNotifications = async (req, res) => {
         const notifications = await Notification.find({ recipient: req.user._id })
             .sort({ createdAt: -1 })
             .populate('sender', 'name profilePic')
-            .populate('post', 'content') // Populate related data if needed
+            .populate('post', 'content')
+            .populate('team', 'name') // Added team population
             .limit(20);
 
         res.json(notifications);

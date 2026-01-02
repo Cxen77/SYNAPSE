@@ -44,5 +44,6 @@ export const eventSchema = Joi.object({
     location: Joi.string().required(),
     category: Joi.string().valid('Hackathon', 'Workshop', 'Seminar', 'Tournament', 'Meetup', 'Project', 'Game', 'Sport').required(),
     prize: Joi.string().allow(''),
-    imageUrl: Joi.string().uri().allow('')
+    imageUrl: Joi.string().uri().allow(''),
+    maxTeamSize: Joi.number().min(2).max(50).default(4)
 });

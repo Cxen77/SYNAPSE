@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 export const useEvents = () => {
     const queryClient = useQueryClient();
 
-    const { data: events = [], isLoading, error } = useQuery({
+    const { data: events = [], isLoading, error, refetch } = useQuery({
         queryKey: ['events'],
         queryFn: async () => {
             const { data } = await api.get('/events');
@@ -29,6 +29,7 @@ export const useEvents = () => {
         events,
         loading: isLoading,
         error,
+        refetch,
         createEvent: createEventMutation.mutateAsync
     };
 };

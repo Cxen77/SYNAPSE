@@ -11,7 +11,9 @@ const userSchema = mongoose.Schema({
     bannerPic: { type: String, default: '' },
     course: { type: String, default: '' },
     college: { type: String, default: '' },
+    collegeId: { type: mongoose.Schema.Types.ObjectId, ref: 'College' },
     year: { type: String, default: '' },
+    location: { type: String, default: '' },
     pushToken: { type: String, default: '' }, // FCM Token
     bio: { type: String, default: '' },
     skills: [{ type: String }],

@@ -9,6 +9,7 @@ import { SocketProvider } from './context/SocketContext';
 // Lazy Load Components
 const Home = lazy(() => import('./components/Home_page/Home.jsx'));
 const Teams = lazy(() => import('./components/Team_page/Teams.jsx'));
+const TeamDetails = lazy(() => import('./components/Team_page/TeamDetails.jsx')); // Added
 const Events = lazy(() => import('./components/Event_page/Events.jsx'));
 const EventDetails = lazy(() => import('./components/Event_page/EventDetails.jsx'));
 const Chat = lazy(() => import('./components/Chat_page/Chat.jsx'));
@@ -136,7 +137,25 @@ function App() {
     };
 
     socket.on('message:new', handleNewMessage);
-    return () => socket.off('message:new', handleNewMessage);
+
+    // Auto Team Match Listener
+    socket.on('team:found', (data) => {
+      // console.log('[App] Auto Team Matched!', data);
+      toast.success(
+        <div onClick={() => window.location.href = `/chat/${data.chatId}`} className="cursor-pointer">
+          <b>Team Found!</b>
+          <p className="text-sm">You have been matched into "{data.name}". Click to chat!</p>
+        </div>,
+        { duration: 6000, icon: '🎉' }
+      );
+      // Optional: Auto redirect after delay or immediately?
+      // window.location.href = `/chat/${data.chatId}`; 
+    });
+
+    return () => {
+      socket.off('message:new', handleNewMessage);
+      socket.off('team:found');
+    };
   }, [socket, currentUser]);
 
   return (
@@ -164,6 +183,7 @@ function App() {
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+            <Route path="/teams/:id" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} /> {/* Added */}
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/:id" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />

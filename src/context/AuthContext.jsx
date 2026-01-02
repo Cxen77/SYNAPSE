@@ -51,10 +51,8 @@ export const AuthProvider = ({ children }) => {
 
     // Google Login - fast, no Firestore
     const googleLogin = async () => {
-        console.log("🔵 Starting Google Sign-In...");
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
-        console.log("✅ Signed in!");
         return result.user;
     };
 

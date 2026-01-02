@@ -3,17 +3,29 @@ import { HiBell, HiCheck, HiX } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { formatDistanceToNow } from 'date-fns';
+import { useSocket } from '../../context/SocketContext';
 
 const NotificationDropdown = ({ isOpen, onClose }) => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    const { socket } = useSocket();
+
     useEffect(() => {
         if (isOpen) {
             fetchNotifications();
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleNewNotification = (newNotif) => {
+            setNotifications(prev => [newNotif, ...prev]);
+        };
+        socket.on('notification:new', handleNewNotification);
+        return () => socket.off('notification:new', handleNewNotification);
+    }, [socket]);
 
     const fetchNotifications = async () => {
         try {
@@ -37,15 +49,20 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
             }
 
             // Navigate based on type
+            // Navigate based on type
             if (notification.post) {
-                navigate(`/post/${notification.post._id}`);
+                navigate(`/post/${notification.post._id || notification.post}`);
             } else if (notification.team) {
-                navigate(`/teams/${notification.team._id}`);
+                const teamId = notification.team._id || notification.team;
+                navigate(`/teams/${teamId}`);
             } else if (notification.event) {
-                navigate(`/events/${notification.event._id}`);
+                navigate(`/events/${notification.event._id || notification.event}`);
             } else if (notification.sender) {
                 navigate(`/users/${notification.sender.username}`);
             }
+            // Removed redundant check for type === 'match' processing since 'notification.team' handles it above.
+
+            onClose();
 
             onClose();
         } catch (error) {
@@ -115,6 +132,11 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                                         {notification.type === 'invite' && 'invited you to a team'}
                                         {notification.type === 'join' && 'joined your team'}
                                         {notification.type === 'reply' && 'replied to your comment'}
+                                        {notification.type === 'match' && (
+                                            <span className="text-green-600 font-bold">
+                                                found a match for your team! 🎉
+                                            </span>
+                                        )}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
                                         {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}

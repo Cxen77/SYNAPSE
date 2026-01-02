@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import PropTypes from 'prop-types';
 import { FaTimes, FaUsers, FaCheck } from 'react-icons/fa';
 import api from '../../api/axios';
 
@@ -55,48 +57,69 @@ const InviteToTeamModal = ({ isOpen, onClose, userToInvite }) => {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden flex flex-col max-h-[80vh]">
-                <div className="flex justify-between items-center p-5 border-b border-gray-100">
-                    <h3 className="text-xl font-bold text-gray-900">Invite to Team</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 pointer-events-none">
+            <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity animate-in fade-in duration-200"
+                onClick={onClose}
+            />
+
+            <div className="bg-white w-full sm:max-w-md rounded-t-[2rem] sm:rounded-2xl shadow-xl overflow-hidden pointer-events-auto relative animate-slide-up sm:animate-in sm:zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+
+                {/* Drag Handle for Mobile */}
+                <div className="sm:hidden w-full flex justify-center pt-3 pb-1" onClick={onClose}>
+                    <div className="w-12 h-1.5 bg-gray-200 rounded-full cursor-pointer" />
+                </div>
+
+                <div className="flex justify-between items-center px-6 pt-2 pb-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">Invite to Team</h3>
+                        <p className="text-sm text-gray-500">
+                            Invite <span className="font-bold text-gray-900">{userToInvite?.name}</span> to collaborate
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition">
                         <FaTimes />
                     </button>
                 </div>
 
-                <div className="p-5 overflow-y-auto custom-scrollbar">
-                    <p className="text-gray-600 mb-4">
-                        Select a team to invite <span className="font-bold text-gray-900">{userToInvite?.name}</span> to:
-                    </p>
-
+                <div className="p-5 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/50">
                     {loading ? (
-                        <div className="text-center py-8 text-gray-500">Loading your teams...</div>
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400 space-y-2">
+                            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-sm font-medium">Loading your teams...</span>
+                        </div>
                     ) : teams.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border border-gray-100">
-                            <p>You don't have any teams to invite to.</p>
-                            <p className="text-sm mt-1">Create a team first!</p>
+                        <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                                <FaUsers className="text-xl" />
+                            </div>
+                            <p className="font-medium text-gray-900">No teams available</p>
+                            <p className="text-sm mt-1 mb-4">You need to lead a team to invite members.</p>
+                            <button onClick={onClose} className="text-blue-600 font-bold hover:underline">
+                                Go create one!
+                            </button>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             {teams.map(team => (
-                                <div key={team._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition group">
+                                <div key={team._id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition group">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                             <FaUsers />
                                         </div>
                                         <div>
                                             <h4 className="font-bold text-gray-900">{team.name}</h4>
-                                            <p className="text-xs text-gray-500">{team.members.length} members</p>
+                                            <p className="text-xs text-gray-500 font-medium">{team.members.length} members</p>
                                         </div>
                                     </div>
 
                                     <button
                                         onClick={() => handleInvite(team._id)}
                                         disabled={inviting === team._id}
-                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition ${inviting === team._id
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm ${inviting === team._id
+                                            ? "bg-green-100 text-green-700 cursor-default"
+                                            : "bg-gray-900 text-white hover:bg-black hover:shadow-md active:scale-95"
                                             }`}
                                     >
                                         {inviting === team._id ? (
@@ -109,8 +132,18 @@ const InviteToTeamModal = ({ isOpen, onClose, userToInvite }) => {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
+};
+
+InviteToTeamModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    userToInvite: PropTypes.shape({
+        _id: PropTypes.string,
+        name: PropTypes.string
+    })
 };
 
 export default InviteToTeamModal;

@@ -314,6 +314,17 @@ const getMyInvites = asyncHandler(async (req, res) => {
     res.json(teams);
 });
 
+// @desc    Get teams for a specific event
+// @route   GET /api/events/:id/teams
+// @access  Private
+const getEventTeams = asyncHandler(async (req, res) => {
+    const teams = await Team.find({ eventId: req.params.id })
+        .populate('members', 'name username profilePic skills college') // Added skills/college as per prompt
+        .populate('admins', 'name username profilePic');
+
+    res.json(teams);
+});
+
 export {
     createTeam,
     getMyTeams,
@@ -326,5 +337,6 @@ export {
     removeMember,
     updateTeam,
     searchTeams,
-    getMyInvites
+    getMyInvites,
+    getEventTeams
 };

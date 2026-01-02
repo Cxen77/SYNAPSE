@@ -1,19 +1,87 @@
---- DEBUG REPORT ---
-Found 2 group chats.
+Connected to DB
 
-Group: test group (ID: 693d64d19c702e25ad214f1c)
-Admin: 692f3a247d5c64db76b06993
-    - Participant ID: 692f3a247d5c64db76b06993 [Type: object (ObjectId)]
-    - Participant ID: 69248427f952a8633d80f2ba [Type: object (ObjectId)]
-    - Participant ID: 692f3a247d5c64db76b06993 [Type: object (ObjectId)]
+Found 15 TOTAL entries (queued + matched).
 
-Group: test group (ID: 693d668b969bfb82cc971038)
-Admin: 6929da3af53cc99cb668ef9b
-    - Participant ID: 6929da3af53cc99cb668ef9b [Type: object (ObjectId)]
-    - Participant ID: 69248427f952a8633d80f2ba [Type: object (ObjectId)]
+--- Event ID: 692a8d991ed7d94068d64c87 ---
+Total Queued: 2
+[0] User: Dev chandra  (6929da3af53cc99cb668ef9b) - Status: queued
+    Filters: {"college":"Bmsit&m/vtu","location":"bangalore","year":"1st Year","skills":["React","Node.js","MongoDB"],"role":"Member"}
+[1] User: Xelloyello (692f3a247d5c64db76b06993) - Status: queued
+    Filters: {"college":"Bmsit&m/vtu","location":"bangalore","year":"1st Year","skills":["Frontend Development","UI/UX Design","Machine Learning","Python","React"],"role":"Member"}
 
---- USERS ---
-Test User: 69248427f952a8633d80f2ba
-Dev chandra prasad yadav: 6929da3af53cc99cb668ef9b
-synapse: 692f3a127d5c64db76b06989
-Xelloyello: 692f3a247d5c64db76b06993
+--- Simulating Matches ---
+Match [0] & [1]: Score = 65
+    Details: College Match (+30), Location Match (+20), Year Match (+10), Role Same (0), Skills Overlap: 1 (+5)
+
+--- Event ID: 692b431a46f3de9a74fa9ab9 ---
+Total Queued: 3
+[0] User: Dev chandra  (6929da3af53cc99cb668ef9b) - Status: queued
+    Filters: {"college":"Bmsit&m/vtu","location":"bangalore","year":"1st Year","skills":["React","Node.js","MongoDB"],"role":"Member"}
+[1] User: Peer User 1 (6956b4d7dc4adb76be475fb8) - Status: queued
+    Filters: {"college":"BrowserTestCollege","location":"BrowserCity","year":"3rd","skills":["React","Node"],"role":""}
+[2] User: Peer User 2 (6956b4d7dc4adb76be475fc4) - Status: queued
+    Filters: {"college":"BrowserTestCollege","location":"BrowserCity","year":"3rd","skills":["React","Node"],"role":""}
+
+--- Simulating Matches ---
+Match [0] & [1]: Score = 5
+    Details: Skills Overlap: 1 (+5)
+Match [0] & [2]: Score = 5
+    Details: Skills Overlap: 1 (+5)
+Match [1] & [2]: Score = 70
+    Details: College Match (+30), Location Match (+20), Year Match (+10), Skills Overlap: 2 (+10)
+
+--- Event ID: 6956ba8da05c5fcf4abbca7d ---
+Total Queued: 3
+[0] User: Dev chandra  (6929da3af53cc99cb668ef9b) - Status: queued
+    Filters: {"college":"bmsit&m","location":"Bangalore ","year":"1st","skills":["React.js","css","html"],"role":"Frontend"}
+[1] User: 25ug1bycs0802 (693ef7f5f33bd3aee4cec913) - Status: queued
+    Filters: {"college":"Bmsit&m","location":"Bangalore ","year":"1st year","skills":["Node. Js"],"role":"Backend"}
+[2] User: Xelloyello (692f3a247d5c64db76b06993) - Status: queued
+    Filters: {"college":"Bmsit&m","location":"bangalore","year":"1st Year","skills":["UI/UX Design"],"role":"Designer"}
+
+--- Simulating Matches ---
+Match [0] & [1]: Score = 35
+    Details: Location Match (+20), Role Different (+15)
+Match [0] & [2]: Score = 15
+    Details: Role Different (+15)
+Match [1] & [2]: Score = 45
+    Details: College Match (+30), Role Different (+15)
+
+--- Event ID: 6956ba95a05c5fcf4abbca84 ---
+Total Queued: 2
+[0] User: Xelloyello (692f3a247d5c64db76b06993) - Status: matched
+    Filters: {"college":"Bmsit&m","location":"bangalore","year":"1st","skills":["UI/UX Design"],"role":"Designer"}
+[1] User: Dev chandra  (6929da3af53cc99cb668ef9b) - Status: matched
+    Filters: {"college":"bmsit&m","location":"Bangalore ","year":"1st","skills":["React.js","css","html"],"role":"Frontend"}
+
+--- Simulating Matches ---
+Match [0] & [1]: Score = 25
+    Details: Year Match (+10), Role Different (+15)
+
+--- Event ID: 6956c25be2e9d5b80b18adfe ---
+Total Queued: 3
+[0] User: Dev chandra  (6929da3af53cc99cb668ef9b) - Status: matched
+    Filters: {"college":"bmsit&m","location":"Bangalore ","year":"1st","skills":["React.js","css","html"],"role":"Frontend"}
+[1] User: 25ug1bycs0802 (693ef7f5f33bd3aee4cec913) - Status: matched
+    Filters: {"college":"Bmsit&m","location":"Bangalore ","year":"1st","skills":["Node. Js"],"role":"Backend"}
+[2] User: Xelloyello (692f3a247d5c64db76b06993) - Status: queued
+    Filters: {"college":"Bmsit&m","location":"bangalore","year":"1st ","skills":["UI/UX Design"],"role":"Designer"}
+
+--- Simulating Matches ---
+Match [0] & [1]: Score = 45
+    Details: Location Match (+20), Year Match (+10), Role Different (+15)
+Match [0] & [2]: Score = 15
+    Details: Role Different (+15)
+Match [1] & [2]: Score = 45
+    Details: College Match (+30), Role Different (+15)
+
+--- Event ID: 695768b4f84d4c822dff1799 ---
+Total Queued: 2
+[0] User: Xelloyello (692f3a247d5c64db76b06993) - Status: matched
+    Filters: {"college":"Bmsit&m","location":"bangalore","year":"1st","skills":["UI/UX Design"],"role":"Designer"}
+[1] User: 25ug1bycs0802 (693ef7f5f33bd3aee4cec913) - Status: matched
+    Filters: {"college":"Bmsit&m","location":"Bangalore ","year":"1st","skills":["Node. Js"],"role":"Backend"}
+
+--- Simulating Matches ---
+Match [0] & [1]: Score = 55
+    Details: College Match (+30), Year Match (+10), Role Different (+15)

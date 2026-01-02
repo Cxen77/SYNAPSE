@@ -9,6 +9,8 @@ export default {
       animation: {
         blob: "blob 7s infinite",
         fadeIn: "fadeIn 0.5s ease-out forwards",
+        "slide-up": "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards", // iOS-like spring/smooth
+        "slide-down": "slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
       keyframes: {
         blob: {
@@ -21,8 +23,18 @@ export default {
           "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        slideUp: {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        slideDown: {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(100%)" },
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require("tailwindcss-animate"),
+  ],
 }

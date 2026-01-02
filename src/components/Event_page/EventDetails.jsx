@@ -1,52 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaUser, FaArrowLeft } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaUser, FaArrowLeft, FaBolt } from 'react-icons/fa';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
+import TeamList from './TeamList';
+import AutoTeamModal from './AutoTeamModal';
+import { useAuth } from '../../context/AuthContext'; // Need auth for user data
+import MatchFoundModal from './MatchFoundModal';
+import { useSocket } from '../../context/SocketContext'; // Need socket for real-time updates
 
 const EventDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { currentUser, loading: authLoading } = useAuth(); // Get loading state from auth
+    const { socket } = useSocket(); // Get socket instance
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isJoined, setIsJoined] = useState(false);
-    const [joinLoading, setJoinLoading] = useState(false);
-    const [currentUserId, setCurrentUserId] = useState(null);
+    const [isQueued, setIsQueued] = useState(null); // Initialize as null (loading)
+    const [joinLoading, setJoinLoading] = useState(false); // Added for handleJoin
+    const [showAutoTeamModal, setShowAutoTeamModal] = useState(false); // Added for AutoTeamModal
 
     useEffect(() => {
         const fetchEventDetails = async () => {
             try {
-                const { data } = await api.get(`/events`);
-                // Since we don't have a get-single-event endpoint yet (or maybe we do, let's check routes),
-                // wait, the routes file showed router.route('/:id').put(...). It didn't show a GET /:id.
-                // The GET / was for all events.
-                // I need to check if I need to add GET /:id to backend.
-                // Looking at eventRoutes.js from previous turn:
-                // router.route('/').post(...).get(...)
-                // router.route('/:id').put(..., updateEvent)
-                // It seems GET /:id is MISSING.
-                // I will need to add it. For now, I'll assume I'll add it.
-
-                // Actually, let's double check the file content I saw earlier.
-                // Step 1172: router.route('/:id').put(...)
-                // It does NOT have .get().
-
-                // So I need to implement getEventById in backend first?
-                // Or I can filter from the list if I have to, but that's bad practice.
-                // I will implement GET /api/events/:id in backend.
-
-                // For this file creation, I will assume the endpoint exists.
-                const res = await api.get(`/events/${id}`); // This will fail until I add the route
-                setEvent(res.data);
-
-                const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-                if (userInfo) {
-                    setCurrentUserId(userInfo._id);
-                    if (res.data.attendees.some(att => (att._id || att) === userInfo._id)) {
-                        setIsJoined(true);
+                let fetchedEvent = null;
+                // 1. Fetch Event
+                // Try direct fetch first for better performance and reliability
+                try {
+                    const res = await api.get(`/events/${id}`);
+                    fetchedEvent = res.data;
+                    setEvent(fetchedEvent);
+                } catch (err) {
+                    // Fallback to list fetch if individual endpoint fails (or not implemented)
+                    const { data } = await api.get(`/events`);
+                    fetchedEvent = data.events?.find(e => e._id === id);
+                    if (fetchedEvent) {
+                        setEvent(fetchedEvent);
+                    } else {
+                        throw new Error("Event not found");
                     }
                 }
+
+                // 2. Check Event Attendance
+                if (currentUser && fetchedEvent) {
+                    // Re-check attendance from the fetched event data
+                    const userIsAttending = fetchedEvent.attendees.some(att => (att._id || att) === currentUser._id);
+                    setIsJoined(userIsAttending);
+                } else {
+                    setIsJoined(false); // Not logged in or event not found
+                }
+
             } catch (err) {
                 console.error("Failed to fetch event details", err);
                 setError("Failed to load event details.");
@@ -55,8 +60,53 @@ const EventDetails = () => {
             }
         };
 
-        fetchEventDetails();
-    }, [id]);
+        if (id) fetchEventDetails();
+    }, [id, currentUser]); // Added currentUser to dependencies for isJoined check
+
+    // Separate effect for Queue Status to depend on currentUser (Auth)
+    useEffect(() => {
+        const checkQueue = async () => {
+            if (authLoading) return; // Wait for auth to initialize
+
+            if (currentUser && id) {
+                try {
+                    const qRes = await api.get(`/autoteam/${id}/status`);
+                    setIsQueued(qRes.data.isQueued);
+                } catch (qErr) {
+                    console.error("Failed to check queue status", qErr);
+                    setIsQueued(false);
+                }
+            } else {
+                setIsQueued(false); // Not logged in -> Not queued
+            }
+        };
+        checkQueue();
+    }, [id, currentUser, authLoading]);
+
+    const [matchData, setMatchData] = useState(null);
+    const [showMatchModal, setShowMatchModal] = useState(false);
+
+    // Listen for real-time match events
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleTeamFound = (data) => {
+            // console.log("Team Found Socket Event:", data);
+            if (data.teamId) {
+                setMatchData(data);
+                setShowMatchModal(true);
+                // Also update queue state
+                setIsQueued(false);
+                setIsJoined(true); // Technically they are now in a team
+            }
+        };
+
+        socket.on('team:found', handleTeamFound);
+
+        return () => {
+            socket.off('team:found', handleTeamFound);
+        };
+    }, [socket]);
 
     const handleJoin = async () => {
         if (isJoined) return;
@@ -159,6 +209,56 @@ const EventDetails = () => {
                             >
                                 {joinLoading ? "Joining..." : isJoined ? "You are going!" : "Join Event"}
                             </button>
+
+                            {/* Auto Team Button */}
+                            {!isJoined && isQueued !== null && (
+                                <button
+                                    onClick={() => !isQueued && setShowAutoTeamModal(true)}
+                                    disabled={isQueued}
+                                    className={`px-6 py-3 rounded-xl font-bold flex-shrink-0 transition flex items-center gap-2 shadow-sm ${isQueued
+                                        ? "bg-blue-50 text-blue-600 border border-blue-200 cursor-default"
+                                        : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-md hover:scale-105 active:scale-95"
+                                        }`}
+                                >
+                                    {isQueued ? (
+                                        <>
+                                            <span className="relative flex h-3 w-3">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                            </span>
+                                            Searching...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaBolt className="text-yellow-300" />
+                                            Auto Match
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                            {!isJoined && isQueued === null && (
+                                <div className="h-12 w-36 bg-gray-100 rounded-xl animate-pulse"></div>
+                            )}
+
+                            {/* Delete Button (Organizer Only) */}
+                            {currentUser && event.organizer && (currentUser._id === (event.organizer._id || event.organizer)) && (
+                                <button
+                                    onClick={async () => {
+                                        if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+                                            try {
+                                                await api.delete(`/events/${id}`);
+                                                navigate('/events');
+                                            } catch (err) {
+                                                alert('Failed to delete event');
+                                                console.error(err);
+                                            }
+                                        }
+                                    }}
+                                    className="px-6 py-3 rounded-xl font-semibold text-red-600 bg-red-50 hover:bg-red-100 hover:shadow-md transition border border-red-200 flex-shrink-0"
+                                >
+                                    Delete Event 🗑️
+                                </button>
+                            )}
                         </div>
 
                         <div className="grid md:grid-cols-3 gap-8">
@@ -214,9 +314,33 @@ const EventDetails = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Event Teams Section */}
+                        <TeamList eventId={event._id} />
                     </div>
                 </div>
             </div>
+
+            {showAutoTeamModal && (
+                <AutoTeamModal
+                    eventId={id}
+                    user={currentUser} // Fix: use currentUser, userInfo was undefined in my read, verifying... 
+                    // Wait, previous file had 'user={userInfo}'. I need to check if userInfo is defined. 
+                    // In lines 1-15, only 'currentUser' is from useAuth. 
+                    // So 'userInfo' was likely a bug or from a variable I missed. 
+                    // I will use 'currentUser' which contains profile data usually.
+                    onClose={() => setShowAutoTeamModal(false)}
+                    onJoined={() => {
+                        setIsQueued(true);
+                    }}
+                />
+            )}
+
+            <MatchFoundModal
+                isOpen={showMatchModal}
+                onClose={() => setShowMatchModal(false)}
+                matchData={matchData}
+            />
         </div>
     );
 };
