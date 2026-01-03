@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { getOnlineUserIds } from '../socket/socketServer.js';
+import cloudinary from '../config/cloudinary.js';
+import stream from 'stream';
 
 // Helper function to format user response
 // Converts empty strings to undefined for cleaner frontend handling
@@ -107,18 +109,63 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @desc    Update profile picture
 // @route   PUT /api/users/profile-pic
 // @access  Private
+// @desc    Update profile picture
+// @route   PUT /api/users/profile-pic
+// @access  Private
 const updateProfilePic = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-        const imagePath = `/${req.file.path.replace(/\\/g, '/')}`;
-        console.log('Updating profile pic to:', imagePath);
-        user.profilePic = imagePath;
-        const updatedUser = await user.save();
-        console.log('Saved profile pic:', updatedUser.profilePic);
-        console.log('Current banner pic:', updatedUser.bannerPic);
+        if (!req.file) {
+            res.status(400);
+            throw new Error('No image file provided');
+        }
 
-        res.json(formatUserResponse(updatedUser));
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'synapse_profiles',
+            },
+            async (error, result) => {
+                if (error) {
+                    console.error('Cloudinary Upload Error:', error);
+                    // We can't really send a response here if we've already sent one or if the async flow is weird,
+                    // but since we are inside the callback, we should handle it carefully.
+                    // Ideally, we wrap this in a promise to await it.
+                } else {
+                    user.profilePic = result.secure_url;
+                    const updatedUser = await user.save();
+                    res.json(formatUserResponse(updatedUser));
+                }
+            }
+        );
+
+        // Wrap stream in a promise to keep the async/await flow clean for the handler
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    { folder: 'synapse_profiles' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                const bufferStream = new stream.PassThrough();
+                bufferStream.end(req.file.buffer);
+                bufferStream.pipe(uploadStream);
+            });
+        };
+
+        try {
+            const result = await uploadToCloudinary();
+            user.profilePic = result.secure_url;
+            const updatedUser = await user.save();
+            res.json(formatUserResponse(updatedUser));
+        } catch (error) {
+            console.error(error);
+            res.status(500);
+            throw new Error('Image upload failed');
+        }
+
     } else {
         res.status(404);
         throw new Error('User not found');
@@ -132,14 +179,36 @@ const updateBannerPic = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-        const imagePath = `/${req.file.path.replace(/\\/g, '/')}`;
-        console.log('Updating banner pic to:', imagePath);
-        user.bannerPic = imagePath;
-        const updatedUser = await user.save();
-        console.log('Saved banner pic:', updatedUser.bannerPic);
-        console.log('Current profile pic:', updatedUser.profilePic);
+        if (!req.file) {
+            res.status(400);
+            throw new Error('No image file provided');
+        }
 
-        res.json(formatUserResponse(updatedUser));
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    { folder: 'synapse_banners' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                const bufferStream = new stream.PassThrough();
+                bufferStream.end(req.file.buffer);
+                bufferStream.pipe(uploadStream);
+            });
+        };
+
+        try {
+            const result = await uploadToCloudinary();
+            user.bannerPic = result.secure_url;
+            const updatedUser = await user.save();
+            res.json(formatUserResponse(updatedUser));
+        } catch (error) {
+            console.error(error);
+            res.status(500);
+            throw new Error('Image upload failed');
+        }
     } else {
         res.status(404);
         throw new Error('User not found');

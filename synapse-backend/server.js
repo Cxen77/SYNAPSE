@@ -127,6 +127,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
 import collegeRoutes from './routes/collegeRoutes.js';
 import autoTeamRoutes from './routes/autoTeamRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -139,6 +140,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/autoteam', autoTeamRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ==========================
 // HEALTH CHECK
@@ -170,16 +172,15 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
 
-  const logMessage = `${new Date().toISOString()} - ${statusCode} - ${
-    err.message
-  }\n${err.stack}\n\n`;
+  const logMessage = `${new Date().toISOString()} - ${statusCode} - ${err.message
+    }\n${err.stack}\n\n`;
 
   try {
     fs.appendFileSync(
       path.join(__dirname, 'server_errors.log'),
       logMessage
     );
-  } catch (_) {}
+  } catch (_) { }
 
   res.status(statusCode).json({
     success: false,

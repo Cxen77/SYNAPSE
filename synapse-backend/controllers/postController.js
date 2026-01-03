@@ -2,6 +2,8 @@ import asyncHandler from 'express-async-handler';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import cloudinary from '../config/cloudinary.js';
+import stream from 'stream';
 
 // @desc    Create a new post
 // @route   POST /api/posts
@@ -11,7 +13,29 @@ const createPost = asyncHandler(async (req, res) => {
     let image = req.body.image;
 
     if (req.file) {
-        image = `/uploads/posts/${req.file.filename}`;
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    { folder: 'synapse_posts' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                const bufferStream = new stream.PassThrough();
+                bufferStream.end(req.file.buffer);
+                bufferStream.pipe(uploadStream);
+            });
+        };
+
+        try {
+            const result = await uploadToCloudinary();
+            image = result.secure_url;
+        } catch (error) {
+            console.error(error);
+            res.status(500);
+            throw new Error('Image upload failed');
+        }
     }
 
     const post = await Post.create({
