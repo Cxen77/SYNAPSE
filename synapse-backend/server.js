@@ -1,5 +1,13 @@
-import express from 'express';
+// ==========================
+// ENV (MUST BE FIRST)
+// ==========================
 import dotenv from 'dotenv';
+dotenv.config(); // ALWAYS load env vars (safe for Render)
+
+// ==========================
+// CORE IMPORTS
+// ==========================
+import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,26 +17,33 @@ import morgan from 'morgan';
 import { createServer } from 'http';
 import fs from 'fs';
 
+// ==========================
+// INTERNAL IMPORTS
+// ==========================
 import connectDB from './config/db.js';
 import { initSocket } from './socket/socketServer.js';
 import initDirectories from './utils/initDirectories.js';
 import { initializeFirebase } from './config/firebaseAdmin.js';
 
-// ✅ IMPORTANT FIX — DO NOT LOAD dotenv IN PRODUCTION
-if (process.env.NODE_ENV !== 'production') {
-    dotenv.config();
-}
+// ==========================
+// SECURITY / OPTIMIZATION
+// ==========================
+import compression from 'compression';
+import xss from 'xss-clean';
+import hpp from 'hpp';
 
 // ==========================
-// INITIAL SETUP
+// DEBUG (REMOVE LATER)
+// ==========================
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGO_URI exists:', !!process.env.MONGO_URI);
+
+// ==========================
+// INITIALIZE SERVICES
 // ==========================
 connectDB();
 initDirectories();
 initializeFirebase();
-
-import compression from 'compression';
-import xss from 'xss-clean';
-import hpp from 'hpp';
 
 // ==========================
 // APP + SERVER
@@ -38,40 +53,53 @@ const httpServer = createServer(app);
 initSocket(httpServer);
 
 // ==========================
-// DIRNAME FIX (ES MODULE)
+// DIRNAME FIX (ESM)
 // ==========================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ==========================
-// SECURITY & MIDDLEWARE
+// HELMET
 // ==========================
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: false
-}));
+  })
+);
 
+// ==========================
+// CORS
+// ==========================
 const allowedOrigins = [
-    'http://localhost:5173',
-    'https://fuseon.in',
-    'https://www.fuseon.in',
-    process.env.CLIENT_URL
+  'http://localhost:5173',
+  'https://fuseon.in',
+  'https://www.fuseon.in',
+  process.env.CLIENT_URL
 ].filter(Boolean);
 
-app.use(cors({
+app.use(
+  cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        process.env.NODE_ENV === 'development'
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  })
+);
 
+// ==========================
+// MIDDLEWARES
+// ==========================
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -116,42 +144,48 @@ app.use('/api/autoteam', autoTeamRoutes);
 // HEALTH CHECK
 // ==========================
 app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'success',
-        message: 'Server is running',
-        timestamp: new Date().toISOString()
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Server is running',
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.get('/', (req, res) => {
-    res.send('Synapse Backend API');
+  res.send('Synapse Backend API');
 });
 
 // ==========================
 // 404 HANDLER
 // ==========================
 app.use((req, res, next) => {
-    const error = new Error(`Not Found - ${req.originalUrl}`);
-    res.status(404);
-    next(error);
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  res.status(404);
+  next(error);
 });
 
 // ==========================
-// ERROR HANDLER
+// GLOBAL ERROR HANDLER
 // ==========================
 app.use((err, req, res, next) => {
-    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
 
-    const logMessage = `${new Date().toISOString()} - ${statusCode} - ${err.message}\n${err.stack}\n\n`;
-    try {
-        fs.appendFileSync(path.join(__dirname, 'server_errors.log'), logMessage);
-    } catch (_) {}
+  const logMessage = `${new Date().toISOString()} - ${statusCode} - ${
+    err.message
+  }\n${err.stack}\n\n`;
 
-    res.status(statusCode).json({
-        success: false,
-        message: err.message,
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack
-    });
+  try {
+    fs.appendFileSync(
+      path.join(__dirname, 'server_errors.log'),
+      logMessage
+    );
+  } catch (_) {}
+
+  res.status(statusCode).json({
+    success: false,
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+  });
 });
 
 // ==========================
@@ -160,5 +194,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  console.log(
+    `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+  );
 });
