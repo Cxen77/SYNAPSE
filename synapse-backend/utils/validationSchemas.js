@@ -24,7 +24,7 @@ export const loginSchema = Joi.object({
 });
 
 export const postSchema = Joi.object({
-    content: Joi.string().required(),
+    content: Joi.string().allow(''),
     image: Joi.string().allow('')
 }).unknown(true);
 

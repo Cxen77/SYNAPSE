@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const postSchema = mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    content: { type: String, required: true },
+    content: { type: String },
     image: { type: String },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     comments: [{
