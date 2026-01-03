@@ -21,7 +21,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
-const messaging = getMessaging(app);
+let messaging = null;
+
+try {
+    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+        messaging = getMessaging(app);
+    }
+} catch (err) {
+    console.warn('Firebase Messaging not supported');
+}
 
 export { auth, db, storage, messaging };
 export default app;
