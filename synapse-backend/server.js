@@ -111,7 +111,7 @@ app.use(morgan('dev'));
 // ==========================
 // STATIC FILES
 // ==========================
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Removed for Cloudinary migration
 
 // ==========================
 // ROUTES
