@@ -19,7 +19,8 @@ export const SocketProvider = ({ children }) => {
                 const token = await currentUser.getIdToken();
 
                 // Use environment variable for production, fallback to localhost for dev
-                const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                // Correct: Connect to root URL (e.g. localhost:5000 or api.fuseon.in)
+                const SERVER_URL = import.meta.env.VITE_API_URL;
 
                 newSocket = io(SERVER_URL, {
                     auth: { token },

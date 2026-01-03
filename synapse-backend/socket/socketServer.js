@@ -9,11 +9,14 @@ export const initSocket = (httpServer) => {
     io = new Server(httpServer, {
         cors: {
             origin: [
-                process.env.CLIENT_URL || "http://localhost:5173",
+                "http://localhost:5173",
+                "http://localhost:5174",
                 "https://fuseon.in",
-                "https://www.fuseon.in"
-            ],
-            methods: ["GET", "POST"]
+                "https://www.fuseon.in",
+                process.env.CLIENT_URL
+            ].filter(Boolean),
+            methods: ["GET", "POST"],
+            credentials: true
         }
     });
 
