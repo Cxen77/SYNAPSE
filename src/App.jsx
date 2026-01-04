@@ -25,6 +25,7 @@ const ForumDetails = lazy(() => import('./components/Forum_page/ForumDetails.jsx
 const ThreadPage = lazy(() => import('./components/Forum_page/ThreadPage.jsx'));
 
 import Skeleton from './components/common/Skeleton';
+import NotificationToast from './components/common/NotificationToast';
 
 // Loading Fallback with Skeleton Layout
 const PageLoader = () => (
@@ -120,23 +121,15 @@ function App() {
         // If we are in the chat room (on backend), but not on frontend route (unlikely for "in dm" duplicate case), 
         // the "isChatActive" check above covers the "in DM" case.
 
-        toast((t) => (
-          <div onClick={() => {
-            toast.dismiss(t.id);
-            window.location.href = `/chat/${msgChatId}`;
-          }} className="cursor-pointer flex items-center gap-3 min-w-[200px]">
-            {/* Avatar */}
-            <img
-              src={newMessage.senderId.profilePic || "https://via.placeholder.com/40"}
-              alt=""
-              className="w-10 h-10 rounded-full object-cover border border-gray-200"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{newMessage.senderId.name}</p>
-              <p className="text-sm text-gray-500 truncate">{newMessage.text}</p>
-            </div>
-          </div>
-        ), { duration: 4000, style: { borderRadius: '12px', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } });
+        toast.custom((t) => (
+          <NotificationToast
+            t={t}
+            senderName={newMessage.senderId.name}
+            message={newMessage.text}
+            profilePic={newMessage.senderId.profilePic}
+            chatId={msgChatId}
+          />
+        ), { duration: 4000 });
       }
     };
 

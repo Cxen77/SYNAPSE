@@ -57,10 +57,10 @@ const usePushNotification = () => {
             // For foreground, apps usually show a toast or in-app UI.
             // I'll leave a log and a simple toast for now.
             console.log('Foreground push message received:', payload);
-            toast(payload.notification.title + ': ' + payload.notification.body, {
-                icon: '💬',
-                duration: 4000
-            });
+            // toast(payload.notification.title + ': ' + payload.notification.body, {
+            //     icon: '💬',
+            //     duration: 4000
+            // });
         });
 
         return () => unsubscribe();
