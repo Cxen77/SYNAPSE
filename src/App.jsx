@@ -72,6 +72,7 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+import usePushNotification from './hooks/usePushNotification';
 import useNotifications from './hooks/useNotifications';
 import { useSocket } from './context/SocketContext';
 import { useEffect } from 'react';
@@ -83,7 +84,10 @@ function App() {
   const isChatPage = location.pathname.startsWith('/chat');
   const isChatConversation = location.pathname.match(/^\/chat\/[^/]+$/);
 
-  // Notifications
+  // Push Notifications (FCM)
+  usePushNotification();
+
+  // In-App Notifications
   useNotifications();
   const { socket } = useSocket();
   const { currentUser } = useAuth();
