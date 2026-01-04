@@ -25,7 +25,7 @@ const ForumDetails = lazy(() => import('./components/Forum_page/ForumDetails.jsx
 const ThreadPage = lazy(() => import('./components/Forum_page/ThreadPage.jsx'));
 
 import Skeleton from './components/common/Skeleton';
-import NotificationToast from './components/common/NotificationToast';
+import InAppNotification from './components/common/InAppNotification';
 
 // Loading Fallback with Skeleton Layout
 const PageLoader = () => (
@@ -76,8 +76,9 @@ const ProtectedRoute = ({ children }) => {
 import usePushNotification from './hooks/usePushNotification';
 import useNotifications from './hooks/useNotifications';
 import { useSocket } from './context/SocketContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { hasShownNotification, markNotificationShown } from './utils/notificationManager';
 
 function App() {
   const location = useLocation();
@@ -93,16 +94,16 @@ function App() {
   const { socket } = useSocket();
   const { currentUser } = useAuth();
 
+  // State for in-app notifications
+  const [activeNotification, setActiveNotification] = useState(null);
+
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (newMessage) => {
-      // If we are NOT in the chat page, show toast
-      // Or if we are in chat page but different chat (harder to know active chat here without context, 
-      // but simplistic approach: if not startswith /chat, show toast)
-
       const currentPath = window.location.pathname;
       const msgChatId = newMessage.chatId._id || newMessage.chatId;
+      const messageId = newMessage._id;
 
       // Check if we are in the specific chat
       const isChatActive = currentPath.startsWith(`/chat/${msgChatId}`);
@@ -113,23 +114,28 @@ function App() {
           return;
         }
 
-        // Deduplication: Dismiss existing toast for same chat if needed, or rely on key?
-        // Actually, react-hot-toast creates unique IDs.
-        // If we get double events, we get double toasts.
+        // DEDUPLICATION: Check if we've already shown this notification
+        if (hasShownNotification(messageId)) {
+          console.log('[App] Skipping duplicate notification for message:', messageId);
+          return;
+        }
 
-        // Simple dedupe by timestamp check or just rely on the fact that if we are in chat room, we shouldn't get here?
-        // If we are in the chat room (on backend), but not on frontend route (unlikely for "in dm" duplicate case), 
-        // the "isChatActive" check above covers the "in DM" case.
+        // Mark as shown BEFORE displaying to prevent race conditions
+        markNotificationShown(messageId);
 
-        toast.custom((t) => (
-          <NotificationToast
-            t={t}
-            senderName={newMessage.senderId.name}
-            message={newMessage.text}
-            profilePic={newMessage.senderId.profilePic}
-            chatId={msgChatId}
-          />
-        ), { duration: 4000 });
+        // Show Instagram-style notification
+        setActiveNotification({
+          id: messageId,
+          senderName: newMessage.senderId.name,
+          message: newMessage.text,
+          profilePic: newMessage.senderId.profilePic,
+          chatId: msgChatId
+        });
+
+        // Auto-dismiss after showing
+        setTimeout(() => {
+          setActiveNotification(null);
+        }, 4500);
       }
     };
 
@@ -200,6 +206,14 @@ function App() {
       </main>
 
       {!isAuthPage && !isChatConversation && <BottomNav />}
+
+      {/* Instagram-style in-app notification */}
+      {activeNotification && (
+        <InAppNotification
+          notification={activeNotification}
+          onDismiss={() => setActiveNotification(null)}
+        />
+      )}
     </div>
   );
 }

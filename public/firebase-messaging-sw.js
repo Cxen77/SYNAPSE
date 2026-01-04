@@ -19,25 +19,25 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage(function (payload) {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-    // Check if window is focused
+    // Check if ANY app window is open
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-        for (let i = 0; i < clientList.length; i++) {
-            const client = clientList[i];
-            // If app is focused/visible, we generally don't want a system notification
-            // because the in-app socket listener will handle it.
-            if (client.focused || client.visibilityState === 'visible') {
-                console.log('[firebase-messaging-sw.js] App is focused - suppressing system notification');
-                return;
-            }
+        // If ANY client exists (even if not focused), suppress notification
+        // The socket listener will handle in-app notifications
+        if (clientList.length > 0) {
+            console.log('[firebase-messaging-sw.js] App window is open - suppressing system notification (socket will handle)');
+            return;
         }
 
-        // If no client is focused, show system notification
+        // Only show system notification if app is completely closed
+        console.log('[firebase-messaging-sw.js] No app window open - showing system notification');
         const notificationTitle = payload.notification.title;
         const notificationOptions = {
             body: payload.notification.body,
             icon: '/logo192.png',
             data: payload.data,
-            tag: 'message-tag'
+            tag: 'message-tag',
+            badge: '/logo192.png',
+            requireInteraction: false
         };
 
         self.registration.showNotification(notificationTitle, notificationOptions);
