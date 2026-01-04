@@ -157,7 +157,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} containerStyle={{ zIndex: 99999 }} />
       {!isAuthPage && (
         <div className={isChatPage ? "hidden md:block" : ""}>
           <Navbar />

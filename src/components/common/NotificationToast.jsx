@@ -5,7 +5,7 @@ const NotificationToast = ({ t, senderName, message, profilePic, chatId }) => {
     return (
         <div
             className={`${t.visible ? 'animate-enter' : 'animate-leave'
-                } max-w-sm w-full bg-white/80 backdrop-blur-md shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black/5 cursor-pointer hover:bg-white/90 transition-all duration-300`}
+                } max-w-sm w-full bg-white shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black/10 cursor-pointer hover:bg-gray-50 transition-all duration-300 z-[99999]`}
             onClick={() => {
                 toast.dismiss(t.id);
                 window.location.href = `/chat/${chatId}`;

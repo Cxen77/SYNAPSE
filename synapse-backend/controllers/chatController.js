@@ -165,6 +165,7 @@ export const sendMessage = async (req, res) => {
             // PUSH NOTIFICATION LOGIC
             if (partIdStr !== req.user._id.toString()) {
                 const isOnline = isUserOnline(partIdStr);
+                console.log(`[Message] Participant ${partIdStr} (${participantId.name}) online status: ${isOnline}`);
 
                 // Fetch full participant to get pushToken
                 // We could have populated it in the loop above or fetched here
