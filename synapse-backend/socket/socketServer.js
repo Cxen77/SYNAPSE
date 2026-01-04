@@ -59,6 +59,9 @@ export const initSocket = (httpServer) => {
         // Track Socket ID
         if (!onlineUsers.has(userId)) {
             onlineUsers.set(userId, new Set());
+            console.log(`[Socket] New User Set Created for: ${userId} (Type: ${typeof userId})`);
+        } else {
+            // console.log(`[Socket] Adding socket ${socket.id} to existing user ${userId}`);
         }
         const userSockets = onlineUsers.get(userId);
         userSockets.add(socket.id);
