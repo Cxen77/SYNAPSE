@@ -5,6 +5,7 @@ import Notification from '../models/Notification.js';
 import { getOnlineUserIds } from '../socket/socketServer.js';
 import cloudinary from '../config/cloudinary.js';
 import stream from 'stream';
+import axios from 'axios';
 
 // Helper function to format user response
 // Converts empty strings to undefined for cleaner frontend handling
@@ -26,7 +27,8 @@ const formatUserResponse = (user) => {
         following: user.following,
         settings: user.settings,
         teams: user.teams || [],
-        projects: user.projects || []
+        projects: user.projects || [],
+        githubId: user.githubId // Include this to check connection status
     };
 };
 
@@ -70,6 +72,9 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         user.bio = req.body.bio || user.bio;
         user.skills = req.body.skills || user.skills;
         user.socials = req.body.socials || user.socials;
+        if (req.body.projects) {
+            user.projects = req.body.projects;
+        }
 
         if (req.body.settings) {
             user.settings = {
@@ -358,6 +363,152 @@ const getOnlineUsers = asyncHandler(async (req, res) => {
     res.json(onlineUsers);
 });
 
+// @desc    Get user's GitHub repositories
+// @route   GET /api/users/github/repos
+// @access  Private
+const getGithubRepos = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select('+githubAccessToken');
+
+    if (!user || !user.githubAccessToken) {
+        res.status(400);
+        throw new Error('GitHub account not connected or token missing');
+    }
+
+    try {
+        // Fetch ALL repos (public and private)
+        const response = await axios.get('https://api.github.com/user/repos?sort=updated&visibility=all&per_page=100', {
+            headers: {
+                Authorization: `token ${user.githubAccessToken}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
+        });
+
+        const repos = response.data.map(repo => ({
+            id: repo.id,
+            name: repo.name,
+            full_name: repo.full_name,
+            description: repo.description,
+            html_url: repo.html_url,
+            language: repo.language,
+            stargazers_count: repo.stargazers_count,
+            updated_at: repo.updated_at
+        }));
+
+        res.json(repos);
+    } catch (error) {
+        console.error('GitHub API Error:', error.response?.data || error.message);
+
+        // Check for 401 Unauthorized (Token expired/revoked)
+        if (error.response && error.response.status === 401) {
+            console.log("GitHub token expired/invalid. Disconnecting user.");
+            user.githubId = undefined;
+            user.githubAccessToken = undefined;
+            await user.save();
+
+            res.status(401);
+            throw new Error('GitHub token expired. Please reconnect your account.');
+        }
+
+        res.status(500);
+        throw new Error('Failed to fetch GitHub repositories');
+    }
+});
+
+// @desc    Disconnect GitHub account
+// @route   DELETE /api/users/github
+// @access  Private
+const disconnectGithub = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+        user.githubId = undefined;
+        user.githubAccessToken = undefined;
+        await user.save();
+        res.json({ message: 'GitHub account disconnected' });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
+// @desc    Get user's GitHub stats
+// @route   GET /api/users/:id/github/stats
+// @access  Public
+const getGithubStats = asyncHandler(async (req, res) => {
+    // 1. Get the target user (NOT necessarily the current user)
+    // We need their token to fetch *their* repos if we want private ones, 
+    // BUT since this is a public endpoint (viewable by others), we should probably 
+    // only use their token to fetch PUBLIC data or aggregated data.
+    // HOWEVER, for simplicity and to allow showing off private stats if they granted access, 
+    // we will use their stored token.
+    const user = await User.findById(req.params.id).select('+githubAccessToken');
+
+    if (!user || !user.githubId) {
+        // If no GitHub connected, just return null or 404
+        return res.status(404).json({ message: 'GitHub not connected' });
+    }
+
+    if (!user.githubAccessToken) {
+        // Connected but no token (weird state, but possible if old auth)
+        return res.status(404).json({ message: 'GitHub token missing' });
+    }
+
+    try {
+        const headers = {
+            Authorization: `token ${user.githubAccessToken}`,
+            Accept: 'application/vnd.github.v3+json'
+        };
+
+        // Parallel fetch: User Profile & Repos
+        const [userRes, reposRes] = await Promise.all([
+            axios.get('https://api.github.com/user', { headers }),
+            axios.get('https://api.github.com/user/repos?per_page=100&type=all', { headers })
+        ]);
+
+        const githubUser = userRes.data;
+        const repos = reposRes.data;
+
+        // Calculate Stats
+        const totalStars = repos.reduce((acc, repo) => acc + repo.stargazers_count, 0);
+        const totalForks = repos.reduce((acc, repo) => acc + repo.forks_count, 0);
+
+        // Language Stats
+        const languages = {};
+        repos.forEach(repo => {
+            if (repo.language) {
+                languages[repo.language] = (languages[repo.language] || 0) + 1;
+            }
+        });
+
+        const topLanguages = Object.entries(languages)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 3)
+            .map(([name, count]) => ({ name, count, percent: Math.round((count / repos.length) * 100) }));
+
+        res.json({
+            username: githubUser.login,
+            totalRepos: githubUser.public_repos + (githubUser.total_private_repos || 0),
+            totalStars,
+            totalForks,
+            followers: githubUser.followers,
+            following: githubUser.following,
+            topLanguages,
+            profileUrl: githubUser.html_url
+        });
+
+    } catch (error) {
+        console.error('GitHub Stats Error:', error.response?.data || error.message);
+        if (error.response && error.response.status === 401) {
+            // Token expired - clean up
+            user.githubId = undefined;
+            user.githubAccessToken = undefined;
+            await user.save();
+            return res.status(401).json({ message: 'GitHub token expired' });
+        }
+        res.status(500).json({ message: 'Failed to fetch GitHub stats' });
+    }
+});
+
 export {
     getUserProfile,
     updateUserProfile,
@@ -369,5 +520,8 @@ export {
     getUserStats,
     deleteUser,
     getRecommendedUsers,
-    getOnlineUsers
+    getOnlineUsers,
+    getGithubRepos,
+    disconnectGithub,
+    getGithubStats
 };

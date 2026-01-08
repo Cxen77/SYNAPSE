@@ -11,7 +11,10 @@ import {
     getUserStats,
     deleteUser,
     getRecommendedUsers,
-    getOnlineUsers
+    getOnlineUsers,
+    getGithubRepos,
+    disconnectGithub,
+    getGithubStats
 } from '../controllers/userController.js';
 import { updatePushToken } from '../controllers/notificationController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -20,38 +23,25 @@ const router = express.Router();
 
 import upload from '../middleware/uploadMiddleware.js';
 
-router.route('/profile')
-    .get(protect, getUserProfile)
-    .put(protect, updateUserProfile)
-    .delete(protect, deleteUser);
-
 router.get('/me', protect, (req, res) => {
     res.json(req.user);
 });
 
 router.put('/pushtoken', protect, updatePushToken);
 
-router.put('/profile-pic', protect, upload.single('profilePic'), updateProfilePic);
-router.put('/banner-pic', protect, upload.single('bannerPic'), updateBannerPic);
+router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile).delete(protect, deleteUser);
+router.route('/profile-pic').put(protect, upload.single('profilePic'), updateProfilePic);
+router.route('/banner-pic').put(protect, upload.single('bannerPic'), updateBannerPic);
+router.route('/search').get(protect, searchUsers);
+router.route('/recommended').get(protect, getRecommendedUsers);
+router.route('/online').get(protect, getOnlineUsers);
+router.route('/github/repos').get(protect, getGithubRepos);
+router.delete('/github', protect, disconnectGithub);
 
-// Search Users
-router.get('/search', protect, searchUsers);
-
-// Recommended Users
-router.get('/recommended', protect, getRecommendedUsers);
-
-// Online Users
-router.get('/online', protect, getOnlineUsers);
-
-// Follow/Unfollow
-router.put('/:id/follow', protect, followUser);
-
-// Get User Stats
+// Public routes (or semi-public)
 router.get('/:id/stats', getUserStats);
-
-// Get by Username
+router.get('/:id/github/stats', getGithubStats);
 router.get('/:username', getUserByUsername);
-
-
+router.put('/:id/follow', protect, followUser);
 
 export default router;

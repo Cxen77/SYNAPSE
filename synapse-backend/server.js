@@ -7,7 +7,7 @@ dotenv.config(); // ALWAYS load env vars (safe for Render)
 // ==========================
 // CORE IMPORTS
 // ==========================
-import express from 'express';
+import express from 'express'; // Force restart
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -141,6 +141,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/autoteam', autoTeamRoutes);
 app.use('/api/upload', uploadRoutes);
+
+// ==========================
+// PASSPORT CONFIG
+// ==========================
+import passport from './config/passport.js';
+app.use(passport.initialize());
 
 // ==========================
 // HEALTH CHECK

@@ -1,12 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Key, LogOut } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
 import useSettings from '../../../hooks/useSettings';
 import api from '../../../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 const AccountSettings = ({ user, setUser }) => {
     const { updateSettings, loading } = useSettings(user, setUser);
+    const { currentUser } = useAuth();
+    const [githubConnected, setGithubConnected] = useState(!!user.githubId);
+    const [connectLoading, setConnectLoading] = useState(false);
+
+    useEffect(() => {
+        setGithubConnected(!!user.githubId);
+    }, [user]);
+
+    const handleGithubConnect = async () => {
+        if (githubConnected) {
+            // Disconnect
+            try {
+                setConnectLoading(true);
+                await api.delete('/users/github');
+                setGithubConnected(false);
+                // Ideally update 'user' prop too to reflect change
+                setUser(prev => ({ ...prev, githubId: undefined }));
+            } catch (err) {
+                console.error("Failed to disconnect GitHub", err);
+            } finally {
+                setConnectLoading(false);
+            }
+        } else {
+            // Connect
+            const token = await currentUser.getIdToken();
+            window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/github?token=${token}`;
+        }
+    };
+
     const [formData, setFormData] = useState({
         name: user.name || '',
         username: user.username || '',
@@ -98,10 +129,32 @@ const AccountSettings = ({ user, setUser }) => {
                         <Key size={16} />
                         Change Password
                     </button>
-                    <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                        <h4 className="text-sm font-bold text-blue-900 mb-1">Connected Accounts</h4>
-                        <p className="text-xs text-blue-700 mb-3">Login easier by connecting your other accounts.</p>
-                        <button className="text-sm text-blue-600 font-medium hover:underline">Connect Google Account</button>
+                    <div className="mt-8">
+                        <h4 className="text-sm font-bold text-gray-900 mb-4">Connected Accounts</h4>
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                                    <FaGithub className="text-2xl text-gray-900" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-900">GitHub</h4>
+                                    <p className="text-xs text-gray-500">
+                                        {githubConnected ? 'Account connected' : 'Link your GitHub account'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleGithubConnect}
+                                disabled={connectLoading}
+                                className={`px-4 py-2 rounded-lg font-bold text-sm transition ${githubConnected
+                                        ? 'bg-white border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200'
+                                        : 'bg-gray-900 text-white hover:bg-black'
+                                    }`}
+                            >
+                                {connectLoading ? 'Processing...' : (githubConnected ? 'Disconnect' : 'Connect')}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-gray-100 md:hidden">

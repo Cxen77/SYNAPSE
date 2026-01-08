@@ -48,7 +48,7 @@ const AboutSection = ({ user }) => {
                             user.skills.map((skill, index) => (
                                 <span
                                     key={index}
-                                    className="px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 text-gray-800 rounded-full text-sm font-semibold hover:from-blue-200 hover:to-purple-200 transition"
+                                    className="px-4 py-2 bg-gray-100 border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 transition"
                                 >
                                     {skill}
                                 </span>

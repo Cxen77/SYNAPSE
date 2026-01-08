@@ -119,7 +119,7 @@ const InviteToTeamModal = ({ isOpen, onClose, userToInvite }) => {
                                         disabled={inviting === team._id}
                                         className={`px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm ${inviting === team._id
                                             ? "bg-green-100 text-green-700 cursor-default"
-                                            : "bg-gray-900 text-white hover:bg-black hover:shadow-md active:scale-95"
+                                            : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-95"
                                             }`}
                                     >
                                         {inviting === team._id ? (

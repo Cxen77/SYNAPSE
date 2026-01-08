@@ -7,6 +7,8 @@ const userSchema = mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String }, // Optional for Google users
     firebaseUid: { type: String, unique: true, sparse: true }, // Link to Firebase Auth
+    githubId: { type: String, unique: true, sparse: true }, // GitHub OAuth ID
+    githubAccessToken: { type: String, select: false }, // GitHub Access Token
     profilePic: { type: String, default: '' },
     bannerPic: { type: String, default: '' },
     course: { type: String, default: '' },

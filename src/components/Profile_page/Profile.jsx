@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import ProfileHero from './ProfileHero';
 import AboutSection from './AboutSection';
 import ProjectsSection from './ProjectsSection';
-import TeamsSection from './TeamsSection';
+
 import PostsSection from './PostsSection';
 import AchievementsSection from './AchievementsSection';
 import SocialLinks from './SocialLinks';
@@ -13,6 +13,8 @@ import PendingInvites from '../Team_page/PendingInvites';
 import SuggestedConnections from './SuggestedConnections';
 import api from '../../api/axios';
 import InviteToTeamModal from './InviteToTeamModal';
+import GithubImportModal from './GithubImportModal';
+import GithubStatsCard from './GithubStatsCard';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,6 +28,7 @@ const Profile = () => {
     const [isFollowing, setIsFollowing] = useState(false);
     const [viewAsPublic, setViewAsPublic] = useState(false); // Only for owner
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
 
     const [invites, setInvites] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
@@ -122,6 +125,18 @@ const Profile = () => {
         fetchData();
     }, [username, firebaseUser]);
 
+    // Check for GitHub OAuth Success
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('github') === 'success') {
+            toast.success("GitHub connected successfully!");
+            // Remove query param
+            window.history.replaceState({}, document.title, window.location.pathname);
+            // Open Import Modal
+            setIsGithubModalOpen(true);
+        }
+    }, []);
+
     const handleFollow = async () => {
         if (!user || isOwnProfile) return;
 
@@ -175,6 +190,22 @@ const Profile = () => {
         }));
     };
 
+    const handleGithubClick = () => {
+        setIsGithubModalOpen(true);
+    };
+
+    const handleProjectImport = async (newProjects) => {
+        try {
+            const updatedProjects = [...(user.projects || []), ...newProjects];
+            const { data } = await api.put('/users/profile', { projects: updatedProjects });
+            setUser(prev => ({ ...prev, projects: updatedProjects }));
+            toast.success(`Imported ${newProjects.length} projects!`);
+        } catch (err) {
+            console.error("Failed to save projects", err);
+            toast.error("Failed to save imported projects");
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -201,7 +232,7 @@ const Profile = () => {
 
     const tabs = [
         { id: 'overview', label: 'Overview' },
-        { id: 'teams', label: 'Teams' },
+        { id: 'stats', label: 'Stats' },
         { id: 'projects', label: 'Projects' },
         { id: 'events', label: 'Events' },
         { id: 'posts', label: 'Posts' },
@@ -229,7 +260,7 @@ const Profile = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex-1 px-6 py-2.5 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id
-                                    ? 'bg-gray-900 text-white shadow-md'
+                                    ? 'bg-blue-600 text-white shadow-md'
                                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                                     }`}
                             >
@@ -256,13 +287,19 @@ const Profile = () => {
                                     )}
                                     {showOwnerControls && <ProfileScore user={user} />}
                                     {!showOwnerControls && <SuggestedConnections />}
+
                                     <AchievementsSection user={user} />
                                     <SocialLinks user={user} />
                                 </div>
                             </>
                         )}
-                        {activeTab === 'teams' && <TeamsSection user={user} />}
-                        {activeTab === 'projects' && <ProjectsSection user={user} />}
+                        {activeTab === 'stats' && <GithubStatsCard userId={user._id} />}
+                        {activeTab === 'projects' && (
+                            <ProjectsSection
+                                user={user}
+                                onImportClick={showOwnerControls ? handleGithubClick : undefined}
+                            />
+                        )}
                         {activeTab === 'events' && <EventsSection />}
                         {activeTab === 'posts' && <PostsSection isOwner={showOwnerControls} user={user} currentUser={currentUser} />}
                     </div>
@@ -278,6 +315,7 @@ const Profile = () => {
                         )}
                         {showOwnerControls && <ProfileScore user={user} />}
                         {!showOwnerControls && <SuggestedConnections />}
+
                         <AchievementsSection user={user} />
                         <SocialLinks user={user} />
                     </div>
@@ -288,6 +326,12 @@ const Profile = () => {
                 isOpen={isInviteModalOpen}
                 onClose={() => setIsInviteModalOpen(false)}
                 userToInvite={user}
+            />
+
+            <GithubImportModal
+                isOpen={isGithubModalOpen}
+                onClose={() => setIsGithubModalOpen(false)}
+                onImport={handleProjectImport}
             />
         </div>
     );

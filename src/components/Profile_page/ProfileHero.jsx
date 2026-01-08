@@ -159,7 +159,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                                 <Eye className="w-4 h-4 ml-[-2px]" />
                                                 Public View
                                             </button>
-                                            <button onClick={() => setShowEditModal(true)} className="btn-primary flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-white hover:bg-black transition-all shadow-lg shadow-gray-200">
+                                            <button onClick={() => setShowEditModal(true)} className="btn-primary flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-gray-200">
                                                 <Edit3 className="w-4 h-4 ml-[-2px]" />
                                                 Edit Profile
                                             </button>
@@ -172,7 +172,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                     )
                                 ) : (
                                     <>
-                                        <button onClick={onFollow} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${isFollowing ? "bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" : "bg-gray-900 text-white hover:bg-black shadow-lg shadow-gray-200"}`}>
+                                        <button onClick={onFollow} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${isFollowing ? "bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-gray-200"}`}>
                                             {isFollowing ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                                             {isFollowing ? "Following" : "Follow"}
                                         </button>

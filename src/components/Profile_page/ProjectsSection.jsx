@@ -1,7 +1,7 @@
 import React from 'react';
 import { Github, ExternalLink, FolderGit } from 'lucide-react';
 
-const ProjectsSection = ({ user }) => {
+const ProjectsSection = ({ user, onImportClick }) => {
     const projects = user?.projects || [];
 
     return (
@@ -17,6 +17,16 @@ const ProjectsSection = ({ user }) => {
                         {projects.length}
                     </span>
                 </div>
+                {/* GitHub Import Button */}
+                {onImportClick && (
+                    <button
+                        onClick={onImportClick}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition border border-gray-200"
+                    >
+                        <Github className="w-4 h-4" />
+                        <span className="hidden sm:inline">Import from GitHub</span>
+                    </button>
+                )}
             </div>
 
             <div className="p-6">
