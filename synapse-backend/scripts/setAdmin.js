@@ -18,10 +18,17 @@ const setAdmin = async () => {
             process.exit(1);
         }
 
+        if (!process.env.MONGO_URI) {
+            console.error('❌ MONGO_URI is missing in .env');
+            process.exit(1);
+        }
+
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected to MongoDB');
 
+        // Find user by email (case-insensitive)
         const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+
         if (!user) {
             console.error(`❌ User NOT found with email: ${email}`);
             process.exit(1);
@@ -31,7 +38,7 @@ const setAdmin = async () => {
         await user.save();
 
         console.log(`✅ Success! User ${user.name} (${user.email}) is now an ADMIN.`);
-        console.log('You can now access the admin panel at: http://localhost:5173/kiwi');
+        console.log('You can now access the admin panel at: /admin');
 
         process.exit(0);
     } catch (error) {
