@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { admin } from '../config/firebaseAdmin.js';
 import User from '../models/User.js';
+import SystemSettings from '../models/SystemSettings.js';
 
 let io;
 const onlineUsers = new Map(); // userId -> Set<socketId>
@@ -43,6 +44,23 @@ export const initSocket = (httpServer) => {
             // console.log('[Socket Auth] User found in MongoDB:', user._id);
             socket.mongoUser = user;
 
+            // Check if chat is disabled or role restricted
+            const settings = await SystemSettings.getSettings();
+            const chatFeature = settings.features?.get('chat');
+            if (!chatFeature?.enabled) {
+                return next(new Error('Chat is currently disabled'));
+            }
+            if (chatFeature.rolesAllowed && chatFeature.rolesAllowed.length > 0) {
+                if (!chatFeature.rolesAllowed.includes(user.role)) {
+                    return next(new Error('Chat access denied for your role'));
+                }
+            }
+
+            // Check if user is suspended
+            if (user.isSuspended) {
+                return next(new Error('Account suspended'));
+            }
+
             next();
         } catch (error) {
             console.error('Socket Auth Error:', error.message);
@@ -78,10 +96,19 @@ export const initSocket = (httpServer) => {
             // console.log(`User ${userId} connected another tab (Active: ${userSockets.size})`);
         }
 
-        // Handle joining a chat room
-        socket.on('join:chat', (chatId) => {
-            socket.join(`chat:${chatId}`);
-            // Could mark read here if window is focused
+        // Handle joining a chat room — SECURITY: verify membership
+        socket.on('join:chat', async (chatId) => {
+            try {
+                const Chat = (await import('../models/Chat.js')).default;
+                const chat = await Chat.findById(chatId).select('participants').lean();
+                if (!chat || !chat.participants.some(p => p.toString() === userId)) {
+                    socket.emit('error', { message: 'Not a member of this chat' });
+                    return;
+                }
+                socket.join(`chat:${chatId}`);
+            } catch (err) {
+                console.error('[Socket] join:chat validation error:', err.message);
+            }
         });
 
         // Handle leaving a chat room

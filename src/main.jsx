@@ -20,15 +20,18 @@ const queryClient = new QueryClient({
 
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { FeatureProvider } from './context/FeatureContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-            <AuthProvider>
-                <SocketProvider>
-                    <App />
-                </SocketProvider>
-            </AuthProvider>
+            <FeatureProvider>
+                <AuthProvider>
+                    <SocketProvider>
+                        <App />
+                    </SocketProvider>
+                </AuthProvider>
+            </FeatureProvider>
         </BrowserRouter>
     </QueryClientProvider>
 );

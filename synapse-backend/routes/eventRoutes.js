@@ -10,13 +10,14 @@ import {
 } from '../controllers/eventController.js';
 import { getEventTeams } from '../controllers/teamController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import requireFeature from '../middleware/requireFeature.js';
 import validate from '../middleware/validate.js';
 import { eventSchema } from '../utils/validationSchemas.js';
 
 const router = express.Router();
 
 router.route('/')
-    .post(protect, validate(eventSchema), createEvent)
+    .post(protect, requireFeature('events'), validate(eventSchema), createEvent)
     .get(protect, getEvents);
 
 router.route('/:id')

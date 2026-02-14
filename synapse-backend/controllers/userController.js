@@ -7,6 +7,9 @@ import cloudinary from '../config/cloudinary.js';
 import stream from 'stream';
 import axios from 'axios';
 
+// Security: Escape regex special characters to prevent ReDoS
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Helper function to format user response
 // Converts empty strings to undefined for cleaner frontend handling
 const formatUserResponse = (user) => {
@@ -28,6 +31,8 @@ const formatUserResponse = (user) => {
         settings: user.settings,
         teams: user.teams || [],
         projects: user.projects || [],
+        role: user.role,
+        isSuspended: user.isSuspended,
         githubId: user.githubId // Include this to check connection status
     };
 };
@@ -63,37 +68,42 @@ const getUserProfile = asyncHandler(async (req, res) => {
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
-    if (user) {
-        user.name = req.body.name || user.name;
-        user.course = req.body.course || user.course;
-        user.college = req.body.college || user.college;
-        user.year = req.body.year || user.year;
-        user.location = req.body.location || user.location;
-        user.bio = req.body.bio || user.bio;
-        user.skills = req.body.skills || user.skills;
-        user.socials = req.body.socials || user.socials;
-        if (req.body.projects) {
-            user.projects = req.body.projects;
-        }
-
-        if (req.body.settings) {
-            user.settings = {
-                privacy: { ...user.settings.privacy, ...req.body.settings.privacy },
-                notifications: { ...user.settings.notifications, ...req.body.settings.notifications }
-            };
-        }
-
-        if (req.body.password) {
-            user.password = req.body.password;
-        }
-
-        const updatedUser = await user.save();
-
-        res.json(formatUserResponse(updatedUser));
-    } else {
+    if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
+
+    // SECURITY: Strict field whitelist — block role, isSuspended, email, firebaseUid, etc.
+    const ALLOWED_FIELDS = ['name', 'course', 'college', 'year', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password'];
+    const updates = Object.keys(req.body);
+    const blocked = updates.filter(f => !ALLOWED_FIELDS.includes(f));
+    if (blocked.length > 0) {
+        console.warn(`[Security] Blocked fields in profile update: ${blocked.join(', ')} by user ${user._id}`);
+    }
+
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.course) user.course = req.body.course;
+    if (req.body.college) user.college = req.body.college;
+    if (req.body.year) user.year = req.body.year;
+    if (req.body.location) user.location = req.body.location;
+    if (req.body.bio) user.bio = req.body.bio;
+    if (req.body.skills) user.skills = req.body.skills;
+    if (req.body.socials) user.socials = req.body.socials;
+    if (req.body.projects) user.projects = req.body.projects;
+
+    if (req.body.settings) {
+        user.settings = {
+            privacy: { ...user.settings.privacy, ...req.body.settings.privacy },
+            notifications: { ...user.settings.notifications, ...req.body.settings.notifications }
+        };
+    }
+
+    if (req.body.password) {
+        user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+    res.json(formatUserResponse(updatedUser));
 });
 
 // @desc    Delete user account
@@ -102,13 +112,22 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 const deleteUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
-    if (user) {
-        await user.deleteOne();
-        res.json({ message: 'User removed' });
-    } else {
+    if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
+
+    // SECURITY: Soft delete — preserve record, clear sensitive data
+    user.isSuspended = true;
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.bio = '';
+    user.pushToken = '';
+    user.githubAccessToken = undefined;
+    user.name = `[Deleted User]`;
+    await user.save();
+
+    res.json({ message: 'Account deactivated' });
 });
 
 // @desc    Update profile picture
@@ -294,10 +313,11 @@ const searchUsers = asyncHandler(async (req, res) => {
         throw new Error('Search query is required');
     }
 
+    const safe = escapeRegex(searchQuery);
     const users = await User.find({
         $or: [
-            { name: { $regex: searchQuery, $options: 'i' } },
-            { username: { $regex: searchQuery, $options: 'i' } }
+            { name: { $regex: safe, $options: 'i' } },
+            { username: { $regex: safe, $options: 'i' } }
         ]
     })
         .select('-password')

@@ -9,20 +9,14 @@ import { admin } from '../config/firebaseAdmin.js';
 // @access  Private
 export const getChats = async (req, res) => {
     try {
-        console.log("getChats Request User:", req.user._id, "(Type:", typeof req.user._id, ")");
-
-        // Standard query - Mongoose casts query to Schema Type (ObjectId)
-        // If req.user._id is string or ObjectId, it should work.
         const chats = await Chat.find({ participants: req.user._id })
             .populate('participants', 'name email profilePic status lastSeen')
             .populate('lastMessage')
             .populate('groupAdmin', 'name profilePic')
             .sort({ updatedAt: -1 });
 
-        console.log(`Found ${chats.length} chats for user ${req.user._id}`);
         res.json(chats);
     } catch (error) {
-        console.error("getChats Error:", error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -78,7 +72,15 @@ export const accessChat = async (req, res) => {
 export const getChatHistory = async (req, res) => {
     try {
         const { chatId } = req.params;
-        const { limit = 30, cursor } = req.query; // cursor can be a timestamp or _id
+        const { limit = 30, cursor } = req.query;
+
+        // SECURITY: Verify requester is a participant
+        const chat = await Chat.findById(chatId).select('participants').lean();
+        if (!chat || !chat.participants.some(p => p.toString() === req.user._id.toString())) {
+            return res.status(403).json({ message: 'Not a member of this chat' });
+        }
+
+        const cappedLimit = Math.min(parseInt(limit) || 30, 100);
 
         const query = { chatId };
         if (cursor) {
@@ -86,11 +88,10 @@ export const getChatHistory = async (req, res) => {
         }
 
         const messages = await Message.find(query)
-            .sort({ createdAt: -1 }) // Newest first for cursor pagination
-            .limit(parseInt(limit))
+            .sort({ createdAt: -1 })
+            .limit(cappedLimit)
             .populate('senderId', 'name profilePic');
 
-        // Reverse to show oldest -> newest in UI
         res.json(messages.reverse());
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -108,6 +109,12 @@ export const sendMessage = async (req, res) => {
     }
 
     try {
+        // SECURITY: Verify sender is a participant
+        const targetChat = await Chat.findById(chatId).select('participants').lean();
+        if (!targetChat || !targetChat.participants.some(p => p.toString() === req.user._id.toString())) {
+            return res.status(403).json({ message: 'Not a member of this chat' });
+        }
+
         let message = await Message.create({
             senderId: req.user._id,
             text,
@@ -150,7 +157,6 @@ export const sendMessage = async (req, res) => {
 
         // Emit socket event to all participants
         const io = getIO();
-        console.log(`[Socket] Emitting 'message:new' to chat room: chat:${chat._id}`);
         io.to(`chat:${chat._id}`).emit('message:new', message);
 
         chat.participants.forEach(async (participantId) => {
@@ -165,7 +171,6 @@ export const sendMessage = async (req, res) => {
             // PUSH NOTIFICATION LOGIC
             if (partIdStr !== req.user._id.toString()) {
                 const isOnline = isUserOnline(partIdStr);
-                console.log(`[Message] Participant ${partIdStr} (${participantId.name}) online status: ${isOnline}`);
 
                 // Fetch full participant to get pushToken
                 // We could have populated it in the loop above or fetched here
@@ -174,7 +179,6 @@ export const sendMessage = async (req, res) => {
                     try {
                         const user = await User.findById(participantId).select('pushToken name');
                         if (user && user.pushToken) {
-                            console.log(`[Push] User ${user.name} is OFFLINE. Sending Push...`);
                             await admin.messaging().send({
                                 token: user.pushToken,
                                 notification: {
@@ -187,7 +191,6 @@ export const sendMessage = async (req, res) => {
                                     senderId: req.user._id.toString()
                                 }
                             });
-                            console.log(`[Push] Sent to ${user.name}`);
                         }
                     } catch (pushErr) {
                         console.error(`[Push Error] Failed to send to user ${partIdStr}:`, pushErr.message);
@@ -197,7 +200,6 @@ export const sendMessage = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("[SendMessage Error]", error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -240,7 +242,11 @@ export const getChatById = async (req, res) => {
 
         if (!chat) return res.status(404).json({ message: "Chat not found" });
 
-        // Populate sender of lastMessage
+        // SECURITY: Verify requester is a participant
+        if (!chat.participants.some(p => p._id.toString() === req.user._id.toString())) {
+            return res.status(403).json({ message: 'Not a member of this chat' });
+        }
+
         await User.populate(chat, {
             path: "lastMessage.senderId",
             select: "name profilePic email",
@@ -298,20 +304,23 @@ export const createGroupChat = async (req, res) => {
 export const renameGroup = async (req, res) => {
     const { chatId, chatName } = req.body;
 
-    const updatedChat = await Chat.findByIdAndUpdate(
-        chatId,
-        { chatName },
-        { new: true }
-    )
+    // SECURITY: Verify requester is group admin
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+        return res.status(404).json({ message: "Chat Not Found" });
+    }
+    if (!chat.groupAdmin || chat.groupAdmin.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Only group admin can rename the group' });
+    }
+
+    chat.chatName = chatName;
+    await chat.save();
+
+    const updatedChat = await Chat.findById(chatId)
         .populate("participants", "-password")
         .populate("groupAdmin", "-password");
 
-    if (!updatedChat) {
-        res.status(404);
-        throw new Error("Chat Not Found");
-    } else {
-        res.json(updatedChat);
-    }
+    res.json(updatedChat);
 };
 
 // @desc    Add user to Group
@@ -320,22 +329,24 @@ export const renameGroup = async (req, res) => {
 export const addToGroup = async (req, res) => {
     const { chatId, userId } = req.body;
 
+    // SECURITY: Verify requester is group admin
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+        return res.status(404).json({ message: "Chat Not Found" });
+    }
+    if (!chat.groupAdmin || chat.groupAdmin.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Only group admin can add members' });
+    }
+
     const added = await Chat.findByIdAndUpdate(
         chatId,
-        {
-            $push: { participants: userId },
-        },
+        { $push: { participants: userId } },
         { new: true }
     )
         .populate("participants", "-password")
         .populate("groupAdmin", "-password");
 
-    if (!added) {
-        res.status(404);
-        throw new Error("Chat Not Found");
-    } else {
-        res.json(added);
-    }
+    res.json(added);
 };
 
 // @desc    Remove user from Group
@@ -343,6 +354,15 @@ export const addToGroup = async (req, res) => {
 // @access  Private
 export const removeFromGroup = async (req, res) => {
     const { chatId, userId } = req.body;
+
+    // SECURITY: Verify requester is group admin
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+        return res.status(404).json({ message: "Chat Not Found" });
+    }
+    if (!chat.groupAdmin || chat.groupAdmin.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Only group admin can remove members' });
+    }
 
     const removed = await Chat.findByIdAndUpdate(
         chatId,
@@ -355,12 +375,7 @@ export const removeFromGroup = async (req, res) => {
         .populate("participants", "-password")
         .populate("groupAdmin", "-password");
 
-    if (!removed) {
-        res.status(404);
-        throw new Error("Chat Not Found");
-    } else {
-        res.json(removed);
-    }
+    res.json(removed);
 };
 
 

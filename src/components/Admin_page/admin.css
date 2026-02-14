@@ -1,0 +1,214 @@
+/* Admin Dashboard — Custom Styles */
+
+/* Dark scrollbar for Admin */
+.admin-dashboard ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.admin-dashboard ::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+
+.admin-dashboard ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+.admin-dashboard ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Fade-in animation for tab content */
+@keyframes adminFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.admin-fade-in {
+    animation: adminFadeIn 0.3s ease-out;
+}
+
+/* Pulse glow for active indicators */
+@keyframes adminGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 16px rgba(52, 211, 153, 0.7);
+    }
+}
+
+.admin-glow {
+    animation: adminGlow 2s ease-in-out infinite;
+}
+
+/* Glassmorphism card */
+.admin-glass {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Stat card gradient borders */
+.admin-stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--admin-accent, #34d399);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.admin-stat-card:hover::before {
+    opacity: 1;
+}
+
+/* Toggle switch */
+.admin-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.admin-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.admin-toggle.active {
+    background-color: #34d399;
+}
+
+.admin-toggle.active::after {
+    transform: translateX(20px);
+}
+
+.admin-toggle.inactive {
+    background-color: #475569;
+}
+
+/* Hide scrollbar for mobile tabs */
+.admin-tabs-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-tabs-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Table styles */
+.admin-table th {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 0.85rem;
+    color: #e2e8f0;
+}
+
+.admin-table tr {
+    transition: background-color 0.15s ease;
+}
+
+.admin-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Action buttons */
+.admin-btn {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    outline: none;
+}
+
+.admin-btn:active {
+    transform: scale(0.96);
+}
+
+.admin-btn-emerald {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+.admin-btn-emerald:hover {
+    background: rgba(52, 211, 153, 0.25);
+}
+
+.admin-btn-red {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.admin-btn-red:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.admin-btn-blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.admin-btn-blue:hover {
+    background: rgba(59, 130, 246, 0.25);
+}
+
+.admin-btn-amber {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.admin-btn-amber:hover {
+    background: rgba(245, 158, 11, 0.25);
+}
+
+/* Badge styles */
+.admin-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    letter-spacing: 0.03em;
+}

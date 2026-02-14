@@ -6,6 +6,10 @@ const userSchema = mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String }, // Optional for Google users
+    role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
+    isSuspended: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
     firebaseUid: { type: String, unique: true, sparse: true }, // Link to Firebase Auth
     githubId: { type: String, unique: true, sparse: true }, // GitHub OAuth ID
     githubAccessToken: { type: String, select: false }, // GitHub Access Token
@@ -64,6 +68,7 @@ const userSchema = mongoose.Schema({
 // Indexes for performance (FIXED — no duplicates)
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
+userSchema.index({ name: 'text', username: 'text', email: 'text' });
 
 // Methods
 userSchema.methods.matchPassword = async function (enteredPassword) {

@@ -51,17 +51,17 @@ const createPost = asyncHandler(async (req, res) => {
 // @route   GET /api/posts
 // @access  Private
 const getPosts = asyncHandler(async (req, res) => {
-    const pageSize = 10;
+    const pageSize = Math.min(Number(req.query.limit) || 10, 100);
     const page = Number(req.query.pageNumber) || 1;
     const filter = req.query.filter;
 
-    let query = {};
+    let query = { isDeleted: { $ne: true } };
 
     if (filter === 'following') {
         const user = await User.findById(req.user._id);
-        query = { user: { $in: user.following } };
+        query.user = { $in: user.following };
     } else if (req.query.userId) {
-        query = { user: req.query.userId };
+        query.user = req.query.userId;
     }
 
     const count = await Post.countDocuments(query);
@@ -77,7 +77,8 @@ const getPosts = asyncHandler(async (req, res) => {
         })
         .limit(pageSize)
         .skip(pageSize * (page - 1))
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
 
     res.json({ posts, page, pages: Math.ceil(count / pageSize) });
 });
@@ -88,18 +89,22 @@ const getPosts = asyncHandler(async (req, res) => {
 const deletePost = asyncHandler(async (req, res) => {
     const post = await Post.findById(req.params.id);
 
-    if (post) {
-        if (post.user.toString() !== req.user._id.toString()) {
-            res.status(401);
-            throw new Error('Not authorized');
-        }
-
-        await post.deleteOne();
-        res.json({ message: 'Post removed' });
-    } else {
+    if (!post) {
         res.status(404);
         throw new Error('Post not found');
     }
+
+    if (post.user.toString() !== req.user._id.toString()) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    // SECURITY: Soft delete — preserve record
+    post.isDeleted = true;
+    post.deletedAt = new Date();
+    await post.save();
+
+    res.json({ message: 'Post removed' });
 });
 
 // @desc    Like/Unlike post

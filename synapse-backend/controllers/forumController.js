@@ -155,14 +155,15 @@ const getForumPosts = asyncHandler(async (req, res) => {
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const posts = await ForumPost.find({ forum: req.params.id })
+    const posts = await ForumPost.find({ forum: req.params.id, isDeleted: { $ne: true } })
         .populate('author', 'name username profilePic')
         .populate('forum', 'name icon')
         .sort(sortOption)
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .lean();
 
-    const total = await ForumPost.countDocuments({ forum: req.params.id });
+    const total = await ForumPost.countDocuments({ forum: req.params.id, isDeleted: { $ne: true } });
 
     res.json({
         posts,
@@ -177,14 +178,14 @@ const getForumPosts = asyncHandler(async (req, res) => {
 // @access  Private
 const getAllPosts = asyncHandler(async (req, res) => {
     const { search } = req.query;
-    let query = {};
+    let query = { isDeleted: { $ne: true } };
 
     if (search) {
-        query = { $text: { $search: search } };
+        query.$text = { $search: search };
     }
 
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
+    const limit = Math.min(Number(req.query.limit) || 10, 100);
     const skip = (page - 1) * limit;
 
     const posts = await ForumPost.find(query)
@@ -192,7 +193,8 @@ const getAllPosts = asyncHandler(async (req, res) => {
         .populate('forum', 'name icon')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .lean();
 
     const total = await ForumPost.countDocuments(query);
 
@@ -208,7 +210,7 @@ const getAllPosts = asyncHandler(async (req, res) => {
 // @route   GET /api/forums/posts/:id
 // @access  Private
 const getPostDetails = asyncHandler(async (req, res) => {
-    const post = await ForumPost.findById(req.params.id)
+    const post = await ForumPost.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
         .populate('author', 'name username profilePic')
         .populate('forum', 'name icon');
 
@@ -382,10 +384,11 @@ const searchPosts = asyncHandler(async (req, res) => {
         return;
     }
 
-    const posts = await ForumPost.find({ $text: { $search: q } })
+    const posts = await ForumPost.find({ $text: { $search: q }, isDeleted: { $ne: true } })
         .populate('author', 'name username profilePic')
         .populate('forum', 'name icon')
-        .sort({ score: { $meta: "textScore" } });
+        .sort({ score: { $meta: "textScore" } })
+        .lean();
 
     res.json(posts);
 });

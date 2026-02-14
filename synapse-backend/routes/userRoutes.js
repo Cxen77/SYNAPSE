@@ -22,6 +22,7 @@ import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 import upload from '../middleware/uploadMiddleware.js';
+import { searchLimiter } from '../middleware/rateLimiters.js';
 
 router.get('/me', protect, (req, res) => {
     res.json(req.user);
@@ -32,7 +33,7 @@ router.put('/pushtoken', protect, updatePushToken);
 router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile).delete(protect, deleteUser);
 router.route('/profile-pic').put(protect, upload.single('profilePic'), updateProfilePic);
 router.route('/banner-pic').put(protect, upload.single('bannerPic'), updateBannerPic);
-router.route('/search').get(protect, searchUsers);
+router.route('/search').get(protect, searchLimiter, searchUsers);
 router.route('/recommended').get(protect, getRecommendedUsers);
 router.route('/online').get(protect, getOnlineUsers);
 router.route('/github/repos').get(protect, getGithubRepos);

@@ -4,10 +4,12 @@ import passport from 'passport';
 import { protect } from '../middleware/authMiddleware.js';
 import User from '../models/User.js'; // Import User directly here for callback logic helper if needed, or better, keep logic in controller
 
+import { authLimiter } from '../middleware/rateLimiters.js';
+
 const router = express.Router();
 
-router.post('/login', authUser);
-router.post('/signup', registerUser);
+router.post('/login', authLimiter, authUser);
+router.post('/signup', authLimiter, registerUser);
 router.post('/logout', logoutUser);
 
 // ==========================

@@ -14,7 +14,10 @@ const eventSchema = mongoose.Schema({
     imageUrl: { type: String },
     organizer: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    maxTeamSize: { type: Number, default: 4 }
+    maxTeamSize: { type: Number, default: 4 },
+    isApproved: { type: Boolean },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 }, {
     timestamps: true
 });
@@ -23,6 +26,7 @@ const eventSchema = mongoose.Schema({
 eventSchema.index({ date: 1 });
 eventSchema.index({ organizer: 1 });
 eventSchema.index({ attendees: 1 });
+eventSchema.index({ isApproved: 1, isDeleted: 1, createdAt: -1 });
 
 const Event = mongoose.model('Event', eventSchema);
 

@@ -3,8 +3,9 @@ import Event from '../models/Event.js';
 
 // @desc    Create a new event
 // @route   POST /api/events
-// @access  Private
+// @access  Private (gated by requireFeature('events') middleware)
 const createEvent = asyncHandler(async (req, res) => {
+
     const { title, description, date, location, category, prize, imageUrl, maxTeamSize } = req.body;
 
     const event = await Event.create({
@@ -27,15 +28,17 @@ const createEvent = asyncHandler(async (req, res) => {
 // @route   GET /api/events
 // @access  Private
 const getEvents = asyncHandler(async (req, res) => {
-    const pageSize = 100;
+    const pageSize = Math.min(Number(req.query.limit) || 20, 100);
     const page = Number(req.query.pageNumber) || 1;
 
-    const count = await Event.countDocuments({});
-    const events = await Event.find({})
+    const filter = { isApproved: true, isDeleted: { $ne: true } };
+    const count = await Event.countDocuments(filter);
+    const events = await Event.find(filter)
         .populate('organizer', 'name username profilePic')
         .sort({ date: 1 })
         .limit(pageSize)
-        .skip(pageSize * (page - 1));
+        .skip(pageSize * (page - 1))
+        .lean();
 
     res.json({ events, page, pages: Math.ceil(count / pageSize) });
 });
@@ -113,9 +116,9 @@ const updateEvent = asyncHandler(async (req, res) => {
 // @route   GET /api/events/:id
 // @access  Private
 const getEventById = asyncHandler(async (req, res) => {
-    const event = await Event.findById(req.params.id)
+    const event = await Event.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
         .populate('organizer', 'name username profilePic')
-        .populate('attendees', 'name username profilePic'); // Populate attendees too for the view
+        .populate('attendees', 'name username profilePic');
 
     if (event) {
         res.json(event);
@@ -142,7 +145,9 @@ const deleteEvent = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to delete this event');
     }
 
-    await event.deleteOne();
+    event.isDeleted = true;
+    event.deletedAt = new Date();
+    await event.save();
     res.json({ message: 'Event removed' });
 });
 

@@ -13,7 +13,9 @@ const forumPostSchema = mongoose.Schema({
     slug: { type: String }, // Optional: for SEO friendly URLs
     lastActivity: { type: Date, default: Date.now },
     isSolved: { type: Boolean, default: false },
-    repliesCount: { type: Number, default: 0 }
+    repliesCount: { type: Number, default: 0 },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 }, {
     timestamps: true
 });

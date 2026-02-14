@@ -19,12 +19,13 @@ import {
     reportPost
 } from '../controllers/forumController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import requireFeature from '../middleware/requireFeature.js';
 
 const router = express.Router();
 
 // Forum Routes
 router.route('/')
-    .post(protect, createForum)
+    .post(protect, requireFeature('forum'), createForum)
     .get(protect, getAllForums);
 
 router.route('/posts/feed')
@@ -44,7 +45,7 @@ router.route('/:id/leave')
 
 // Post Routes (nested under forums for creation, but also standalone for actions)
 router.route('/:id/posts')
-    .post(protect, createPost)
+    .post(protect, requireFeature('forum'), createPost)
     .get(protect, getForumPosts);
 
 // Single Post Actions
@@ -52,7 +53,7 @@ router.route('/post/:id')
     .get(protect, getPostDetails);
 
 router.route('/post/:id/reply')
-    .post(protect, createReply);
+    .post(protect, requireFeature('forum'), createReply);
 
 router.route('/posts/:id/like')
     .put(protect, toggleLike);

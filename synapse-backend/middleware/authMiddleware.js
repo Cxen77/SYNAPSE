@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { admin } from '../config/firebaseAdmin.js';
 import User from '../models/User.js';
+import SystemSettings from '../models/SystemSettings.js';
 
 const protect = asyncHandler(async (req, res, next) => {
     let token;
@@ -39,11 +40,30 @@ const protect = asyncHandler(async (req, res, next) => {
             }
 
             req.user = user;
+
+            // Block suspended users globally
+            if (user.isSuspended) {
+                res.status(403);
+                throw new Error('Your account has been suspended. Contact support for assistance.');
+            }
+
+            // Maintenance mode — block non-admins
+            const settings = await SystemSettings.getSettings();
+            const maintenance = settings.features?.get('maintenance');
+            if (maintenance?.enabled && user.role !== 'admin') {
+                res.status(503);
+                throw new Error('Service temporarily unavailable — maintenance in progress');
+            }
+
             next();
         } catch (error) {
             console.error('Auth Error:', error);
-            res.status(401);
-            throw new Error('Not authorized, token failed');
+            // Preserve original status (403 suspension, 503 maintenance) — only default to 401
+            if (!res.headersSent) {
+                const status = res.statusCode >= 400 ? res.statusCode : 401;
+                res.status(status);
+                throw new Error(error.message || 'Not authorized, token failed');
+            }
         }
     }
 

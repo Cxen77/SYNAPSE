@@ -31,6 +31,9 @@ import { initializeFirebase } from './config/firebaseAdmin.js';
 import compression from 'compression';
 import xss from 'xss-clean';
 import hpp from 'hpp';
+import { globalLimiter } from './middleware/rateLimiters.js';
+import passport from './config/passport.js';
+import mongoose from 'mongoose';
 
 // ==========================
 // DEBUG (REMOVE LATER)
@@ -92,7 +95,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
@@ -106,6 +109,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
+app.use(globalLimiter);
 app.use(morgan('dev'));
 
 // ==========================
@@ -128,6 +132,8 @@ import storyRoutes from './routes/storyRoutes.js';
 import collegeRoutes from './routes/collegeRoutes.js';
 import autoTeamRoutes from './routes/autoTeamRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import systemRoutes from './routes/systemRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -141,20 +147,29 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/autoteam', autoTeamRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/system', systemRoutes);
 
 // ==========================
 // PASSPORT CONFIG
 // ==========================
-import passport from './config/passport.js';
 app.use(passport.initialize());
 
 // ==========================
 // HEALTH CHECK
 // ==========================
+
 app.get('/health', (req, res) => {
+  const memUsage = process.memoryUsage();
   res.status(200).json({
     status: 'success',
-    message: 'Server is running',
+    uptime: Math.floor(process.uptime()) + 's',
+    memory: {
+      rss: Math.round(memUsage.rss / 1024 / 1024) + 'MB',
+      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + 'MB'
+    },
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    version: process.env.npm_package_version || '1.0.0',
     timestamp: new Date().toISOString()
   });
 });

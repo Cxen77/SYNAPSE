@@ -23,6 +23,7 @@ const ForumLayout = lazy(() => import('./components/Forum_page/ForumLayout.jsx')
 const ForumHome = lazy(() => import('./components/Forum_page/ForumHome.jsx'));
 const ForumDetails = lazy(() => import('./components/Forum_page/ForumDetails.jsx'));
 const ThreadPage = lazy(() => import('./components/Forum_page/ThreadPage.jsx'));
+const AdminDashboard = lazy(() => import('./components/Admin_page/AdminDashboard.jsx'));
 
 import Skeleton from './components/common/Skeleton';
 import InAppNotification from './components/common/InAppNotification';
@@ -73,6 +74,16 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const AdminRoute = ({ children }) => {
+  const { currentUser } = useAuth();
+
+  if (currentUser?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 import usePushNotification from './hooks/usePushNotification';
 import useNotifications from './hooks/useNotifications';
 import { useSocket } from './context/SocketContext';
@@ -83,6 +94,7 @@ import { hasShownNotification, markNotificationShown } from './utils/notificatio
 function App() {
   const location = useLocation();
   const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password'].includes(location.pathname);
+  const isAdminPage = location.pathname.startsWith('/admin');
   const isChatPage = location.pathname.startsWith('/chat');
   const isChatConversation = location.pathname.match(/^\/chat\/[^/]+$/);
 
@@ -164,14 +176,14 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} containerStyle={{ zIndex: 99999 }} />
-      {!isAuthPage && (
+      {!isAuthPage && !isAdminPage && (
         <div className={isChatPage ? "hidden md:block" : ""}>
           <Navbar />
         </div>
       )}
 
       <main className={
-        isAuthPage ? "" :
+        isAuthPage || isAdminPage ? "" :
           isChatPage ? "h-screen overflow-hidden" :
             "pt-16 pb-16 md:pb-0"
       }>
@@ -195,6 +207,9 @@ function App() {
             <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
+            {/* Admin Route */}
+            <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminDashboard /></AdminRoute></ProtectedRoute>} />
+
             {/* Forum Routes */}
             <Route path="/forums" element={<ProtectedRoute><ForumLayout /></ProtectedRoute>}>
               <Route index element={<ForumHome />} />
@@ -205,7 +220,7 @@ function App() {
         </Suspense>
       </main>
 
-      {!isAuthPage && !isChatConversation && <BottomNav />}
+      {!isAuthPage && !isAdminPage && !isChatConversation && <BottomNav />}
 
       {/* Instagram-style in-app notification */}
       {activeNotification && (
