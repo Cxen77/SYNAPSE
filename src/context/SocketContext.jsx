@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getAccessToken } from '../api/axios';
 
 const SocketContext = createContext();
 
@@ -16,8 +17,7 @@ export const SocketProvider = ({ children }) => {
 
         const initSocket = async () => {
             if (currentUser) {
-                // Fix: currentUser is backend user, use token directly
-                const token = currentUser.token || localStorage.getItem('token');
+                const token = getAccessToken();
 
                 // Use environment variable for production, fallback to localhost for dev
                 // Correct: Connect to root URL (e.g. localhost:5000 or api.fuseon.in)

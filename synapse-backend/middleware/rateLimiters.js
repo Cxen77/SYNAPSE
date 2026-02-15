@@ -35,3 +35,12 @@ export const apiLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+
+// Refresh Token Limiter - Prevent token abuse
+export const refreshLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30, // Allow reasonable refresh attempts (silent refresh fires often)
+    message: { message: 'Too many refresh attempts, please login again' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});

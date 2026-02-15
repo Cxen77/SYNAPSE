@@ -40,7 +40,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
             next();
         } catch (error) {
-            console.error('Auth Error:', error.message);
+            // Auth error — do not leak details
             res.status(401);
             throw new Error('Not authorized, token failed');
         }

@@ -1,25 +1,43 @@
 import express from 'express';
-import { authUser, registerUser, logoutUser, verifyEmail, forgotPassword, resetPassword, googleAuth } from '../controllers/authController.js';
+import {
+    authUser,
+    registerUser,
+    logoutUser,
+    logoutAllSessions,
+    verifyEmail,
+    forgotPassword,
+    resetPassword,
+    googleAuth,
+    refreshToken,
+    getCurrentSession,
+    getAllSessions,
+    resendOtp
+} from '../controllers/authController.js';
 import passport from 'passport';
 import { protect } from '../middleware/authMiddleware.js';
 import User from '../models/User.js';
-import { authLimiter } from '../middleware/rateLimiters.js';
+import { authLimiter, refreshLimiter } from '../middleware/rateLimiters.js';
 import verifyCaptcha from '../middleware/captchaMiddleware.js';
 
 const router = express.Router();
 
-// Apply Rate Limiting & CAPTCHA to all auth routes
-// Note: Google Auth skips captcha as Firebase handles it on frontend, but we keep rate limiter.
+// Auth routes with Rate Limiting & CAPTCHA
 router.post('/signup', authLimiter, verifyCaptcha, registerUser);
 router.post('/login', authLimiter, verifyCaptcha, authUser);
 router.post('/verify-email', authLimiter, verifyCaptcha, verifyEmail);
 router.post('/forgot-password', authLimiter, verifyCaptcha, forgotPassword);
 router.post('/reset-password', authLimiter, verifyCaptcha, resetPassword);
+router.post('/resend-otp', authLimiter, resendOtp);
 
-// Google Auth Route (Protected by Rate Limiter)
+// Google Auth Route
 router.post('/google', authLimiter, googleAuth);
 
+// Session management
+router.post('/refresh', refreshLimiter, refreshToken);
 router.post('/logout', logoutUser);
+router.post('/logout-all', protect, logoutAllSessions);
+router.get('/session', protect, getCurrentSession);
+router.get('/sessions', protect, getAllSessions);
 
 // ==========================
 // GITHUB OAUTH ROUTES
@@ -52,17 +70,13 @@ router.get('/github',
 
             passport.authenticate('github', options)(req, res, next);
         } catch (error) {
-            console.error("Token verification failed:", error);
+            console.error("Token verification failed:", error.message);
             res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=token_failed`);
         }
     }
 );
 
 router.get('/github/callback',
-    (req, res, next) => {
-        console.log('GitHub Callback received:', req.query);
-        next();
-    },
     passport.authenticate('github', {
         failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=github_auth_failed`,
         session: false

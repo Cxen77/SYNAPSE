@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import fs from 'fs';
 
@@ -97,6 +98,7 @@ app.use(
 // ==========================
 // MIDDLEWARES
 // ==========================
+app.use(cookieParser());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -104,7 +106,9 @@ app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 app.use(globalLimiter);
-app.use(morgan('dev'));
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
 
 // ==========================
 // STATIC FILES
@@ -187,8 +191,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
 
-  const logMessage = `${new Date().toISOString()} - ${statusCode} - ${err.message
-    }\n${err.stack}\n\n`;
+  const logMessage = `${new Date().toISOString()} - ${statusCode} - ${err.message}\n${err.stack}\n\n`;
 
   try {
     fs.appendFileSync(
@@ -197,10 +200,16 @@ app.use((err, req, res, next) => {
     );
   } catch (_) { }
 
+  // In production, never leak internal error details for server errors
+  const isProduction = process.env.NODE_ENV === 'production';
+  const safeMessage = (isProduction && statusCode >= 500)
+    ? 'Something went wrong. Please try again later.'
+    : err.message;
+
   res.status(statusCode).json({
     success: false,
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+    message: safeMessage,
+    ...(isProduction ? {} : { stack: err.stack })
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -12,8 +12,12 @@ const Login = () => {
   const [captchaToken, setCaptchaToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const navigate = useNavigate();
   const { login, googleLogin } = useAuth();
+
+  // No cleanup needed — tokens are in memory now
+  useEffect(() => { }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -31,12 +35,13 @@ const Login = () => {
       toast.success("Logged in successfully!");
       navigate("/");
     } catch (err) {
-      console.error(err);
       if (err.response?.status === 403) {
         setError("Email not verified. Please verify your email.");
       } else {
         setError(err.response?.data?.message || "Login failed. Invalid credentials.");
       }
+      setCaptchaToken("");
+      setCaptchaResetKey(prev => prev + 1);
     } finally {
       setLoading(false);
     }
@@ -48,95 +53,113 @@ const Login = () => {
       toast.success("Logged in with Google!");
       navigate("/");
     } catch (err) {
-      console.error(err);
       toast.error("Google login failed.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex flex-col gap-6">
-        <div className="text-center mb-2">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Login to Synapse</h2>
-          <p className="text-gray-600">Welcome back! Please login to your account.</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 px-4 py-8 sm:py-12" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Subtle decorative blobs */}
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full bg-blue-100/40 blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-violet-100/30 blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
-            {error}
-          </div>
-        )}
-
-        <form className="flex flex-col gap-5" onSubmit={handleLogin}>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-            <input
-              type="email"
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </div>
-          <div className="relative">
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline">
-                Forgot Password?
-              </Link>
+      <div className="w-full max-w-md animate-fade-in-up relative z-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-4 shadow-md shadow-blue-600/20">
+              <span className="text-white font-bold text-lg">S</span>
             </div>
-            <input
-              type={showPassword ? "text" : "password"}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-            <span
-              className="absolute right-3 top-[38px] cursor-pointer text-gray-400 hover:text-blue-600 transition-colors"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-            </span>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Welcome Back</h1>
+            <p className="text-gray-500 text-sm mt-1">Sign in to your Synapse account</p>
           </div>
 
-          <TurnstileWidget onVerify={setCaptchaToken} />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm text-center mb-5">
+              {error}
+            </div>
+          )}
+
+          <form className="flex flex-col gap-4" onSubmit={handleLogin}>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Email</label>
+              <input
+                type="email"
+                className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-sm"
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Password</label>
+                <Link to="/forgot-password" className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                  Forgot Password?
+                </Link>
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full px-4 py-2.5 pr-11 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-sm"
+                placeholder="Enter your password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-[34px] text-gray-400 hover:text-blue-600 transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+              </button>
+            </div>
+
+            <TurnstileWidget key={captchaResetKey} onVerify={setCaptchaToken} />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 mt-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  Logging in...
+                </span>
+              ) : "Login"}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-white text-xs text-gray-400 uppercase tracking-wider">Or</span>
+            </div>
+          </div>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleGoogleLogin}
+            className="w-full py-2.5 flex items-center justify-center gap-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 text-sm shadow-sm"
           >
-            {loading ? "Logging in..." : "Login"}
+            <FaGoogle className="text-red-500" />
+            Sign in with Google
           </button>
-        </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
-          </div>
-        </div>
-
-        <button
-          onClick={handleGoogleLogin}
-          className="w-full py-2.5 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200"
-        >
-          <FaGoogle className="text-red-500" />
-          Sign in with Google
-        </button>
-
-        <div className="text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
-            Create Account
-          </Link>
+          <p className="text-center text-sm text-gray-500 mt-5">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+              Create Account
+            </Link>
+          </p>
         </div>
       </div>
     </div>

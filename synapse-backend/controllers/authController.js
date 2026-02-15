@@ -1,12 +1,14 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
-import generateToken from '../utils/generateToken.js';
+import Session from '../models/Session.js';
+import { generateAccessToken, generateRefreshToken, hashRefreshToken } from '../utils/generateToken.js';
+import { createSession, clearSessionCookie, setRefreshCookie } from '../utils/sessionHelpers.js';
 import generateOTP from '../utils/generateOTP.js';
 import sendEmail from '../utils/sendEmail.js';
 import { validatePassword } from '../utils/validation.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { admin } from '../config/firebaseAdmin.js'; // Import Firebase Admin
+import { admin } from '../config/firebaseAdmin.js';
 
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
@@ -14,18 +16,19 @@ import { admin } from '../config/firebaseAdmin.js'; // Import Firebase Admin
 const authUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    // 1. Find user (select password)
     const user = await User.findOne({ email }).select('+password');
 
     if (user && (await user.matchPassword(password))) {
-        // 2. Check Verification
         if (!user.isEmailVerified) {
             res.status(403);
             throw new Error('Email not verified. Please verify your email.');
         }
 
-        // 3. Issue Token
-        const token = generateToken(res, user._id);
+        // Generate access token
+        const accessToken = generateAccessToken(user._id);
+
+        // Create session + set refresh cookie
+        await createSession(user._id, req, res);
 
         res.json({
             _id: user._id,
@@ -34,7 +37,7 @@ const authUser = asyncHandler(async (req, res) => {
             email: user.email,
             profilePic: user.profilePic,
             isEmailVerified: user.isEmailVerified,
-            token
+            accessToken
         });
     } else {
         res.status(401);
@@ -43,10 +46,12 @@ const authUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Register a new user
-// @route   POST /api/auth/register
+// @route   POST /api/auth/signup
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, username, email, password, course, year, bio, skills, socials } = req.body;
+    const { name, password, course, year, bio, skills, socials } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
+    const username = req.body.username?.trim().toLowerCase();
 
     // 1. Validate Password Strength
     if (!validatePassword(password)) {
@@ -56,9 +61,44 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // 2. Check Exists
     const userExists = await User.findOne({ email });
+
     if (userExists) {
-        res.status(400);
-        throw new Error('User already exists');
+        if (userExists.isEmailVerified) {
+            res.status(400);
+            throw new Error('User already exists');
+        } else {
+            // User exists but NOT verified — Overwrite/Resend OTP
+            userExists.name = name;
+            userExists.username = username;
+            userExists.password = password;
+            userExists.course = course;
+            userExists.year = year;
+            userExists.bio = bio;
+            userExists.skills = skills;
+            userExists.socials = socials;
+
+            const otp = generateOTP();
+            userExists.otpHash = await bcrypt.hash(otp, 10);
+            userExists.otpExpiresAt = Date.now() + 10 * 60 * 1000;
+
+            await userExists.save();
+
+            try {
+                await sendEmail({
+                    email: userExists.email,
+                    subject: 'Your Verification Code - SYNAPSE',
+                    message: `Your verification code is: ${otp}. It expires in 10 minutes.`
+                });
+            } catch (err) {
+                console.error('Email send failed:', err.message);
+            }
+
+            return res.status(200).json({
+                message: 'Registration successful. Please verify your email.',
+                requiresVerification: true,
+                email: userExists.email
+            });
+        }
     }
 
     const usernameExists = await User.findOne({ username });
@@ -70,14 +110,14 @@ const registerUser = asyncHandler(async (req, res) => {
     // 3. Generate OTP
     const otp = generateOTP();
     const otpHash = await bcrypt.hash(otp, 10);
-    const otpExpiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+    const otpExpiresAt = Date.now() + 10 * 60 * 1000;
 
-    // 4. Create User (isEmailVerified: false)
+    // 4. Create User
     const user = await User.create({
         name,
         username,
         email,
-        password, // Pre-save hook will hash this
+        password,
         course,
         year,
         bio,
@@ -96,8 +136,7 @@ const registerUser = asyncHandler(async (req, res) => {
             message: `Your verification code is: ${otp}. It expires in 10 minutes.`
         });
     } catch (err) {
-        // If email fails, we shouldn't delete user, but user needs to resend
-        console.error('Email send failed:', err);
+        console.error('Email send failed:', err.message);
     }
 
     if (user) {
@@ -147,8 +186,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
     if (!isMatch) {
         user.otpAttempts += 1;
         if (user.otpAttempts >= 5) {
-            user.otpLockUntil = Date.now() + 15 * 60 * 1000; // 15 mins lock
-            user.otpAttempts = 0; // Reset attempts after lock
+            user.otpLockUntil = Date.now() + 15 * 60 * 1000;
+            user.otpAttempts = 0;
         }
         await user.save();
         res.status(400);
@@ -163,7 +202,9 @@ const verifyEmail = asyncHandler(async (req, res) => {
     user.otpLockUntil = undefined;
     await user.save();
 
-    const token = generateToken(res, user._id);
+    // Generate access token + session
+    const accessToken = generateAccessToken(user._id);
+    await createSession(user._id, req, res);
 
     res.json({
         message: 'Email verified successfully',
@@ -171,7 +212,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         isEmailVerified: true,
-        token
+        accessToken
     });
 });
 
@@ -182,20 +223,17 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
-    // Always return success to prevent enumeration
     if (!user) {
         return res.json({ message: 'If a user with that email exists, a reset link has been sent.' });
     }
 
-    // Generate Token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
 
     user.resetPasswordToken = resetTokenHash;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    // Send Email
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
     try {
@@ -220,7 +258,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
 const resetPassword = asyncHandler(async (req, res) => {
     const { token, newPassword } = req.body;
 
-    // Hash token to compare
     const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
@@ -233,17 +270,18 @@ const resetPassword = asyncHandler(async (req, res) => {
         throw new Error('Invalid or expired token');
     }
 
-    // Validate New Password
     if (!validatePassword(newPassword)) {
         res.status(400);
         throw new Error('Password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
     }
 
-    // Set new password (pre-save hook hashes it)
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    // Invalidate all existing sessions on password reset
+    await Session.deleteMany({ userId: user._id });
 
     res.json({ message: 'Password reset successful. You can now login.' });
 });
@@ -260,27 +298,22 @@ const googleAuth = asyncHandler(async (req, res) => {
     }
 
     try {
-        // 1. Verify Firebase ID Token
         const decodedToken = await admin.auth().verifyIdToken(token);
         const { email, name, picture, uid } = decodedToken;
 
-        // 2. Check if user exists
         let user = await User.findOne({ email });
 
         if (user) {
-            // User exists: Update info if needed (optional)
             if (!user.firebaseUid) {
                 user.firebaseUid = uid;
                 await user.save();
             }
-            // If user login via Google, verify email automatically if not yet
             if (!user.isEmailVerified) {
                 user.isEmailVerified = true;
                 await user.save();
             }
         } else {
-            // 3. Create new user
-            const randomPassword = crypto.randomBytes(16).toString('hex') + 'A1!'; // Meets strong requirements
+            const randomPassword = crypto.randomBytes(16).toString('hex') + 'A1!';
 
             user = await User.create({
                 name: name || 'Google User',
@@ -293,8 +326,9 @@ const googleAuth = asyncHandler(async (req, res) => {
             });
         }
 
-        // 4. Issue App JWT
-        const appToken = generateToken(res, user._id);
+        // Generate access token + session
+        const accessToken = generateAccessToken(user._id);
+        await createSession(user._id, req, res);
 
         res.json({
             _id: user._id,
@@ -303,25 +337,141 @@ const googleAuth = asyncHandler(async (req, res) => {
             email: user.email,
             profilePic: user.profilePic,
             isEmailVerified: true,
-            token: appToken
+            accessToken
         });
 
     } catch (error) {
-        console.error('Google Auth Error:', error);
+        console.error('Google Auth Error:', error.message);
         res.status(401);
         throw new Error('Invalid Google Token');
     }
 });
 
-// @desc    Logout user
-// @route   POST /api/auth/logout
-// @access  Public
-const logoutUser = asyncHandler(async (req, res) => {
-    res.cookie('jwt', '', {
-        httpOnly: true,
-        expires: new Date(0)
+// @desc    Refresh access token (with rotation)
+// @route   POST /api/auth/refresh
+// @access  Public (cookie required)
+const refreshToken = asyncHandler(async (req, res) => {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+        res.status(401);
+        throw new Error('No refresh token provided');
+    }
+
+    const hashedToken = hashRefreshToken(token);
+
+    // Find the session with this refresh token
+    const session = await Session.findOne({
+        refreshTokenHash: hashedToken,
+        isActive: true,
+        expiresAt: { $gt: new Date() }
     });
+
+    if (!session) {
+        // REUSE DETECTION: Token not found means it was already rotated
+        // Someone is replaying an old token — invalidate ALL sessions for safety
+        // Try to decode the token to find the user (best effort)
+        // Since we can't decode a random token, we clear the cookie and reject
+        clearSessionCookie(res);
+        res.status(401);
+        throw new Error('Invalid refresh token. Please login again.');
+    }
+
+    // ROTATION: Delete the old session
+    await Session.deleteById ? await session.deleteOne() : await Session.findByIdAndDelete(session._id);
+
+    // Create a new session with a new refresh token
+    const accessToken = generateAccessToken(session.userId);
+    await createSession(session.userId, req, res);
+
+    res.json({ accessToken });
+});
+
+// @desc    Logout current session
+// @route   POST /api/auth/logout
+// @access  Public (cookie required)
+const logoutUser = asyncHandler(async (req, res) => {
+    const token = req.cookies?.refreshToken;
+
+    if (token) {
+        const hashedToken = hashRefreshToken(token);
+        await Session.findOneAndDelete({ refreshTokenHash: hashedToken });
+    }
+
+    clearSessionCookie(res);
     res.status(200).json({ message: 'Logged out successfully' });
+});
+
+// @desc    Logout all sessions
+// @route   POST /api/auth/logout-all
+// @access  Private (requires access token)
+const logoutAllSessions = asyncHandler(async (req, res) => {
+    await Session.deleteMany({ userId: req.user._id });
+    clearSessionCookie(res);
+    res.status(200).json({ message: 'All sessions logged out successfully' });
+});
+
+// @desc    Get current session details
+// @route   GET /api/auth/session
+// @access  Private (requires access token)
+const getCurrentSession = asyncHandler(async (req, res) => {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+        return res.json({ session: null });
+    }
+
+    const hashedToken = hashRefreshToken(token);
+    const session = await Session.findOne({
+        refreshTokenHash: hashedToken,
+        isActive: true
+    }).select('ipAddress userAgent createdAt expiresAt');
+
+    res.json({ session });
+});
+
+// @desc    Get all active sessions for user
+// @route   GET /api/auth/sessions
+// @access  Private (requires access token)
+const getAllSessions = asyncHandler(async (req, res) => {
+    const sessions = await Session.find({
+        userId: req.user._id,
+        isActive: true,
+        expiresAt: { $gt: new Date() }
+    }).select('ipAddress userAgent createdAt expiresAt').sort({ createdAt: -1 });
+
+    res.json({ sessions });
+});
+
+// @desc    Resend OTP
+// @route   POST /api/auth/resend-otp
+// @access  Public
+const resendOtp = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user || user.isEmailVerified) {
+        return res.json({ message: 'If the email is valid, a new code has been sent.' });
+    }
+
+    const otp = generateOTP();
+    user.otpHash = await bcrypt.hash(otp, 10);
+    user.otpExpiresAt = Date.now() + 10 * 60 * 1000;
+    user.otpAttempts = 0;
+    user.otpLockUntil = undefined;
+    await user.save();
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: 'Your Verification Code - SYNAPSE',
+            message: `Your verification code is: ${otp}. It expires in 10 minutes.`
+        });
+    } catch (err) {
+        console.error('Email send failed:', err.message);
+    }
+
+    res.json({ message: 'If the email is valid, a new code has been sent.' });
 });
 
 export {
@@ -331,5 +481,10 @@ export {
     forgotPassword,
     resetPassword,
     logoutUser,
-    googleAuth
+    logoutAllSessions,
+    refreshToken,
+    getCurrentSession,
+    getAllSessions,
+    googleAuth,
+    resendOtp
 };

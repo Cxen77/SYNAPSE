@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Key, LogOut } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import useSettings from '../../../hooks/useSettings';
-import api from '../../../api/axios';
+import api, { getAccessToken } from '../../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -33,7 +33,7 @@ const AccountSettings = ({ user, setUser }) => {
             }
         } else {
             // Connect
-            const token = localStorage.getItem('token');
+            const token = getAccessToken();
             window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/github?token=${token}`;
         }
     };

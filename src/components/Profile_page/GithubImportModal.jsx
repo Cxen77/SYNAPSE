@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { FaGithub, FaTimes, FaCheck, FaSearch } from 'react-icons/fa';
-import api from '../../api/axios';
+import api, { getAccessToken } from '../../api/axios';
 import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 const GithubImportModal = ({ isOpen, onClose, onImport }) => {
@@ -16,7 +16,7 @@ const GithubImportModal = ({ isOpen, onClose, onImport }) => {
 
     useEffect(() => {
         if (currentUser) {
-            const t = currentUser.token || localStorage.getItem('token');
+            const t = getAccessToken();
             setToken(t);
         }
     }, [currentUser]);

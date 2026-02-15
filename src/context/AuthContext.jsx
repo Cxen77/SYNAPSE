@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../api/axios';
+import api, { setAccessToken, getAccessToken } from '../api/axios';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebaseClient'; // Import Firebase Auth
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'; // Import Google Auth
+import { auth } from '../firebaseClient';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -12,55 +12,57 @@ export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Initial Load: Check for token
+    // Initial Load: Try silent refresh to restore session
     useEffect(() => {
         const loadUser = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const { data } = await api.get('/users/me');
-                    setCurrentUser(data);
-                } catch (error) {
-                    console.error("Failed to load user", error);
-                    logout(); // Token invalid
-                }
+            try {
+                // Attempt to refresh access token from cookie
+                const { data: refreshData } = await api.post('/auth/refresh');
+                setAccessToken(refreshData.accessToken);
+
+                // Fetch user profile
+                const { data: userData } = await api.get('/users/me');
+                setCurrentUser(userData);
+            } catch (error) {
+                // No valid session — user needs to login
+                setAccessToken(null);
+                setCurrentUser(null);
             }
             setLoading(false);
         };
         loadUser();
     }, []);
 
-    // Signup
+    // Signup (no token issued — requires email verification)
     const signup = async (formData, captchaToken) => {
         const { data } = await api.post('/auth/signup', { ...formData, captchaToken });
-        return data; // returns { requiresVerification: true, email: ... }
+        return data;
     };
 
-    // Verify OTP
+    // Verify OTP — issues access token + refresh cookie
     const verifyOtp = async (email, otp, captchaToken) => {
         const { data } = await api.post('/auth/verify-email', { email, otp, captchaToken });
-        localStorage.setItem('token', data.token);
+        setAccessToken(data.accessToken);
         setCurrentUser(data);
         return data;
     };
 
-    // Login
+    // Login — issues access token + refresh cookie
     const login = async (email, password, captchaToken) => {
         const { data } = await api.post('/auth/login', { email, password, captchaToken });
-        localStorage.setItem('token', data.token);
+        setAccessToken(data.accessToken);
         setCurrentUser(data);
         return data;
     };
 
-    // Google Login
+    // Google Login — issues access token + refresh cookie
     const googleLogin = async () => {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         const idToken = await result.user.getIdToken();
 
-        // Exchange Firebase ID Token for Backend JWT
         const { data } = await api.post('/auth/google', { token: idToken });
-        localStorage.setItem('token', data.token);
+        setAccessToken(data.accessToken);
         setCurrentUser(data);
         return data;
     };
@@ -77,15 +79,26 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    // Logout
+    // Logout current session
     const logout = async () => {
-        localStorage.removeItem('token');
-        setCurrentUser(null);
         try {
             await api.post('/auth/logout');
         } catch (error) {
             // Ignore logout errors
         }
+        setAccessToken(null);
+        setCurrentUser(null);
+    };
+
+    // Logout all sessions
+    const logoutAll = async () => {
+        try {
+            await api.post('/auth/logout-all');
+        } catch (error) {
+            // Ignore errors
+        }
+        setAccessToken(null);
+        setCurrentUser(null);
     };
 
     const value = {
@@ -97,6 +110,7 @@ export const AuthProvider = ({ children }) => {
         forgotPassword,
         resetPassword,
         logout,
+        logoutAll,
         loading
     };
 
