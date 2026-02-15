@@ -1,37 +1,29 @@
 import express from 'express';
-import { authUser, registerUser, logoutUser, verifyEmail, forgotPassword, resetPassword } from '../controllers/authController.js';
+import { authUser, registerUser, logoutUser, verifyEmail, forgotPassword, resetPassword, googleAuth } from '../controllers/authController.js';
 import passport from 'passport';
 import { protect } from '../middleware/authMiddleware.js';
-import User from '../models/User.js'; // Import User directly here for callback logic helper if needed, or better, keep logic in controller
-
+import User from '../models/User.js';
 import { authLimiter } from '../middleware/rateLimiters.js';
-import verifyCaptcha from '../middleware/captchaMiddleware.js'; // Import Captcha
+import verifyCaptcha from '../middleware/captchaMiddleware.js';
 
 const router = express.Router();
 
 // Apply Rate Limiting & CAPTCHA to all auth routes
+// Note: Google Auth skips captcha as Firebase handles it on frontend, but we keep rate limiter.
 router.post('/signup', authLimiter, verifyCaptcha, registerUser);
 router.post('/login', authLimiter, verifyCaptcha, authUser);
 router.post('/verify-email', authLimiter, verifyCaptcha, verifyEmail);
 router.post('/forgot-password', authLimiter, verifyCaptcha, forgotPassword);
 router.post('/reset-password', authLimiter, verifyCaptcha, resetPassword);
 
+// Google Auth Route (Protected by Rate Limiter)
+router.post('/google', authLimiter, googleAuth);
+
 router.post('/logout', logoutUser);
 
 // ==========================
 // GITHUB OAUTH ROUTES
 // ==========================
-
-// 1. Initiate GitHub Login
-// We use a custom callback to ensure `req.user` (from our JWT auth middleware) is available if we want to link accounts.
-// However, Passport standard flow redirects *to* GitHub.
-// To link an account, the user clicks "Connect GitHub". 
-// The frontend should send a token? No, standard OAuth is a browser redirect.
-// So: User clicks link -> Browser goes to /api/auth/github?token=... (unsafe to pass token in URL?)
-// Better: User clicks link -> Browser goes to /api/auth/github. 
-// COOKIES? This app uses localStorage JWT. 
-// Issue: Passport won't see the User if it's in localStorage.
-// Solution: We pass the JWT as a query param 'token', verify it, and set req.user manually before passport.authenticate.
 
 import { admin } from '../config/firebaseAdmin.js';
 
@@ -53,9 +45,6 @@ router.get('/github',
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            // Pass user ID as "state" to GitHub
-            // Passport will send this to GitHub, and GitHub will echo it back.
-            // We can then use it in the callback.
             const options = {
                 scope: ['user:email', 'repo'],
                 state: user._id.toString()
@@ -71,7 +60,6 @@ router.get('/github',
 
 router.get('/github/callback',
     (req, res, next) => {
-        // Log the callback query for debugging
         console.log('GitHub Callback received:', req.query);
         next();
     },
@@ -80,22 +68,6 @@ router.get('/github/callback',
         session: false
     }),
     (req, res) => {
-        // Successful authentication
-        // IN OUR CASE: passport strategy currently only succeeds if req.user exists (via our custom logic usually)
-        // BUT invalidating that plan: req.user is populated by session usually. We have no session.
-        // 
-        // LET'S SIMPLIFY for this "Agentic" sprint:
-        // We will just Redirect to frontend with the Github Access Token in query param?
-        // No, that exposes it.
-        // 
-        // BACKTRACK:
-        // Check `config/passport.js`. It tries to find user by `req.user`.
-        // This won't work without sessions or passing token.
-        // 
-        // FIX: We need to handle the linkage MANUALLY in the callback if using JWT.
-        // Or we use the strategy which returns the "GitHub Profile".
-        // Then in this callback, we decide what to do.
-
         res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/profile?github=success`);
     }
 );

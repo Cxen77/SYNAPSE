@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -12,7 +12,7 @@ const Signup = () => {
     username: "",
     email: "",
     password: "",
-    course: "", // Added as they were in backend model
+    course: "",
     year: "",
     bio: "",
     skills: [],
@@ -22,7 +22,7 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signup, googleLogin } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,6 +48,17 @@ const Signup = () => {
       setError(err.response?.data?.message || "Failed to create account.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    try {
+      await googleLogin();
+      toast.success("Signed up with Google!");
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      toast.error("Google signup failed.");
     }
   };
 
@@ -133,6 +144,23 @@ const Signup = () => {
             {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <button
+          onClick={handleGoogleSignup}
+          className="w-full py-2.5 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200"
+        >
+          <FaGoogle className="text-red-500" />
+          Sign up with Google
+        </button>
 
         <div className="text-center text-sm text-gray-600">
           Already have an account?{' '}

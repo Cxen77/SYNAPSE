@@ -36,13 +36,11 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
     };
 
     const handleProfileUpdate = (updatedData) => {
-        console.log('ProfileHero received update:', updatedData);
         onProfileUpdate(updatedData);
         setShowEditModal(false);
     };
 
     const handleImageUpload = (data) => {
-        console.log('ProfileHero received image upload:', data);
         onProfileUpdate(data);
     };
 
@@ -81,7 +79,9 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
             <div className="h-48 md:h-80 relative bg-gray-900">
                 {user.bannerPic ? (
                     <img
-                        src={user.bannerPic}
+                        src={user.bannerPic.startsWith('/uploads')
+                            ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${user.bannerPic}`
+                            : user.bannerPic}
                         alt="Cover"
                         className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                     />

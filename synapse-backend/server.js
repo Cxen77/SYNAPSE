@@ -36,12 +36,6 @@ import passport from './config/passport.js';
 import mongoose from 'mongoose';
 
 // ==========================
-// DEBUG (REMOVE LATER)
-// ==========================
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('MONGO_URI exists:', !!process.env.MONGO_URI);
-
-// ==========================
 // INITIALIZE SERVICES
 // ==========================
 connectDB();
@@ -115,7 +109,7 @@ app.use(morgan('dev'));
 // ==========================
 // STATIC FILES
 // ==========================
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Removed for Cloudinary migration
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Re-enabled for legacy/local images
 
 // ==========================
 // ROUTES

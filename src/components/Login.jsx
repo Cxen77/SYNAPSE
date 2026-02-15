@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -13,7 +13,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,6 +39,17 @@ const Login = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await googleLogin();
+      toast.success("Logged in with Google!");
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      toast.error("Google login failed.");
     }
   };
 
@@ -109,9 +120,17 @@ const Login = () => {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Secure Login</span>
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
           </div>
         </div>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full py-2.5 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200"
+        >
+          <FaGoogle className="text-red-500" />
+          Sign in with Google
+        </button>
 
         <div className="text-center text-sm text-gray-600">
           Don't have an account?{' '}

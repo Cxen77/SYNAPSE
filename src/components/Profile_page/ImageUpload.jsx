@@ -56,14 +56,14 @@ const ImageUpload = ({ type = 'profile', currentImage, onUploadSuccess }) => {
             const formData = new FormData();
             formData.append(isProfilePic ? 'profilePic' : 'bannerPic', selectedFile);
 
-            console.log('Uploading image to:', endpoint);
+
             const { data } = await api.put(endpoint, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
 
-            console.log('Upload successful, received data:', data);
+
 
             setSuccess(true);
 

@@ -20,7 +20,19 @@ const Avatar = ({ src, alt, size = "md", className = "" }) => {
 
     const currentSizeClass = sizeClasses[size] || sizeClasses.md;
 
-    if (!src || error) {
+    const getStatsSrc = (src) => {
+        if (!src) return null;
+        if (src.startsWith('http')) return src;
+        if (src.startsWith('/uploads')) {
+            const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            return `${backendUrl}${src}`;
+        }
+        return src;
+    };
+
+    const finalSrc = getStatsSrc(src);
+
+    if (!finalSrc || error) {
         return (
             <div
                 className={`${currentSizeClass} ${className} bg-gray-200 flex items-center justify-center text-gray-400 rounded-full overflow-hidden`}
@@ -33,7 +45,7 @@ const Avatar = ({ src, alt, size = "md", className = "" }) => {
 
     return (
         <img
-            src={src}
+            src={finalSrc}
             alt={alt}
             className={`${currentSizeClass} ${className} object-cover rounded-full`}
             onError={() => setError(true)}

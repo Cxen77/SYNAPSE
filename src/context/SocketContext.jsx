@@ -16,7 +16,8 @@ export const SocketProvider = ({ children }) => {
 
         const initSocket = async () => {
             if (currentUser) {
-                const token = await currentUser.getIdToken();
+                // Fix: currentUser is backend user, use token directly
+                const token = currentUser.token || localStorage.getItem('token');
 
                 // Use environment variable for production, fallback to localhost for dev
                 // Correct: Connect to root URL (e.g. localhost:5000 or api.fuseon.in)

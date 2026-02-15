@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { admin } from '../config/firebaseAdmin.js';
+import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import SystemSettings from '../models/SystemSettings.js';
 
@@ -26,22 +26,17 @@ export const initSocket = (httpServer) => {
         try {
             const token = socket.handshake.auth.token;
             if (!token) {
-                // console.error('[Socket Auth] No token provided in handshake');
                 return next(new Error('Authentication error: No token provided'));
             }
 
-            // console.log('[Socket Auth] Verifying token...');
-            const decodedToken = await admin.auth().verifyIdToken(token);
-            socket.user = decodedToken; // { uid, email, etc. }
-            // console.log('[Socket Auth] Token verified for UID:', decodedToken.uid);
+            // Verify Custom JWT (matches authMiddleware)
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Fetch full user from Mongo to get _id
-            const user = await User.findOne({ firebaseUid: decodedToken.uid });
+            // Fetch full user from Mongo
+            const user = await User.findById(decoded.userId).select('-password');
             if (!user) {
-                // console.error('[Socket Auth] User not found in MongoDB for UID:', decodedToken.uid);
                 return next(new Error('User not found in database'));
             }
-            // console.log('[Socket Auth] User found in MongoDB:', user._id);
             socket.mongoUser = user;
 
             // Check if chat is disabled or role restricted
@@ -77,7 +72,6 @@ export const initSocket = (httpServer) => {
         // Track Socket ID
         if (!onlineUsers.has(userId)) {
             onlineUsers.set(userId, new Set());
-            console.log(`[Socket] New User Set Created for: ${userId} (Type: ${typeof userId})`);
         } else {
             // console.log(`[Socket] Adding socket ${socket.id} to existing user ${userId}`);
         }
@@ -91,7 +85,6 @@ export const initSocket = (httpServer) => {
         // If this is the FIRST connection for this user, broadcast Online
         if (userSockets.size === 1) {
             io.emit('user:presence', { userId, status: 'online' });
-            console.log(`User ${userId} came ONLINE`);
         } else {
             // console.log(`User ${userId} connected another tab (Active: ${userSockets.size})`);
         }
@@ -143,7 +136,6 @@ export const initSocket = (httpServer) => {
                     }
 
                     io.emit('user:presence', { userId, status: 'offline', lastSeen: new Date() });
-                    console.log(`User ${userId} went OFFLINE`);
                 } else {
                     // console.log(`User ${userId} closed a tab (Remaining: ${userSockets.size})`);
                 }

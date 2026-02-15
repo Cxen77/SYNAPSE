@@ -6,6 +6,7 @@ import sendEmail from '../utils/sendEmail.js';
 import { validatePassword } from '../utils/validation.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { admin } from '../config/firebaseAdmin.js'; // Import Firebase Admin
 
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
@@ -32,6 +33,7 @@ const authUser = asyncHandler(async (req, res) => {
             username: user.username,
             email: user.email,
             profilePic: user.profilePic,
+            isEmailVerified: user.isEmailVerified,
             token
         });
     } else {
@@ -168,6 +170,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        isEmailVerified: true,
         token
     });
 });
@@ -245,6 +248,71 @@ const resetPassword = asyncHandler(async (req, res) => {
     res.json({ message: 'Password reset successful. You can now login.' });
 });
 
+// @desc    Google Auth (Verify Firebase Token & Login/Register)
+// @route   POST /api/auth/google
+// @access  Public
+const googleAuth = asyncHandler(async (req, res) => {
+    const { token } = req.body;
+
+    if (!token) {
+        res.status(400);
+        throw new Error('No token provided');
+    }
+
+    try {
+        // 1. Verify Firebase ID Token
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const { email, name, picture, uid } = decodedToken;
+
+        // 2. Check if user exists
+        let user = await User.findOne({ email });
+
+        if (user) {
+            // User exists: Update info if needed (optional)
+            if (!user.firebaseUid) {
+                user.firebaseUid = uid;
+                await user.save();
+            }
+            // If user login via Google, verify email automatically if not yet
+            if (!user.isEmailVerified) {
+                user.isEmailVerified = true;
+                await user.save();
+            }
+        } else {
+            // 3. Create new user
+            const randomPassword = crypto.randomBytes(16).toString('hex') + 'A1!'; // Meets strong requirements
+
+            user = await User.create({
+                name: name || 'Google User',
+                username: email.split('@')[0] + Math.random().toString(36).slice(-4),
+                email,
+                password: randomPassword,
+                profilePic: picture,
+                firebaseUid: uid,
+                isEmailVerified: true
+            });
+        }
+
+        // 4. Issue App JWT
+        const appToken = generateToken(res, user._id);
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            username: user.username,
+            email: user.email,
+            profilePic: user.profilePic,
+            isEmailVerified: true,
+            token: appToken
+        });
+
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(401);
+        throw new Error('Invalid Google Token');
+    }
+});
+
 // @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Public
@@ -262,5 +330,6 @@ export {
     verifyEmail,
     forgotPassword,
     resetPassword,
-    logoutUser
+    logoutUser,
+    googleAuth
 };

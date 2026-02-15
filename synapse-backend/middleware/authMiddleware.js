@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import { admin } from '../config/firebaseAdmin.js';
+import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import SystemSettings from '../models/SystemSettings.js';
 
@@ -13,36 +13,19 @@ const protect = asyncHandler(async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
 
-            // Verify token with Firebase Admin
-            if (!admin.apps.length) {
-                throw new Error('Firebase Admin not initialized');
+            // Verify Custom JWT
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            // Get user from token
+            req.user = await User.findById(decoded.userId).select('-password');
+
+            if (!req.user) {
+                res.status(401);
+                throw new Error('User not found');
             }
-
-            const decodedToken = await admin.auth().verifyIdToken(token);
-            const { uid, email, name, picture } = decodedToken;
-
-            // Find or create user in MongoDB
-            let user = await User.findOne({ email });
-
-            if (!user) {
-                // Create new user if not exists
-                user = await User.create({
-                    name: name || email.split('@')[0],
-                    email: email,
-                    username: email.split('@')[0],
-                    profilePic: picture,
-                    firebaseUid: uid
-                });
-            } else if (!user.firebaseUid) {
-                // Link existing user to Firebase UID if missing
-                user.firebaseUid = uid;
-                await user.save();
-            }
-
-            req.user = user;
 
             // Block suspended users globally
-            if (user.isSuspended) {
+            if (req.user.isSuspended) {
                 res.status(403);
                 throw new Error('Your account has been suspended. Contact support for assistance.');
             }
@@ -50,20 +33,16 @@ const protect = asyncHandler(async (req, res, next) => {
             // Maintenance mode — block non-admins
             const settings = await SystemSettings.getSettings();
             const maintenance = settings.features?.get('maintenance');
-            if (maintenance?.enabled && user.role !== 'admin') {
+            if (maintenance?.enabled && req.user.role !== 'admin') {
                 res.status(503);
                 throw new Error('Service temporarily unavailable — maintenance in progress');
             }
 
             next();
         } catch (error) {
-            console.error('Auth Error:', error);
-            // Preserve original status (403 suspension, 503 maintenance) — only default to 401
-            if (!res.headersSent) {
-                const status = res.statusCode >= 400 ? res.statusCode : 401;
-                res.status(status);
-                throw new Error(error.message || 'Not authorized, token failed');
-            }
+            console.error('Auth Error:', error.message);
+            res.status(401);
+            throw new Error('Not authorized, token failed');
         }
     }
 

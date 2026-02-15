@@ -16,10 +16,8 @@ const GithubImportModal = ({ isOpen, onClose, onImport }) => {
 
     useEffect(() => {
         if (currentUser) {
-            currentUser.getIdToken().then(t => {
-                // console.log("Token fetched for Modal");
-                setToken(t);
-            });
+            const t = currentUser.token || localStorage.getItem('token');
+            setToken(t);
         }
     }, [currentUser]);
 

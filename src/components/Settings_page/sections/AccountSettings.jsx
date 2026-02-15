@@ -33,7 +33,7 @@ const AccountSettings = ({ user, setUser }) => {
             }
         } else {
             // Connect
-            const token = await currentUser.getIdToken();
+            const token = localStorage.getItem('token');
             window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/github?token=${token}`;
         }
     };
@@ -148,8 +148,8 @@ const AccountSettings = ({ user, setUser }) => {
                                 onClick={handleGithubConnect}
                                 disabled={connectLoading}
                                 className={`px-4 py-2 rounded-lg font-bold text-sm transition ${githubConnected
-                                        ? 'bg-white border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200'
-                                        : 'bg-gray-900 text-white hover:bg-black'
+                                    ? 'bg-white border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200'
+                                    : 'bg-gray-900 text-white hover:bg-black'
                                     }`}
                             >
                                 {connectLoading ? 'Processing...' : (githubConnected ? 'Disconnect' : 'Connect')}

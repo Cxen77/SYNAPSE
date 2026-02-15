@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebaseClient'; // Import Firebase Auth
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'; // Import Google Auth
 
 const AuthContext = createContext();
 
@@ -50,6 +52,19 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
+    // Google Login
+    const googleLogin = async () => {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const idToken = await result.user.getIdToken();
+
+        // Exchange Firebase ID Token for Backend JWT
+        const { data } = await api.post('/auth/google', { token: idToken });
+        localStorage.setItem('token', data.token);
+        setCurrentUser(data);
+        return data;
+    };
+
     // Forgot Password
     const forgotPassword = async (email, captchaToken) => {
         const { data } = await api.post('/auth/forgot-password', { email, captchaToken });
@@ -78,6 +93,7 @@ export const AuthProvider = ({ children }) => {
         signup,
         verifyOtp,
         login,
+        googleLogin,
         forgotPassword,
         resetPassword,
         logout,
