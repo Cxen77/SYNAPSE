@@ -4,7 +4,7 @@ import Session from '../models/Session.js';
 import { generateAccessToken, generateRefreshToken, hashRefreshToken } from '../utils/generateToken.js';
 import { createSession, clearSessionCookie, setRefreshCookie } from '../utils/sessionHelpers.js';
 import generateOTP from '../utils/generateOTP.js';
-import sendEmail from '../utils/sendEmail.js';
+import sendEmail, { sendEmailAsync } from '../utils/sendEmail.js';
 import { validatePassword } from '../utils/validation.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -83,15 +83,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
             await userExists.save();
 
-            try {
-                await sendEmail({
-                    email: userExists.email,
-                    subject: 'Your Verification Code - SYNAPSE',
-                    message: `Your verification code is: ${otp}. It expires in 10 minutes.`
-                });
-            } catch (err) {
-                console.error('Email send failed:', err.message);
-            }
+            // Fire-and-forget — don't block the response
+            sendEmailAsync({
+                email: userExists.email,
+                subject: 'Your Verification Code - SYNAPSE',
+                message: `Your verification code is: ${otp}. It expires in 10 minutes.`
+            });
 
             return res.status(200).json({
                 message: 'Registration successful. Please verify your email.',
@@ -128,16 +125,12 @@ const registerUser = asyncHandler(async (req, res) => {
         isEmailVerified: false
     });
 
-    // 5. Send OTP Email
-    try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Your Verification Code - SYNAPSE',
-            message: `Your verification code is: ${otp}. It expires in 10 minutes.`
-        });
-    } catch (err) {
-        console.error('Email send failed:', err.message);
-    }
+    // 5. Send OTP Email (fire-and-forget — don't block response)
+    sendEmailAsync({
+        email: user.email,
+        subject: 'Your Verification Code - SYNAPSE',
+        message: `Your verification code is: ${otp}. It expires in 10 minutes.`
+    });
 
     if (user) {
         res.status(201).json({
@@ -480,15 +473,12 @@ const resendOtp = asyncHandler(async (req, res) => {
     }
     await user.save();
 
-    try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Your Verification Code - SYNAPSE',
-            message: `Your verification code is: ${otp}. It expires in 10 minutes.`
-        });
-    } catch (err) {
-        console.error('Email send failed:', err.message);
-    }
+    // Fire-and-forget — don't block the response
+    sendEmailAsync({
+        email: user.email,
+        subject: 'Your Verification Code - SYNAPSE',
+        message: `Your verification code is: ${otp}. It expires in 10 minutes.`
+    });
 
     const remaining = 3 - user.otpResendCount;
     res.json({ message: 'If the email is valid, a new code has been sent.', resendsRemaining: remaining });
