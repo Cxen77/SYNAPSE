@@ -1,18 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    GoogleAuthProvider,
-    signInWithPopup,
-    sendEmailVerification,
-    sendPasswordResetEmail,
-    updateProfile
-} from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../firebaseClient';
 import api from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -22,103 +10,77 @@ export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Signup with Email/Password
-    const signup = async (email, password, name, username) => {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+    // Initial Load: Check for token
+    useEffect(() => {
+        const loadUser = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const { data } = await api.get('/users/me');
+                    setCurrentUser(data);
+                } catch (error) {
+                    console.error("Failed to load user", error);
+                    logout(); // Token invalid
+                }
+            }
+            setLoading(false);
+        };
+        loadUser();
+    }, []);
 
-        await updateProfile(user, { displayName: name });
-        await sendEmailVerification(user);
-
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            name: name,
-            username: username,
-            email: email,
-            profilePic: "",
-            createdAt: serverTimestamp(),
-            authProvider: "email"
-        });
-
-        return user;
+    // Signup
+    const signup = async (formData, captchaToken) => {
+        const { data } = await api.post('/auth/signup', { ...formData, captchaToken });
+        return data; // returns { requiresVerification: true, email: ... }
     };
 
-    // Login with Email/Password
-    const login = async (email, password) => {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        return userCredential.user;
+    // Verify OTP
+    const verifyOtp = async (email, otp, captchaToken) => {
+        const { data } = await api.post('/auth/verify-email', { email, otp, captchaToken });
+        localStorage.setItem('token', data.token);
+        setCurrentUser(data);
+        return data;
     };
 
-    // Google Login - fast, no Firestore
-    const googleLogin = async () => {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        return result.user;
+    // Login
+    const login = async (email, password, captchaToken) => {
+        const { data } = await api.post('/auth/login', { email, password, captchaToken });
+        localStorage.setItem('token', data.token);
+        setCurrentUser(data);
+        return data;
     };
 
-    // Logout
-    const logout = () => {
-        return signOut(auth);
+    // Forgot Password
+    const forgotPassword = async (email, captchaToken) => {
+        const { data } = await api.post('/auth/forgot-password', { email, captchaToken });
+        return data;
     };
 
     // Reset Password
-    const resetPassword = (email) => {
-        return sendPasswordResetEmail(auth, email);
+    const resetPassword = async (token, newPassword, captchaToken) => {
+        const { data } = await api.post('/auth/reset-password', { token, newPassword, captchaToken });
+        return data;
     };
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                try {
-                    // Fetch MongoDB user data
-                    // We need to ensure the token is ready for the interceptor
-                    const token = await user.getIdToken();
-                    // The axios interceptor will attach the token
-                    // We might need a specific endpoint to get "me" or just use the user sync logic
-                    // For now, let's assume we can hit a profile endpoint or similar if it exists
-                    // Or we can rely on the fact that the backend creates the user if missing on protected routes
-                    // But we need the _id for the frontend.
-
-                    // Let's try to fetch the user profile from our backend
-                    // If the user is new, this might fail if we don't have a "create if not exists" on GET /me
-                    // But our protect middleware does that!
-                    // So let's add a route for getting current user details if not already present, 
-                    // or just use an existing one.
-                    // Looking at userRoutes.js, there isn't a specific "me" route, but we can add one or use search?
-                    // Actually, let's just use the firebase user for now and rely on the backend to handle the mapping
-                    // BUT, the frontend needs _id for comparisons (isMember, etc).
-
-                    // Let's add a simple fetch to a new endpoint or existing one.
-                    // Since I can't easily add a new endpoint without editing backend again (which I can do),
-                    // I will update userRoutes.js to include a /me endpoint or similar.
-                    // Wait, I can just use the user search or update profile? No.
-
-                    // Let's use the existing /users/profile endpoint
-                    const res = await api.get('/users/profile');
-                    // MERGE CAREFULLY: Do not use spread {...user} as it strips Firebase prototype methods (getIdToken)
-                    // Instead, mutate the user object or use Object.assign to preserve the prototype chain
-                    const mergedUser = Object.assign(user, res.data);
-                    setCurrentUser(mergedUser);
-                } catch (error) {
-                    console.error("Failed to fetch MongoDB user", error);
-                    setCurrentUser(user); // Fallback to just Firebase user
-                }
-            } else {
-                setCurrentUser(null);
-            }
-            setLoading(false);
-        });
-
-        return unsubscribe;
-    }, []);
+    // Logout
+    const logout = async () => {
+        localStorage.removeItem('token');
+        setCurrentUser(null);
+        try {
+            await api.post('/auth/logout');
+        } catch (error) {
+            // Ignore logout errors
+        }
+    };
 
     const value = {
         currentUser,
         signup,
+        verifyOtp,
         login,
-        googleLogin,
-        logout,
+        forgotPassword,
         resetPassword,
+        logout,
         loading
     };
 

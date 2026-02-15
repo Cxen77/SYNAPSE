@@ -1,24 +1,18 @@
 import axios from 'axios';
-import { auth } from '../firebaseClient';
 
 const api = axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL}/api`,
+    baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Add Firebase ID token to all requests
+// Add JWT token to all requests
 api.interceptors.request.use(
-    async (config) => {
-        const user = auth.currentUser;
-        if (user) {
-            try {
-                const token = await user.getIdToken();
-                config.headers.Authorization = `Bearer ${token}`;
-            } catch (error) {
-                console.error('Failed to get Firebase token:', error);
-            }
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },

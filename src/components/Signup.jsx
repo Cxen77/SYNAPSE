@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import TurnstileWidget from "./TurnstileWidget";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,12 +11,18 @@ const Signup = () => {
     name: "",
     username: "",
     email: "",
-    password: ""
+    password: "",
+    course: "", // Added as they were in backend model
+    year: "",
+    bio: "",
+    skills: [],
+    socials: {}
   });
+  const [captchaToken, setCaptchaToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signup, googleLogin } = useAuth();
+  const { signup } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,42 +31,23 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signup(formData.email, formData.password, formData.name, formData.username);
+      await signup(formData, captchaToken);
       toast.success("Account created! Please verify your email.");
-      navigate("/verify-email");
+      navigate("/verify-email", { state: { email: formData.email } });
     } catch (err) {
       console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError("Email already in use.");
-      } else if (err.code === 'auth/weak-password') {
-        setError("Password should be at least 6 characters.");
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError("Email/Password login is not enabled in Firebase Console.");
-      } else {
-        setError("Failed to create account. Please try again.");
-      }
+      setError(err.response?.data?.message || "Failed to create account.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignup = async () => {
-    console.log("📍 Google Signup button clicked");
-    try {
-      console.log("🟡 Calling googleLogin...");
-      const result = await googleLogin();
-      console.log("🟡 googleLogin returned:", result);
-      console.log("🟡 Showing success toast...");
-      toast.success("Signed up with Google successfully!");
-      console.log("🟡 Navigating to home...");
-      navigate("/");
-      console.log("🟡 Navigation called");
-    } catch (err) {
-      console.error("❌ Error in handleGoogleSignup:", err);
-      toast.error(err.message || "Google signup failed. Please try again.");
     }
   };
 
@@ -121,7 +109,7 @@ const Signup = () => {
               type={showPassword ? "text" : "password"}
               name="password"
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Create a password"
+              placeholder="Min 8 chars, Upper, Lower, Number"
               value={formData.password}
               onChange={handleChange}
               autoComplete="new-password"
@@ -134,6 +122,9 @@ const Signup = () => {
               {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
             </span>
           </div>
+
+          <TurnstileWidget onVerify={setCaptchaToken} onError={() => setError("Captcha Failed")} />
+
           <button
             type="submit"
             disabled={loading}
@@ -142,24 +133,6 @@ const Signup = () => {
             {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleSignup}
-          className="w-full py-2.5 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200"
-        >
-          <FaGoogle className="text-red-500" />
-          Sign up with Google
-        </button>
 
         <div className="text-center text-sm text-gray-600">
           Already have an account?{' '}

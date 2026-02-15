@@ -5,11 +5,23 @@ const userSchema = mongoose.Schema({
     name: { type: String, required: true },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String }, // Optional for Google users
+    password: { type: String, select: false }, // Optional for Google users
     role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
     isSuspended: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
+
+    // Auth & Verification
+    isEmailVerified: { type: Boolean, default: false },
+    otpHash: { type: String },
+    otpExpiresAt: { type: Date },
+    otpAttempts: { type: Number, default: 0 },
+    otpLockUntil: { type: Date },
+
+    // Password Reset
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+
     firebaseUid: { type: String, unique: true, sparse: true }, // Link to Firebase Auth
     githubId: { type: String, unique: true, sparse: true }, // GitHub OAuth ID
     githubAccessToken: { type: String, select: false }, // GitHub Access Token

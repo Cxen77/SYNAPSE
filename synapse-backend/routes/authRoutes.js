@@ -1,15 +1,21 @@
 import express from 'express';
-import { authUser, registerUser, logoutUser } from '../controllers/authController.js';
+import { authUser, registerUser, logoutUser, verifyEmail, forgotPassword, resetPassword } from '../controllers/authController.js';
 import passport from 'passport';
 import { protect } from '../middleware/authMiddleware.js';
 import User from '../models/User.js'; // Import User directly here for callback logic helper if needed, or better, keep logic in controller
 
 import { authLimiter } from '../middleware/rateLimiters.js';
+import verifyCaptcha from '../middleware/captchaMiddleware.js'; // Import Captcha
 
 const router = express.Router();
 
-router.post('/login', authLimiter, authUser);
-router.post('/signup', authLimiter, registerUser);
+// Apply Rate Limiting & CAPTCHA to all auth routes
+router.post('/signup', authLimiter, verifyCaptcha, registerUser);
+router.post('/login', authLimiter, verifyCaptcha, authUser);
+router.post('/verify-email', authLimiter, verifyCaptcha, verifyEmail);
+router.post('/forgot-password', authLimiter, verifyCaptcha, forgotPassword);
+router.post('/reset-password', authLimiter, verifyCaptcha, resetPassword);
+
 router.post('/logout', logoutUser);
 
 // ==========================

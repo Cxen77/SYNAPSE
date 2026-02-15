@@ -1,54 +1,44 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import TurnstileWidget from "./TurnstileWidget";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, googleLogin } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const user = await login(email, password);
-      if (!user.emailVerified) {
-        toast.error("Please verify your email first.");
-      } else {
-        toast.success("Logged in successfully!");
-        navigate("/");
-      }
-    } catch (err) {
-      console.error(err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError("Invalid email or password.");
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError("Email/Password login is not enabled in Firebase Console.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    console.log("📍 Google Login button clicked");
-    try {
-      await googleLogin();
-      toast.success("Logged in with Google successfully!");
+      await login(email, password, captchaToken);
+      toast.success("Logged in successfully!");
       navigate("/");
     } catch (err) {
       console.error(err);
-      toast.error(err.message || "Google login failed. Please try again.");
+      if (err.response?.status === 403) {
+        setError("Email not verified. Please verify your email.");
+      } else {
+        setError(err.response?.data?.message || "Login failed. Invalid credentials.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,6 +92,9 @@ const Login = () => {
               {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
             </span>
           </div>
+
+          <TurnstileWidget onVerify={setCaptchaToken} />
+
           <button
             type="submit"
             disabled={loading}
@@ -116,18 +109,9 @@ const Login = () => {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <span className="px-2 bg-white text-gray-500">Secure Login</span>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full py-2.5 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200"
-        >
-          <FaGoogle className="text-red-500" />
-          Sign in with Google
-        </button>
 
         <div className="text-center text-sm text-gray-600">
           Don't have an account?{' '}

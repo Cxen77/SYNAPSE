@@ -19,6 +19,7 @@ const Signup = lazy(() => import('./components/Signup.jsx'));
 const Settings = lazy(() => import('./components/Settings_page/Settings.jsx'));
 const VerifyEmail = lazy(() => import('./components/VerifyEmail.jsx'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword.jsx'));
+const ResetPassword = lazy(() => import('./components/ResetPassword.jsx'));
 const ForumLayout = lazy(() => import('./components/Forum_page/ForumLayout.jsx'));
 const ForumHome = lazy(() => import('./components/Forum_page/ForumHome.jsx'));
 const ForumDetails = lazy(() => import('./components/Forum_page/ForumDetails.jsx'));
@@ -93,7 +94,7 @@ import { hasShownNotification, markNotificationShown } from './utils/notificatio
 
 function App() {
   const location = useLocation();
-  const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password'].includes(location.pathname);
+  const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
   const isChatPage = location.pathname.startsWith('/chat');
   const isChatConversation = location.pathname.match(/^\/chat\/[^/]+$/);
@@ -194,6 +195,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />

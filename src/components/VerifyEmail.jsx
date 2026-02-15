@@ -1,32 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sendEmailVerification } from 'firebase/auth';
 import toast from 'react-hot-toast';
-import { Mail } from 'lucide-react';
+import { Mail, ArrowRight } from 'lucide-react';
+import TurnstileWidget from './TurnstileWidget';
+import api from '../api/axios'; // Direct API call for resend
 
 const VerifyEmail = () => {
-    const { currentUser } = useAuth();
-    const [sending, setSending] = useState(false);
+    const { verifyOtp, currentUser } = useAuth();
+    const [otp, setOtp] = useState("");
+    const [email, setEmail] = useState("");
+    const [captchaToken, setCaptchaToken] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
-        if (currentUser?.emailVerified) {
+        if (location.state?.email) {
+            setEmail(location.state.email);
+        } else if (currentUser?.email) {
+            setEmail(currentUser.email);
+        }
+    }, [location, currentUser]);
+
+    useEffect(() => {
+        if (currentUser?.isEmailVerified) {
             navigate('/');
         }
     }, [currentUser, navigate]);
 
-    const handleResendEmail = async () => {
-        setSending(true);
+    const handleVerify = async (e) => {
+        e.preventDefault();
+        if (!captchaToken) {
+            toast.error("Please complete the CAPTCHA.");
+            return;
+        }
+        setLoading(true);
         try {
-            await sendEmailVerification(currentUser);
-            toast.success("Verification email sent!");
+            await verifyOtp(email, otp, captchaToken);
+            toast.success("Email verified successfully!");
+            navigate('/');
         } catch (error) {
             console.error(error);
-            toast.error("Failed to send verification email.");
+            toast.error(error.response?.data?.message || "Verification failed. Invalid OTP.");
         } finally {
-            setSending(false);
+            setLoading(false);
         }
+    };
+
+    const handleResendOtp = async () => { /* Implement Resend Logic later if needed, currently not in core prompt but good UX */
+        /* For now just show toast */
+        toast("Resend feature coming soon. Please check your spam folder.", { icon: 'ℹ️' });
     };
 
     return (
@@ -38,24 +63,38 @@ const VerifyEmail = () => {
 
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify your email</h2>
                 <p className="text-gray-600 mb-6">
-                    We've sent a verification email to <span className="font-semibold text-gray-900">{currentUser?.email}</span>.
-                    Please check your inbox and follow the link to verify your account.
+                    Enter the 6-digit code sent to <span className="font-semibold text-gray-900">{email || "your email"}</span>.
                 </p>
 
-                <div className="flex flex-col gap-3">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition duration-200"
-                    >
-                        I've verified my email
-                    </button>
+                <form onSubmit={handleVerify} className="flex flex-col gap-4">
+                    <input
+                        type="text"
+                        maxLength="6"
+                        className="w-full text-center text-2xl font-bold tracking-widest px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase"
+                        placeholder="123456"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        required
+                    />
+
+                    <TurnstileWidget onVerify={setCaptchaToken} />
 
                     <button
-                        onClick={handleResendEmail}
-                        disabled={sending}
-                        className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200 disabled:opacity-50"
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition duration-200 disabled:opacity-50"
                     >
-                        {sending ? "Sending..." : "Resend Verification Email"}
+                        {loading ? "Verifying..." : "Verify Email"}
+                    </button>
+                </form>
+
+                <div className="mt-4">
+                    <button
+                        onClick={handleResendOtp}
+                        disabled={resending}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                    >
+                        Resend Code
                     </button>
                 </div>
             </div>
