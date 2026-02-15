@@ -443,7 +443,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
     res.json({ sessions });
 });
 
-// @desc    Resend OTP
+// @desc    Resend OTP (max 3 per day)
 // @route   POST /api/auth/resend-otp
 // @access  Public
 const resendOtp = asyncHandler(async (req, res) => {
@@ -454,11 +454,30 @@ const resendOtp = asyncHandler(async (req, res) => {
         return res.json({ message: 'If the email is valid, a new code has been sent.' });
     }
 
+    // Daily resend limit (3 per day)
+    const now = new Date();
+    const resendCount = user.otpResendCount || 0;
+    const resendResetAt = user.otpResendResetAt ? new Date(user.otpResendResetAt) : null;
+
+    // Reset counter if 24h have passed
+    if (!resendResetAt || now > resendResetAt) {
+        user.otpResendCount = 0;
+    }
+
+    if (user.otpResendCount >= 3) {
+        res.status(429);
+        throw new Error('Maximum 3 resends per day. Please try again tomorrow.');
+    }
+
     const otp = generateOTP();
     user.otpHash = await bcrypt.hash(otp, 10);
     user.otpExpiresAt = Date.now() + 10 * 60 * 1000;
     user.otpAttempts = 0;
     user.otpLockUntil = undefined;
+    user.otpResendCount = (user.otpResendCount || 0) + 1;
+    if (!resendResetAt || now > resendResetAt) {
+        user.otpResendResetAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    }
     await user.save();
 
     try {
@@ -471,7 +490,8 @@ const resendOtp = asyncHandler(async (req, res) => {
         console.error('Email send failed:', err.message);
     }
 
-    res.json({ message: 'If the email is valid, a new code has been sent.' });
+    const remaining = 3 - user.otpResendCount;
+    res.json({ message: 'If the email is valid, a new code has been sent.', resendsRemaining: remaining });
 });
 
 export {

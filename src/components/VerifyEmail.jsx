@@ -94,15 +94,20 @@ const VerifyEmail = () => {
         }
     };
 
+    const [resendsRemaining, setResendsRemaining] = useState(3);
+
     const handleResendOtp = async () => {
         if (resendCooldown > 0 || !email) return;
         setResending(true);
         try {
-            await api.post('/auth/resend-otp', { email });
+            const { data } = await api.post('/auth/resend-otp', { email });
             toast.success("New verification code sent!");
             setResendCooldown(60);
             setOtp(["", "", "", "", "", ""]);
             inputRefs.current[0]?.focus();
+            if (data.resendsRemaining !== undefined) {
+                setResendsRemaining(data.resendsRemaining);
+            }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to resend code.");
         } finally {
@@ -164,17 +169,22 @@ const VerifyEmail = () => {
                     </form>
 
                     {/* Resend */}
-                    <div className="mt-5">
+                    <div className="mt-5 space-y-1">
                         <button
                             onClick={handleResendOtp}
-                            disabled={resending || resendCooldown > 0}
+                            disabled={resending || resendCooldown > 0 || resendsRemaining <= 0}
                             className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
                         >
                             <RotateCcw className="w-3.5 h-3.5" />
                             {resendCooldown > 0
                                 ? `Resend in ${resendCooldown}s`
-                                : resending ? "Sending..." : "Resend Code"}
+                                : resendsRemaining <= 0
+                                    ? "Daily limit reached"
+                                    : resending ? "Sending..." : "Resend Code"}
                         </button>
+                        {resendsRemaining < 3 && resendsRemaining > 0 && (
+                            <p className="text-xs text-gray-400">{resendsRemaining} resend{resendsRemaining > 1 ? 's' : ''} left today</p>
+                        )}
                     </div>
                 </div>
             </div>

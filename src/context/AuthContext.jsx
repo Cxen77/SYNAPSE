@@ -16,15 +16,20 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const loadUser = async () => {
             try {
-                // Attempt to refresh access token from cookie
-                const { data: refreshData } = await api.post('/auth/refresh');
+                // Use raw axios (not api instance) to avoid interceptor loop
+                const axios = (await import('axios')).default;
+                const { data: refreshData } = await axios.post(
+                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
+                    {},
+                    { withCredentials: true }
+                );
                 setAccessToken(refreshData.accessToken);
 
-                // Fetch user profile
+                // Now use the api instance (with token) to fetch user profile
                 const { data: userData } = await api.get('/users/me');
                 setCurrentUser(userData);
             } catch (error) {
-                // No valid session — user needs to login
+                // No valid session — user needs to login (this is expected)
                 setAccessToken(null);
                 setCurrentUser(null);
             }

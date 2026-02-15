@@ -50,9 +50,9 @@ api.interceptors.response.use(
 
         // Only attempt refresh on 401 and if we haven't already retried
         if (error.response?.status === 401 && !originalRequest._retry) {
-            // Don't try to refresh the refresh endpoint itself
-            if (originalRequest.url?.includes('/auth/refresh')) {
-                setAccessToken(null);
+            // Don't try to refresh the refresh endpoint itself or auth endpoints
+            const skipUrls = ['/auth/refresh', '/auth/login', '/auth/signup', '/auth/register', '/auth/verify-email', '/auth/google'];
+            if (skipUrls.some(url => originalRequest.url?.includes(url))) {
                 return Promise.reject(error);
             }
 
@@ -88,8 +88,14 @@ api.interceptors.response.use(
                 setAccessToken(null);
                 refreshSubscribers = [];
 
-                // Redirect to login if not already there
-                if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+                // Only redirect if this wasn't a silent background check
+                // (skipAuthRedirect flag is set by AuthContext on initial load)
+                if (!originalRequest._skipAuthRedirect &&
+                    window.location.pathname !== '/login' &&
+                    window.location.pathname !== '/signup' &&
+                    window.location.pathname !== '/verify-email' &&
+                    window.location.pathname !== '/forgot-password' &&
+                    window.location.pathname !== '/reset-password') {
                     window.location.href = '/login';
                 }
                 return Promise.reject(refreshError);

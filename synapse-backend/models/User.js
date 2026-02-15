@@ -17,6 +17,8 @@ const userSchema = mongoose.Schema({
     otpExpiresAt: { type: Date },
     otpAttempts: { type: Number, default: 0 },
     otpLockUntil: { type: Date },
+    otpResendCount: { type: Number, default: 0 },
+    otpResendResetAt: { type: Date },
 
     // Password Reset
     resetPasswordToken: { type: String },

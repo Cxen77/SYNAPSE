@@ -23,6 +23,7 @@ const router = express.Router();
 
 // Auth routes with Rate Limiting & CAPTCHA
 router.post('/signup', authLimiter, verifyCaptcha, registerUser);
+router.post('/register', authLimiter, verifyCaptcha, registerUser); // alias for backward compat
 router.post('/login', authLimiter, verifyCaptcha, authUser);
 router.post('/verify-email', authLimiter, verifyCaptcha, verifyEmail);
 router.post('/forgot-password', authLimiter, verifyCaptcha, forgotPassword);
