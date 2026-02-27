@@ -6,9 +6,9 @@ import Event from '../models/Event.js';
 // @access  Private (gated by requireFeature('events') middleware)
 const createEvent = asyncHandler(async (req, res) => {
 
-    const { title, description, date, location, category, prize, imageUrl, maxTeamSize } = req.body;
+    const { title, description, date, location, category, prize, imageUrl, maxTeamSize, isMultiCollege, allowTeamRegistration } = req.body;
 
-    const event = await Event.create({
+    const eventParams = {
         title,
         description,
         date,
@@ -17,9 +17,20 @@ const createEvent = asyncHandler(async (req, res) => {
         prize,
         imageUrl,
         maxTeamSize: maxTeamSize || 4,
+        isMultiCollege: isMultiCollege !== undefined ? isMultiCollege : true,
+        allowTeamRegistration: allowTeamRegistration || false,
         organizer: req.user._id,
         attendees: [req.user._id]
-    });
+    };
+
+    // Auto-set collegeId for organizers based on their own profile
+    if (req.user.role === 'organizer') {
+        eventParams.collegeId = req.user.collegeId;
+    } else if (req.body.collegeId) {
+        eventParams.collegeId = req.body.collegeId;
+    }
+
+    const event = await Event.create(eventParams);
 
     res.status(201).json(event);
 });
@@ -50,6 +61,14 @@ const joinEvent = asyncHandler(async (req, res) => {
     const event = await Event.findById(req.params.id);
 
     if (event) {
+        // Strict Cross-College restriction: Prevent users from joining single-college events not their own
+        if (!event.isMultiCollege && event.collegeId) {
+            if (!req.user.collegeId || event.collegeId.toString() !== req.user.collegeId.toString()) {
+                res.status(403);
+                throw new Error('This event is restricted to students from the host college only.');
+            }
+        }
+
         if (event.attendees.includes(req.user._id)) {
             res.status(400);
             throw new Error('User already attending');
@@ -102,6 +121,8 @@ const updateEvent = asyncHandler(async (req, res) => {
         event.prize = prize || event.prize;
         event.imageUrl = imageUrl || event.imageUrl;
         event.maxTeamSize = req.body.maxTeamSize || event.maxTeamSize;
+        if (req.body.isMultiCollege !== undefined) event.isMultiCollege = req.body.isMultiCollege;
+        if (req.body.allowTeamRegistration !== undefined) event.allowTeamRegistration = req.body.allowTeamRegistration;
 
         const updatedEvent = await event.save();
         await updatedEvent.populate('organizer', 'name username profilePic');

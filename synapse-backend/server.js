@@ -131,21 +131,32 @@ import collegeRoutes from './routes/collegeRoutes.js';
 import autoTeamRoutes from './routes/autoTeamRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import organizerRoutes from './routes/organizerRoutes.js';
 import systemRoutes from './routes/systemRoutes.js';
+
+import { protect } from './middleware/authMiddleware.js';
+import { requireRole } from './middleware/roleMiddleware.js';
+import { apiLimiter } from './middleware/rateLimiters.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/forums', forumRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stories', storyRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/notifications', notificationRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/autoteam', autoTeamRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/admin', adminRoutes);
+
+// Admin / Moderator Shared Route Mount (Internal routing is protected per endpoint)
+app.use('/api/admin', protect, apiLimiter, adminRoutes);
+
+// Strict Organizer Panel
+app.use('/api/organizer', protect, apiLimiter, requireRole('organizer'), organizerRoutes);
+
 app.use('/api/system', systemRoutes);
 
 // ==========================

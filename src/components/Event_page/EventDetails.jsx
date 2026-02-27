@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaUser, FaArrowLeft, FaBolt } from 'react-icons/fa';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
-import TeamList from './TeamList';
 import AutoTeamModal from './AutoTeamModal';
 import { useAuth } from '../../context/AuthContext'; // Need auth for user data
 import MatchFoundModal from './MatchFoundModal';
@@ -178,145 +177,102 @@ const EventDetails = () => {
                     </div>
 
                     <div className="p-6 sm:p-8">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.title}</h1>
-                                <div className="flex flex-wrap gap-4 text-gray-600 mt-3">
-                                    <div className="flex items-center">
-                                        <FaCalendarAlt className="mr-2 text-blue-500" />
-                                        {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                    </div>
-                                    <div className="flex items-center">
-                                        <FaMapMarkerAlt className="mr-2 text-red-500" />
-                                        {event.location}
-                                    </div>
-                                    {event.prize && (
-                                        <div className="flex items-center text-yellow-600 font-medium">
-                                            <FaTrophy className="mr-2" />
-                                            {event.prize}
-                                        </div>
+                        <div className="max-w-3xl mx-auto">
+                            {/* Title & Actions */}
+                            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex-1 pr-4">{event.title}</h1>
+
+                                {/* Action Buttons Row */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        onClick={handleJoin}
+                                        disabled={joinLoading || isJoined}
+                                        className={`px-6 py-2 rounded-xl font-bold text-sm transition ${isJoined
+                                            ? "bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white cursor-default"
+                                            : "bg-[#3B82F6] text-white hover:opacity-90"
+                                            }`}
+                                    >
+                                        {joinLoading ? "Joining..." : isJoined ? "Going" : "Join Event"}
+                                    </button>
+
+                                    {/* Auto Match Button */}
+                                    {!isJoined && isQueued !== null && (
+                                        <button
+                                            onClick={() => !isQueued && setShowAutoTeamModal(true)}
+                                            disabled={isQueued}
+                                            className={`px-5 py-2 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${isQueued
+                                                ? "bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 cursor-default"
+                                                : "bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#363636]"
+                                                }`}
+                                        >
+                                            {isQueued ? "Searching..." : "Auto Match"}
+                                        </button>
+                                    )}
+                                    {!isJoined && isQueued === null && (
+                                        <div className="h-9 w-28 bg-gray-100 dark:bg-[#262626] rounded-xl animate-pulse"></div>
+                                    )}
+
+                                    {/* Delete Button (Organizer Only) */}
+                                    {currentUser && event.organizer && (currentUser._id === (event.organizer._id || event.organizer)) && (
+                                        <button
+                                            onClick={async () => {
+                                                if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+                                                    try {
+                                                        await api.delete(`/events/${id}`);
+                                                        navigate('/events');
+                                                    } catch (err) {
+                                                        alert('Failed to delete event');
+                                                        console.error(err);
+                                                    }
+                                                }
+                                            }}
+                                            className="px-5 py-2 rounded-xl font-bold text-sm text-red-600 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 transition"
+                                        >
+                                            Delete
+                                        </button>
                                     )}
                                 </div>
                             </div>
-
-                            <button
-                                onClick={handleJoin}
-                                disabled={joinLoading || isJoined}
-                                className={`px-8 py-3 rounded-xl font-semibold shadow-sm transition flex-shrink-0 ${isJoined
-                                    ? "bg-green-100 text-green-700 border border-green-200 cursor-default"
-                                    : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
-                                    }`}
-                            >
-                                {joinLoading ? "Joining..." : isJoined ? "You are going!" : "Join Event"}
-                            </button>
-
-                            {/* Auto Team Button */}
-                            {!isJoined && isQueued !== null && (
-                                <button
-                                    onClick={() => !isQueued && setShowAutoTeamModal(true)}
-                                    disabled={isQueued}
-                                    className={`px-6 py-3 rounded-xl font-bold flex-shrink-0 transition flex items-center gap-2 shadow-sm ${isQueued
-                                        ? "bg-blue-50 text-blue-600 border border-blue-200 cursor-default"
-                                        : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-md hover:scale-105 active:scale-95"
-                                        }`}
-                                >
-                                    {isQueued ? (
-                                        <>
-                                            <span className="relative flex h-3 w-3">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                                            </span>
-                                            Searching...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FaBolt className="text-yellow-300" />
-                                            Auto Match
-                                        </>
-                                    )}
-                                </button>
-                            )}
-                            {!isJoined && isQueued === null && (
-                                <div className="h-12 w-36 bg-gray-100 rounded-xl animate-pulse"></div>
-                            )}
-
-                            {/* Delete Button (Organizer Only) */}
-                            {currentUser && event.organizer && (currentUser._id === (event.organizer._id || event.organizer)) && (
-                                <button
-                                    onClick={async () => {
-                                        if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-                                            try {
-                                                await api.delete(`/events/${id}`);
-                                                navigate('/events');
-                                            } catch (err) {
-                                                alert('Failed to delete event');
-                                                console.error(err);
-                                            }
-                                        }
-                                    }}
-                                    className="px-6 py-3 rounded-xl font-semibold text-red-600 bg-red-50 hover:bg-red-100 hover:shadow-md transition border border-red-200 flex-shrink-0"
-                                >
-                                    Delete Event 🗑️
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="grid md:grid-cols-3 gap-8">
-                            <div className="md:col-span-2 space-y-8">
-                                <section>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">About this event</h3>
-                                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-                                        {event.description}
-                                    </p>
-                                </section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <Avatar
+                                    src={event.organizer?.profilePic}
+                                    alt={event.organizer?.name || "Organizer"}
+                                    size="sm"
+                                    className="border border-gray-100 dark:border-gray-800"
+                                />
+                                <p className="text-sm">
+                                    <span className="text-gray-500 dark:text-gray-400">Hosted by </span>
+                                    <span className="font-semibold text-gray-900 dark:text-white">{event.organizer?.name || "Unknown"}</span>
+                                </p>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                                        <FaUser className="mr-2 text-gray-500" /> Organizer
-                                    </h3>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar
-                                            src={event.organizer?.profilePic}
-                                            alt={event.organizer?.name || "Organizer"}
-                                            size="md"
-                                            className="ring-2 ring-white shadow-sm"
-                                        />
-                                        <div>
-                                            <p className="font-medium text-gray-900">{event.organizer?.name || "Unknown"}</p>
-                                            <p className="text-sm text-gray-500">@{event.organizer?.username || "user"}</p>
-                                        </div>
-                                    </div>
+                            {/* Info Box (Date, Location, Prize) */}
+                            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 text-sm text-gray-700 dark:text-gray-300 mb-8 pb-8 border-b border-gray-100 dark:border-gray-800/60">
+                                <div className="flex items-center gap-2">
+                                    <FaCalendarAlt className="text-gray-400 dark:text-gray-500" />
+                                    {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                 </div>
-
-                                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                                    <h3 className="font-semibold text-gray-900 mb-4">
-                                        Attendees <span className="ml-1 bg-gray-200 text-gray-700 py-0.5 px-2 rounded-full text-xs">{event.attendees?.length || 0}</span>
-                                    </h3>
-                                    <div className="flex -space-x-2 overflow-hidden py-1">
-                                        {/* We might not have full attendee details populated, just IDs. 
-                                            If we want to show avatars, we need to populate attendees in backend.
-                                            For now, just show a count or placeholders if we don't have data.
-                                        */}
-                                        {event.attendees?.slice(0, 5).map((att, i) => (
-                                            <div key={i} className="w-8 h-8 rounded-full bg-gray-300 ring-2 ring-white flex items-center justify-center text-xs font-medium text-gray-600">
-                                                {/* Placeholder since we might only have IDs */}
-                                                ?
-                                            </div>
-                                        ))}
-                                        {(event.attendees?.length || 0) > 5 && (
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 ring-2 ring-white flex items-center justify-center text-xs font-medium text-gray-500">
-                                                +{event.attendees.length - 5}
-                                            </div>
-                                        )}
-                                    </div>
+                                <div className="flex items-center gap-2">
+                                    <FaMapMarkerAlt className="text-gray-400 dark:text-gray-500" />
+                                    {event.location}
                                 </div>
+                                {event.prize && (
+                                    <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-500 font-medium">
+                                        <FaTrophy />
+                                        {event.prize}
+                                    </div>
+                                )}
                             </div>
+
                         </div>
 
-                        {/* Event Teams Section */}
-                        <TeamList eventId={event._id} />
+                        {/* Description Section */}
+                        <div className="pt-2">
+                            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">About this event</h3>
+                            <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
+                                {event.description}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -324,15 +280,9 @@ const EventDetails = () => {
             {showAutoTeamModal && (
                 <AutoTeamModal
                     eventId={id}
-                    user={currentUser} // Fix: use currentUser, userInfo was undefined in my read, verifying... 
-                    // Wait, previous file had 'user={userInfo}'. I need to check if userInfo is defined. 
-                    // In lines 1-15, only 'currentUser' is from useAuth. 
-                    // So 'userInfo' was likely a bug or from a variable I missed. 
-                    // I will use 'currentUser' which contains profile data usually.
+                    user={currentUser}
                     onClose={() => setShowAutoTeamModal(false)}
-                    onJoined={() => {
-                        setIsQueued(true);
-                    }}
+                    onJoined={() => setIsQueued(true)}
                 />
             )}
 

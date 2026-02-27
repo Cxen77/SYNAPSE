@@ -2,18 +2,19 @@ import mongoose from 'mongoose';
 
 // Default features configuration
 const DEFAULT_FEATURES = {
-    maintenance: { enabled: false },
-    chat: { enabled: true, rolesAllowed: ['user', 'moderator', 'admin'] },
-    textPost: { enabled: true, rolesAllowed: ['user', 'moderator', 'admin'] },
-    imagePost: { enabled: true, rolesAllowed: ['user', 'moderator', 'admin'] },
-    forum: { enabled: true, rolesAllowed: ['user', 'moderator', 'admin'] },
-    events: { enabled: true, rolesAllowed: ['user', 'moderator', 'admin'] },
-    autoJoin: { enabled: true, rolesAllowed: ['user', 'moderator', 'admin'] }
+    maintenance: { enabled: false, isKilled: false },
+    chat: { enabled: true, isKilled: false, rolesAllowed: ['user', 'moderator', 'admin', 'organizer'] },
+    textPost: { enabled: true, isKilled: false, rolesAllowed: ['user', 'moderator', 'admin', 'organizer'] },
+    imagePost: { enabled: true, isKilled: false, rolesAllowed: ['user', 'moderator', 'admin', 'organizer'] },
+    forum: { enabled: true, isKilled: false, rolesAllowed: ['user', 'moderator', 'admin', 'organizer'] },
+    events: { enabled: true, isKilled: false, rolesAllowed: ['user', 'moderator', 'admin', 'organizer'] },
+    autoJoin: { enabled: true, isKilled: false, rolesAllowed: ['user', 'moderator', 'admin', 'organizer'] }
 };
 
 const featureSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: true },
-    rolesAllowed: [{ type: String, enum: ['user', 'moderator', 'admin'] }]
+    isKilled: { type: Boolean, default: false },
+    rolesAllowed: [{ type: String, enum: ['user', 'moderator', 'admin', 'organizer'] }]
 }, { _id: false });
 
 const systemSettingsSchema = new mongoose.Schema({
@@ -85,7 +86,11 @@ systemSettingsSchema.methods.getFeaturesObject = function () {
     const obj = {};
     if (this.features) {
         for (const [key, value] of this.features.entries()) {
-            obj[key] = { enabled: value.enabled, rolesAllowed: value.rolesAllowed || [] };
+            obj[key] = {
+                enabled: value.enabled,
+                isKilled: value.isKilled || false,
+                rolesAllowed: value.rolesAllowed || []
+            };
         }
     }
     return obj;

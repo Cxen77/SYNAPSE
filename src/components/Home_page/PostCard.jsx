@@ -224,7 +224,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
       <div className="px-2 py-2 flex items-center justify-between gap-2">
         <button
           onClick={handleLike}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${liked ? 'text-blue-600 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50'
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${liked ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
         >
           {liked ? <HiThumbUp className="w-5 h-5" /> : <HiOutlineThumbUp className="w-5 h-5" />}
@@ -232,14 +232,14 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
         </button>
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all duration-200"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-200"
         >
           <HiChatAlt className="w-5 h-5" />
           Comment
         </button>
         <button
           onClick={handleShare}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all duration-200"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-200"
         >
           <HiShare className="w-5 h-5" />
           Share

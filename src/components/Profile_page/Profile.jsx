@@ -9,6 +9,7 @@ import AchievementsSection from './AchievementsSection';
 import SocialLinks from './SocialLinks';
 import ProfileScore from './ProfileScore';
 import EventsSection from './EventsSection';
+import TeamsSection from './TeamsSection';
 import PendingInvites from '../Team_page/PendingInvites';
 import SuggestedConnections from './SuggestedConnections';
 import api from '../../api/axios';
@@ -234,6 +235,7 @@ const Profile = () => {
         { id: 'overview', label: 'Overview' },
         { id: 'stats', label: 'Stats' },
         { id: 'projects', label: 'Projects' },
+        { id: 'teams', label: 'Teams' },
         { id: 'events', label: 'Events' },
         { id: 'posts', label: 'Posts' },
     ];
@@ -272,7 +274,7 @@ const Profile = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Main Content Area */}
-                    <div className="lg:col-span-8 space-y-6">
+                    <div className={`lg:col-span-8 space-y-6 ${activeTab === 'posts' ? 'max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar pr-2 pb-2' : ''}`}>
                         {activeTab === 'overview' && (
                             <>
                                 <AboutSection user={user} />
@@ -301,11 +303,18 @@ const Profile = () => {
                             />
                         )}
                         {activeTab === 'events' && <EventsSection />}
+                        {activeTab === 'teams' && (
+                            <TeamsSection
+                                user={user}
+                                isOwner={showOwnerControls}
+                                viewerId={currentUser?._id}
+                            />
+                        )}
                         {activeTab === 'posts' && <PostsSection isOwner={showOwnerControls} user={user} currentUser={currentUser} />}
                     </div>
 
                     {/* Desktop Sidebar - Always visible on large screens, hidden on mobile */}
-                    <div className="hidden lg:block lg:col-span-4 space-y-6">
+                    <div className="hidden lg:block lg:col-span-4 space-y-6 sticky top-24 self-start">
                         {showOwnerControls && (
                             <PendingInvites
                                 invites={invites}

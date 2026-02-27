@@ -18,3 +18,21 @@ export const requireAdmin = asyncHandler(async (req, res, next) => {
 
     next();
 });
+
+/**
+ * requireModerator middleware
+ * Allows 'admin' OR 'moderator'
+ */
+export const requireModerator = asyncHandler(async (req, res, next) => {
+    if (!req.user) {
+        res.status(401);
+        throw new Error('Unauthorized — no user found');
+    }
+
+    if (req.user.role !== 'admin' && req.user.role !== 'moderator') {
+        res.status(403);
+        throw new Error('Forbidden — moderator access required');
+    }
+
+    next();
+});

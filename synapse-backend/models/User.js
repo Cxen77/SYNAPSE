@@ -6,7 +6,12 @@ const userSchema = mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, select: false }, // Optional for Google users
-    role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
+    role: {
+        type: String,
+        enum: ['user', 'moderator', 'organizer', 'admin'],
+        default: 'user',
+        index: true
+    },
     isSuspended: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
@@ -31,8 +36,10 @@ const userSchema = mongoose.Schema({
     bannerPic: { type: String, default: '' },
     course: { type: String, default: '' },
     college: { type: String, default: '' },
-    collegeId: { type: mongoose.Schema.Types.ObjectId, ref: 'College' },
+    collegeId: { type: mongoose.Schema.Types.ObjectId, ref: 'College', index: true },
     year: { type: String, default: '' },
+    section: { type: String, default: '' },
+    className: { type: String, default: '' },
     location: { type: String, default: '' },
     pushToken: { type: String, default: '' }, // FCM Token
     bio: { type: String, default: '' },
@@ -82,6 +89,7 @@ const userSchema = mongoose.Schema({
 // Indexes for performance (FIXED — no duplicates)
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
+userSchema.index({ collegeId: 1, year: 1, section: 1 }); // Academic filter index for organizer exports
 userSchema.index({ name: 'text', username: 'text', email: 'text' });
 
 // Methods

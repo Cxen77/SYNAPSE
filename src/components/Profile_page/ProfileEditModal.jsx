@@ -16,6 +16,8 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
         course: user.course || '',
         college: user.college || '',
         year: user.year || '',
+        section: user.section || '',
+        className: user.className || '',
         location: user.location || '',
         skills: user.skills?.join(', ') || '',
         socials: {
@@ -81,7 +83,10 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                 bio: formData.bio,
                 course: formData.course,
                 college: formData.college,
+                collegeId: formData.collegeId,
                 year: formData.year,
+                section: formData.section,
+                className: formData.className,
                 location: formData.location,
                 skills: skillsArray,
                 socials: formData.socials
@@ -213,13 +218,13 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                                                 onClick={() => {
                                                     setFormData(prev => ({
                                                         ...prev,
-                                                        college: college.canonicalName,
+                                                        college: college.name,
                                                         collegeId: college._id
                                                     }));
                                                     setShowCollegeDropdown(false);
                                                 }}
                                             >
-                                                <div className="font-bold text-gray-900 text-sm">{college.canonicalName}</div>
+                                                <div className="font-bold text-gray-900 text-sm">{college.name}</div>
                                                 <div className="text-xs text-gray-500 mt-0.5">{college.city}, {college.state}</div>
                                             </div>
                                         ))}
@@ -254,14 +259,44 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                                    Year
+                                    Semester
                                 </label>
                                 <input
                                     type="text"
                                     name="year"
                                     value={formData.year}
                                     onChange={handleChange}
-                                    placeholder="e.g. 3rd Year"
+                                    placeholder="e.g. 6th"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Academic Fields */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                                    Section <span className="text-gray-400 font-normal normal-case">(optional)</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="section"
+                                    value={formData.section}
+                                    onChange={handleChange}
+                                    placeholder="e.g. A, B, C"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                                    Class Name <span className="text-gray-400 font-normal normal-case">(optional)</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="className"
+                                    value={formData.className}
+                                    onChange={handleChange}
+                                    placeholder="e.g. CSE-A, B.Tech-II"
                                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                                 />
                             </div>
@@ -403,7 +438,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                     onSuccess={(newCollege) => {
                         setFormData(prev => ({
                             ...prev,
-                            college: newCollege.canonicalName,
+                            college: newCollege.name,
                             collegeId: newCollege._id
                         }));
                         setCollegeResults([]);

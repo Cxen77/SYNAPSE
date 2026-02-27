@@ -9,7 +9,8 @@ import { SocketProvider } from './context/SocketContext';
 // Lazy Load Components
 const Home = lazy(() => import('./components/Home_page/Home.jsx'));
 const Teams = lazy(() => import('./components/Team_page/Teams.jsx'));
-const TeamDetails = lazy(() => import('./components/Team_page/TeamDetails.jsx')); // Added
+const TeamDetails = lazy(() => import('./components/Team_page/TeamDetails.jsx'));
+const ManageTeam = lazy(() => import('./components/Team_page/ManageTeam.jsx'));
 const Events = lazy(() => import('./components/Event_page/Events.jsx'));
 const EventDetails = lazy(() => import('./components/Event_page/EventDetails.jsx'));
 const Chat = lazy(() => import('./components/Chat_page/Chat.jsx'));
@@ -25,9 +26,17 @@ const ForumHome = lazy(() => import('./components/Forum_page/ForumHome.jsx'));
 const ForumDetails = lazy(() => import('./components/Forum_page/ForumDetails.jsx'));
 const ThreadPage = lazy(() => import('./components/Forum_page/ThreadPage.jsx'));
 const AdminDashboard = lazy(() => import('./components/Admin_page/AdminDashboard.jsx'));
+const ModeratorDashboard = lazy(() => import('./components/Moderator_page/ModeratorDashboard.jsx'));
+const OrganizerDashboard = lazy(() => import('./components/Organizer_page/OrganizerDashboard.jsx'));
+const Unauthorized = lazy(() => import('./components/Unauthorized.jsx'));
+
+// ... existing imports ...
+
+
 
 import Skeleton from './components/common/Skeleton';
 import InAppNotification from './components/common/InAppNotification';
+import FeatureGate from './components/common/FeatureGate';
 
 // Loading Fallback with Skeleton Layout
 const PageLoader = () => (
@@ -75,15 +84,7 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const AdminRoute = ({ children }) => {
-  const { currentUser } = useAuth();
-
-  if (currentUser?.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
+import RoleRoute from './components/RoleRoute';
 
 import usePushNotification from './hooks/usePushNotification';
 import useNotifications from './hooks/useNotifications';
@@ -198,22 +199,61 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected Routes */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-            <Route path="/teams/:id" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} /> {/* Added */}
-            <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-            <Route path="/events/:id" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
-            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/teams/:id" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
+            <Route path="/teams/:id/manage" element={<ProtectedRoute><ManageTeam /></ProtectedRoute>} />
+
+            {/* Feature Gated Routes */}
+            <Route path="/events" element={<ProtectedRoute><FeatureGate featureKey="events" fallback={<Navigate to="/" replace />}><Events /></FeatureGate></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><FeatureGate featureKey="events" fallback={<Navigate to="/" replace />}><EventDetails /></FeatureGate></ProtectedRoute>} />
+
+            <Route path="/chat" element={<ProtectedRoute><FeatureGate featureKey="chat" fallback={<Navigate to="/" replace />}><Chat /></FeatureGate></ProtectedRoute>} />
+            <Route path="/chat/:id" element={<ProtectedRoute><FeatureGate featureKey="chat" fallback={<Navigate to="/" replace />}><Chat /></FeatureGate></ProtectedRoute>} />
+
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-            {/* Admin Route */}
-            <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminDashboard /></AdminRoute></ProtectedRoute>} />
+            {/* Admin Route - Strict List */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Forum Routes */}
-            <Route path="/forums" element={<ProtectedRoute><ForumLayout /></ProtectedRoute>}>
+            {/* Moderator Route - Strict List */}
+            <Route
+              path="/moderator/*"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['moderator']}>
+                    <ModeratorDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Organizer Route - Strict List */}
+            <Route
+              path="/organizer/*"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['organizer']}>
+                    <OrganizerDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Forum Routes (Feature Gated) */}
+            <Route path="/forums" element={<ProtectedRoute><FeatureGate featureKey="forum" fallback={<Navigate to="/" replace />}><ForumLayout /></FeatureGate></ProtectedRoute>}>
               <Route index element={<ForumHome />} />
               <Route path="post/:id" element={<ThreadPage />} />
               <Route path=":id" element={<ForumDetails />} />

@@ -44,3 +44,12 @@ export const refreshLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+
+// Role Assignment Limiter - Prevent mass role changes (Security)
+export const roleLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10,
+    message: { message: 'To many role assignment attempts, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Moon, Sun, Monitor, Type, Calendar } from 'lucide-react';
 import useSettings from '../../../hooks/useSettings';
+import { useTheme } from '../../../context/ThemeContext';
 
 const RadioCard = ({ name, value, label, icon: Icon, checked, onChange }) => (
     <label className={`flex flex-col items-center justify-center p-4 rounded-2xl border cursor-pointer hover:bg-gray-50 transition-all aspect-square ${checked ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md transform scale-[1.02]' : 'border-gray-200 text-gray-600 bg-white'}`}>
@@ -32,11 +33,15 @@ RadioCard.propTypes = {
 
 const InterfaceSettings = ({ user, setUser }) => {
     const { updateSettings, loading } = useSettings(user, setUser);
+    const { theme: activeTheme, setTheme } = useTheme();
     const [preferences, setPreferences] = useState({
-        theme: user.settings?.interface?.theme || 'system',
         language: user.settings?.interface?.language || 'en',
         eventType: user.settings?.interface?.eventType || 'all'
     });
+
+    const handleThemeChange = (value) => {
+        setTheme(value); // Applies immediately via ThemeContext
+    };
 
     const handleChange = (key, value) => {
         setPreferences(prev => ({ ...prev, [key]: value }));
@@ -44,7 +49,7 @@ const InterfaceSettings = ({ user, setUser }) => {
 
     const handleSave = () => {
         updateSettings('/users/profile', {
-            settings: { interface: preferences }
+            settings: { interface: { ...preferences, theme: activeTheme } }
         }, "Interface preferences updated!");
     };
 
@@ -58,24 +63,24 @@ const InterfaceSettings = ({ user, setUser }) => {
                         value="light"
                         label="Light"
                         icon={Sun}
-                        checked={preferences.theme === 'light'}
-                        onChange={(e) => handleChange('theme', e.target.value)}
+                        checked={activeTheme === 'light'}
+                        onChange={(e) => handleThemeChange(e.target.value)}
                     />
                     <RadioCard
                         name="theme"
                         value="dark"
                         label="Dark"
                         icon={Moon}
-                        checked={preferences.theme === 'dark'}
-                        onChange={(e) => handleChange('theme', e.target.value)}
+                        checked={activeTheme === 'dark'}
+                        onChange={(e) => handleThemeChange(e.target.value)}
                     />
                     <RadioCard
                         name="theme"
                         value="system"
                         label="System"
                         icon={Monitor}
-                        checked={preferences.theme === 'system'}
-                        onChange={(e) => handleChange('theme', e.target.value)}
+                        checked={activeTheme === 'system'}
+                        onChange={(e) => handleThemeChange(e.target.value)}
                     />
                 </div>
             </div>

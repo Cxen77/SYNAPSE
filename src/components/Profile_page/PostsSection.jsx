@@ -50,38 +50,35 @@ const PostsSection = ({ isOwner, user, currentUser }) => {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Create Post Card - Only visible to owner */}
-            {isOwner && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <CreatePost user={currentUser} onPostCreated={handlePostCreated} />
-                </div>
-            )}
+        <div className="h-[490px] flex flex-col space-y-6">
 
-            {/* Posts Feed */}
-            {posts.length === 0 ? (
-                <div className="text-center py-8 bg-white rounded-xl border border-gray-200 text-gray-500">
-                    No posts yet.
-                </div>
-            ) : (
-                posts.map((post) => (
-                    <PostCard
-                        key={post._id}
-                        post={post}
-                        currentUser={currentUser}
-                        onDelete={handleDeletePost}
-                    />
-                ))
-            )}
+            {/* Scrollable Feed Container */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-2 pb-2">
+                {/* Posts Feed */}
+                {posts.length === 0 ? (
+                    <div className="text-center py-8 bg-white rounded-xl border border-gray-200 text-gray-500">
+                        No posts yet.
+                    </div>
+                ) : (
+                    posts.map((post) => (
+                        <PostCard
+                            key={post._id}
+                            post={post}
+                            currentUser={currentUser}
+                            onDelete={handleDeletePost}
+                        />
+                    ))
+                )}
 
-            {/* Load More */}
-            {posts.length > 0 && (
-                <div className="text-center py-4">
-                    <button className="px-6 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition font-semibold">
-                        Load More Posts
-                    </button>
-                </div>
-            )}
+                {/* Load More */}
+                {posts.length > 0 && (
+                    <div className="text-center py-4">
+                        <button className="px-6 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition font-semibold">
+                            Load More Posts
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

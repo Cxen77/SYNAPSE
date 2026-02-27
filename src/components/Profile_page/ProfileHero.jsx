@@ -217,21 +217,20 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         </div>
 
                         {/* Stats Bar (Unified) */}
-                        {/* Stats Bar (Instagram Style) */}
-                        <div className="flex items-center justify-around sm:justify-start sm:gap-12 py-4 border-t border-b border-gray-100 md:border-0 md:bg-gray-50 md:p-4 md:rounded-2xl">
+                        <div className="flex items-center justify-around sm:justify-start sm:gap-12 py-4 border-t border-b border-gray-100 md:border-0 md:py-4">
                             {[
-                                { label: 'Followers', value: user.followers?.length || 0, icon: Users, color: 'text-blue-600' },
-                                { label: 'Following', value: user.following?.length || 0, icon: UserPlus, color: 'text-green-600' },
-                                { label: 'Teams', value: user.teams?.length || 0, icon: Briefcase, color: 'text-purple-600', action: () => scrollToSection('teams-section') },
-                                { label: 'Projects', value: user.projects?.length || 0, icon: FolderGit, color: 'text-orange-600', action: () => scrollToSection('projects-section') }
+                                { label: 'Followers', value: user.followers?.length || 0, icon: Users },
+                                { label: 'Following', value: user.following?.length || 0, icon: UserPlus },
+                                { label: 'Teams', value: user.teams?.length || 0, icon: Briefcase, action: () => scrollToSection('teams-section') },
+                                { label: 'Projects', value: user.projects?.length || 0, icon: FolderGit, action: () => scrollToSection('projects-section') }
                             ].map((stat, i) => (
                                 <div
                                     key={i}
                                     onClick={stat.action}
-                                    className={`flex flex-col items-center md:flex-row md:gap-3 transition-all ${stat.action ? 'cursor-pointer hover:opacity-80' : ''}`}
+                                    className={`flex flex-col items-center md:flex-row md:gap-3 transition-all ${stat.action ? 'cursor-pointer hover:opacity-75 relative group' : ''}`}
                                 >
-                                    <div className={`hidden md:block p-2 bg-white rounded-lg shadow-sm ${stat.color}`}>
-                                        <stat.icon className="w-5 h-5" />
+                                    <div className="hidden md:flex items-center justify-center p-1 text-gray-500 transition-colors">
+                                        <stat.icon className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
                                     </div>
                                     <div className="text-center md:text-left">
                                         <div className="text-lg sm:text-xl font-bold text-gray-900 leading-none">{stat.value}</div>

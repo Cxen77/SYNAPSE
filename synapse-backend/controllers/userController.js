@@ -22,7 +22,10 @@ const formatUserResponse = (user) => {
         bannerPic: user.bannerPic || undefined,
         course: user.course,
         college: user.college,
+        collegeId: user.collegeId,
         year: user.year,
+        section: user.section,
+        className: user.className,
         location: user.location,
         bio: user.bio,
         skills: user.skills,
@@ -74,7 +77,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 
     // SECURITY: Strict field whitelist — block role, isSuspended, email, firebaseUid, etc.
-    const ALLOWED_FIELDS = ['name', 'course', 'college', 'year', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password'];
+    const ALLOWED_FIELDS = ['name', 'course', 'college', 'collegeId', 'year', 'section', 'className', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password'];
     const updates = Object.keys(req.body);
     const blocked = updates.filter(f => !ALLOWED_FIELDS.includes(f));
     if (blocked.length > 0) {
@@ -84,7 +87,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     if (req.body.name) user.name = req.body.name;
     if (req.body.course) user.course = req.body.course;
     if (req.body.college) user.college = req.body.college;
+    if (req.body.collegeId) user.collegeId = req.body.collegeId;
     if (req.body.year) user.year = req.body.year;
+    if (req.body.section) user.section = req.body.section;
+    if (req.body.className !== undefined) user.className = req.body.className;
     if (req.body.location) user.location = req.body.location;
     if (req.body.bio) user.bio = req.body.bio;
     if (req.body.skills) user.skills = req.body.skills;

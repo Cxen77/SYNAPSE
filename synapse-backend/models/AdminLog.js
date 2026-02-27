@@ -16,7 +16,7 @@ const adminLogSchema = new mongoose.Schema({
     },
     targetType: {
         type: String,
-        enum: ['User', 'Event', 'Post', 'ForumPost', 'SystemSettings'],
+        enum: ['User', 'Event', 'Post', 'ForumPost', 'SystemSettings', 'College'],
         required: true
     },
     details: {

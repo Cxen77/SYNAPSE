@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { FiGrid, FiUsers, FiCalendar, FiFileText, FiMessageCircle, FiToggleRight, FiClock, FiArrowLeft, FiShield } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import OverviewTab from './OverviewTab';
 import UsersTab from './UsersTab';
 import EventsTab from './EventsTab';
 import PostsTab from './PostsTab';
 import ForumsTab from './ForumsTab';
 import SettingsTab from './SettingsTab';
+
 import LogsTab from './LogsTab';
+import CollegesTab from './CollegesTab';
 import './admin.css';
 
 const tabs = [
@@ -18,11 +21,13 @@ const tabs = [
     { id: 'forums', label: 'Forums', icon: FiMessageCircle },
     { id: 'settings', label: 'Flags', icon: FiToggleRight },
     { id: 'logs', label: 'Logs', icon: FiClock },
+    { id: 'colleges', label: 'Colleges', icon: FiUsers },
 ];
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const navigate = useNavigate();
+    const { currentUser } = useAuth(); // Get current user for role check
 
     // Set body background to match dark theme and prevent white flash on scroll
     useEffect(() => {
@@ -35,7 +40,22 @@ export default function AdminDashboard() {
         };
     }, []);
 
+    // Filter tabs based on role
+    const visibleTabs = tabs.filter(tab => {
+        if (currentUser?.role === 'admin') return true;
+        // Moderators: Show Overview, Events, Posts, Forums. Hide others.
+        if (currentUser?.role === 'moderator') {
+            return ['overview', 'events', 'posts', 'forums'].includes(tab.id);
+        }
+        return false;
+    });
+
     const renderTab = () => {
+        // Security fallback: don't render restricted tabs even if activeTab is set
+        if (currentUser?.role !== 'admin' && ['users', 'settings', 'logs', 'colleges'].includes(activeTab)) {
+            return <div className="text-white">Unauthorized</div>;
+        }
+
         switch (activeTab) {
             case 'overview': return <OverviewTab />;
             case 'users': return <UsersTab />;
@@ -44,6 +64,7 @@ export default function AdminDashboard() {
             case 'forums': return <ForumsTab />;
             case 'settings': return <SettingsTab />;
             case 'logs': return <LogsTab />;
+            case 'colleges': return <CollegesTab />;
             default: return <OverviewTab />;
         }
     };
@@ -74,7 +95,7 @@ export default function AdminDashboard() {
 
                     {/* Desktop Tabs */}
                     <nav className="hidden md:flex items-center gap-0.5 bg-white/[0.04] rounded-xl p-1 border border-white/[0.04]">
-                        {tabs.map(tab => {
+                        {visibleTabs.map(tab => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
                             return (
@@ -97,7 +118,7 @@ export default function AdminDashboard() {
 
             {/* Mobile Tab Bar */}
             <div className="md:hidden flex admin-tabs-scroll overflow-x-auto gap-1 p-2 bg-[#0f172a] border-b border-white/5">
-                {tabs.map(tab => {
+                {visibleTabs.map(tab => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
                     return (

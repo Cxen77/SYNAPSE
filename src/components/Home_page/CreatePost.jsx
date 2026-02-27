@@ -162,7 +162,7 @@ export default function CreatePost({ user, onPostCreated }) {
                         <button
                             onClick={submitPost}
                             disabled={(!text.trim() && !imageFile) || isSubmitting}
-                            className="bg-blue-600 text-white px-5 py-1.5 md:px-6 md:py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transform active:scale-95"
+                            className="bg-[#3B82F6] text-white px-5 py-1.5 md:px-6 md:py-2 rounded-full text-sm font-bold hover:opacity-90 transition-all disabled:cursor-not-allowed shadow-sm hover:shadow-md transform active:scale-95"
                         >
                             {isSubmitting ? 'Posting...' : 'Post'}
                         </button>

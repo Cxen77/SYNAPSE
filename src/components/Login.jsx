@@ -31,9 +31,16 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password, captchaToken);
+      const data = await login(email, password, captchaToken);
       toast.success("Logged in successfully!");
-      navigate("/");
+
+      // Strict role-based redirect
+      const role = data?.role || 'user';
+      if (role === 'admin') navigate("/admin");
+      else if (role === 'moderator') navigate("/moderator");
+      else if (role === 'organizer') navigate("/organizer");
+      else navigate("/");
+
     } catch (err) {
       if (err.response?.status === 403) {
         setError("Email not verified. Please verify your email.");

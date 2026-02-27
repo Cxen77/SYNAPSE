@@ -14,9 +14,6 @@ function MemberCard({ member }) {
         <h3 className="font-bold text-gray-900 truncate">{member.name}</h3>
         <p className="text-sm text-gray-600 truncate">{member.skill}</p>
       </div>
-      <button className="text-xs text-gray-400 hover:text-red-600 transition font-medium px-2 py-1 hover:bg-red-50 rounded">
-        Remove
-      </button>
     </div>
   );
 }

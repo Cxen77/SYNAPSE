@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiUsers, FiSearch, FiShield, FiSlash, FiCheck, FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 import api from '../../api/axios';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 const roleColors = {
     admin: 'bg-emerald-500/20 text-emerald-400',
@@ -9,6 +11,7 @@ const roleColors = {
 };
 
 export default function UsersTab() {
+    const { currentUser } = useAuth();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -24,6 +27,7 @@ export default function UsersTab() {
             setTotalPages(data.pages);
         } catch (err) {
             console.error('Failed to load users:', err);
+            toast.error('Failed to load users');
         } finally {
             setLoading(false);
         }
@@ -35,9 +39,11 @@ export default function UsersTab() {
         setActionLoading(id);
         try {
             await api.patch(`/admin/users/${id}/role`, { role });
+            toast.success(`Role updated to ${role}`);
             fetchUsers();
         } catch (err) {
             console.error(err);
+            toast.error(err.response?.data?.message || 'Failed to update role');
         } finally {
             setActionLoading(null);
         }
@@ -122,21 +128,46 @@ export default function UsersTab() {
                                             <div>
                                                 <p className="font-medium text-white text-sm">{user.name}</p>
                                                 <p className="text-xs text-slate-500">@{user.username}</p>
+                                                {user.college && (
+                                                    <p className="text-[10px] text-emerald-400/70 mt-0.5 truncate max-w-[150px]" title={user.college}>
+                                                        {user.college}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
                                     <td className="text-slate-400 text-xs">{user.email}</td>
                                     <td className="text-center">
-                                        <select
-                                            value={user.role}
-                                            onChange={e => handleRoleChange(user._id, e.target.value)}
-                                            disabled={actionLoading === user._id}
-                                            className="bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500/40 cursor-pointer"
-                                        >
-                                            <option value="user" className="bg-slate-800">User</option>
-                                            <option value="moderator" className="bg-slate-800">Moderator</option>
-                                            <option value="admin" className="bg-slate-800">Admin</option>
-                                        </select>
+                                        {currentUser?.role === 'admin' ? (
+                                            <select
+                                                value={user.role}
+                                                onChange={e => handleRoleChange(user._id, e.target.value)}
+                                                disabled={actionLoading === user._id || (user._id === currentUser._id && user.role === 'admin')}
+                                                className={`w-full min-w-[140px] bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500/40 cursor-pointer ${user.role === 'admin' ? 'text-emerald-400 font-bold' :
+                                                    user.role === 'moderator' ? 'text-amber-400' :
+                                                        user.role === 'organizer' ? 'text-purple-400' : 'text-slate-400'
+                                                    }`}
+                                            >
+                                                <option value="user" className="bg-slate-800 text-slate-400">User</option>
+                                                <option value="moderator" className="bg-slate-800 text-amber-400">Moderator</option>
+                                                <option
+                                                    value="organizer"
+                                                    className="bg-slate-800 text-purple-400"
+                                                    disabled={!user.collegeId}
+                                                    title={!user.collegeId ? "User must have a linked college (CollegeID) to be an Organizer" : ""}
+                                                >
+                                                    Organizer {!user.collegeId ? '(No College Linked)' : ''}
+                                                </option>
+                                                <option value="admin" className="bg-slate-800 text-emerald-400">Admin</option>
+                                            </select>
+                                        ) : (
+                                            <span className={`text-xs capitalize font-medium ${user.role === 'admin' ? 'text-emerald-400' :
+                                                user.role === 'moderator' ? 'text-amber-400' :
+                                                    user.role === 'organizer' ? 'text-purple-400' : 'text-slate-400'
+                                                }`}>
+                                                {user.role}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="text-center">
                                         <span className={`admin-badge ${user.isSuspended ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
@@ -147,20 +178,23 @@ export default function UsersTab() {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => handleSuspend(user._id, !user.isSuspended)}
-                                                disabled={actionLoading === user._id}
-                                                className={`admin-btn ${user.isSuspended ? 'admin-btn-emerald' : 'admin-btn-amber'}`}
-                                                title={user.isSuspended ? 'Unsuspend' : 'Suspend'}
+                                                disabled={actionLoading === user._id || user.role === 'admin'}
+                                                className={`admin-btn ${user.isSuspended ? 'admin-btn-emerald' : 'admin-btn-amber'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                                                title={user.isSuspended ? 'Unsuspend' : 'Suspend (Cannot suspend admins)'}
                                             >
                                                 {user.isSuspended ? <FiCheck className="w-3.5 h-3.5" /> : <FiSlash className="w-3.5 h-3.5" />}
                                             </button>
-                                            <button
-                                                onClick={() => handleDelete(user._id)}
-                                                disabled={actionLoading === user._id}
-                                                className="admin-btn admin-btn-red"
-                                                title="Soft Delete"
-                                            >
-                                                <FiTrash2 className="w-3.5 h-3.5" />
-                                            </button>
+
+                                            {currentUser?.role === 'admin' && (
+                                                <button
+                                                    onClick={() => handleDelete(user._id)}
+                                                    disabled={actionLoading === user._id || user.role === 'admin'}
+                                                    className="admin-btn admin-btn-red disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    title="Soft Delete (Cannot delete admins)"
+                                                >
+                                                    <FiTrash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

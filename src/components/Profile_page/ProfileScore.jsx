@@ -66,9 +66,9 @@ const ProfileScore = ({ user }) => {
                             <FaCircle className="text-orange-500 w-3 h-3" />
                             Action Items
                         </h4>
-                        <div className="space-y-3">
+                        <div className="flex flex-col gap-3 min-h-[104px] max-h-[104px] overflow-y-auto custom-scrollbar pr-1">
                             {pending.map((item, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
+                                <div key={index} className="flex-1 flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 group hover:border-blue-200 transition-colors">
                                     <span className="text-sm font-medium text-gray-700">{item}</span>
                                     <button className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                         Add
@@ -80,8 +80,8 @@ const ProfileScore = ({ user }) => {
                 )}
 
                 {/* Call to Action */}
-                <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                    <p className="text-sm text-blue-900 font-medium leading-relaxed">
+                <div className="mt-2 p-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 flex items-center justify-center">
+                    <p className="text-xs text-blue-900 font-medium leading-relaxed text-center">
                         Complete your profile to increase visibility by <span className="font-bold">3x</span>!
                     </p>
                 </div>

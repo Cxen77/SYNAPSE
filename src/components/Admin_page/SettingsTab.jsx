@@ -12,7 +12,7 @@ const featureMeta = {
     autoJoin: { label: 'Auto-Join Teams', desc: 'Auto team-matching for events', color: 'amber', icon: '🤝', hasRoles: true },
 };
 
-const ALL_ROLES = ['user', 'moderator', 'admin'];
+const ALL_ROLES = ['user', 'moderator', 'organizer', 'admin'];
 
 export default function SettingsTab() {
     const [features, setFeatures] = useState({});
@@ -43,6 +43,21 @@ export default function SettingsTab() {
             setFeatures(data.features);
         } catch (err) {
             console.error('Toggle failed:', err);
+        } finally {
+            setSaving(null);
+        }
+    };
+
+    const toggleKilled = async (name) => {
+        setSaving(name);
+        try {
+            const current = features[name];
+            const { data } = await api.patch('/admin/settings', {
+                features: { [name]: { isKilled: !current.isKilled } }
+            });
+            setFeatures(data.features);
+        } catch (err) {
+            console.error('Kill switch toggle failed:', err);
         } finally {
             setSaving(null);
         }
@@ -93,16 +108,18 @@ export default function SettingsTab() {
                     if (!feature) return null;
 
                     const isOn = feature.enabled;
+                    const isKilled = feature.isKilled;
                     const isMaint = name === 'maintenance';
 
                     return (
                         <div
                             key={name}
                             className={`admin-glass rounded-2xl p-5 transition-all duration-300
-                                ${isMaint && isOn ? 'border-red-500/30 bg-red-500/5' : ''}`}
+                                ${isMaint && isOn ? 'border-red-500/30 bg-red-500/5' : ''}
+                                ${isKilled ? 'border-red-500/50 bg-red-500/10 opacity-75' : ''}`}
                         >
                             {/* Header row: label + toggle */}
-                            <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className="text-base">{meta.icon}</span>
@@ -118,23 +135,59 @@ export default function SettingsTab() {
                                         <FiInfo className="w-3 h-3 flex-shrink-0" />
                                         {meta.desc}
                                     </p>
+                                    {!isOn && !isKilled && (
+                                        <p className="text-xs text-amber-400/80 mt-1 font-semibold flex items-center gap-1">
+                                            <FiAlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                            Disabled: Feature is visibly disabled but not completely erased.
+                                        </p>
+                                    )}
+                                    {isKilled && (
+                                        <p className="text-xs text-red-500 mt-1 font-bold flex items-center gap-1 bg-red-500/10 p-1.5 rounded-lg border border-red-500/20 w-fit">
+                                            <FiAlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                            KILL SWITCH ACTIVE: UI and APIs are globally removed.
+                                        </p>
+                                    )}
                                 </div>
 
-                                <button
-                                    onClick={() => toggleEnabled(name)}
-                                    disabled={saving === name}
-                                    className={`flex-shrink-0 transition-all duration-200 ${saving === name ? 'opacity-50' : 'hover:scale-110'}`}
-                                >
-                                    {isOn ? (
-                                        <FiToggleRight className={`w-8 h-8 ${isMaint ? 'text-red-400' : 'text-emerald-400'}`} />
-                                    ) : (
-                                        <FiToggleLeft className="w-8 h-8 text-slate-500" />
+                                <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                                    {/* Enable Toggle */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Status</span>
+                                        <button
+                                            onClick={() => toggleEnabled(name)}
+                                            disabled={saving === name}
+                                            className={`transition-all duration-200 ${saving === name ? 'opacity-50' : 'hover:scale-110'}`}
+                                        >
+                                            {isOn ? (
+                                                <FiToggleRight className={`w-8 h-8 ${isMaint ? 'text-red-400' : 'text-emerald-400'}`} />
+                                            ) : (
+                                                <FiToggleLeft className="w-8 h-8 text-slate-500" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Kill Switch Toggle */}
+                                    {!isMaint && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-red-400 uppercase tracking-wide">Kill Switch</span>
+                                            <button
+                                                onClick={() => toggleKilled(name)}
+                                                disabled={saving === name}
+                                                className={`transition-all duration-200 ${saving === name ? 'opacity-50' : 'hover:scale-110'}`}
+                                            >
+                                                {isKilled ? (
+                                                    <FiToggleRight className="w-8 h-8 text-red-500" />
+                                                ) : (
+                                                    <FiToggleLeft className="w-8 h-8 text-slate-500" />
+                                                )}
+                                            </button>
+                                        </div>
                                     )}
-                                </button>
+                                </div>
                             </div>
 
-                            {/* Role checkboxes (only for features that support it, and only when enabled) */}
-                            {meta.hasRoles && isOn && (
+                            {/* Role checkboxes (only for features that support it, and only when enabled AND NOT KILLED) */}
+                            {meta.hasRoles && isOn && !isKilled && (
                                 <div className="mt-3 pt-3 border-t border-white/5">
                                     <div className="flex items-center gap-2 mb-2">
                                         <FiShield className="w-3 h-3 text-slate-400" />

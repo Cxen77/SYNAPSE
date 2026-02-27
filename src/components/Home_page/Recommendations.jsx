@@ -1,129 +1,259 @@
 import React, { useState, useEffect } from "react";
 import { HiUserAdd } from "react-icons/hi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Users, CalendarDays, MapPin, Briefcase, CheckCircle } from "lucide-react";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
+import OpenTeamCard from "../Team_page/OpenTeamCard";
 
-const feeds = [
-  { name: "Adobe Illustrator", type: "Graphic Design", followers: "242k followers" },
-  { name: "Figma", type: "Design Services", followers: "102k followers" },
-  { name: "Webflow", type: "Software Development", followers: "20k followers" },
-];
-
-export default function Recommendations() {
-  const [recommendations, setRecommendations] = useState([]);
+// ──────────────────────────────────────────────
+// Trending Events Card (unchanged)
+// ──────────────────────────────────────────────
+function TrendingEvents() {
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
-      try {
-        const { data } = await api.get('/users/recommended');
-        setRecommendations(data);
-      } catch (error) {
-        console.error("Failed to fetch recommendations", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    api.get("/events")
+      .then(({ data }) => {
+        const evList = Array.isArray(data) ? data : data.events ?? [];
+        setEvents(evList.slice(0, 3));
+      })
+      .catch(() => setEvents([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-    fetchRecommendations();
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return {
+      month: d.toLocaleString("en-US", { month: "short" }).toUpperCase(),
+      day: d.getDate(),
+    };
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-gray-900 flex items-center gap-2">
+          <CalendarDays size={16} className="text-blue-600" />
+          Trending Events
+        </h3>
+        <Link to="/events" className="text-xs text-blue-600 font-semibold hover:underline">
+          See all
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex gap-3 animate-pulse">
+              <div className="w-12 h-12 rounded-xl bg-gray-200 flex-shrink-0" />
+              <div className="flex-1 space-y-2 pt-1">
+                <div className="h-3 bg-gray-200 rounded w-3/4" />
+                <div className="h-2 bg-gray-200 rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : events.length === 0 ? (
+        <p className="text-sm text-gray-500 text-center py-4">No upcoming events.</p>
+      ) : (
+        <div className="space-y-3">
+          {events.map((ev) => {
+            const { month, day } = formatDate(ev.date || ev.startDate || ev.createdAt);
+            const spotsLeft = ev.maxParticipants ? ev.maxParticipants - (ev.participants?.length ?? 0) : null;
+            const isFull = spotsLeft !== null && spotsLeft <= 0;
+            return (
+              <div key={ev._id} className="flex items-start gap-3 group cursor-pointer" onClick={() => navigate(`/events`)}>
+                <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center text-center ${isFull ? 'bg-gray-100' : 'bg-orange-50'}`}>
+                  <span className={`text-[9px] font-bold uppercase tracking-wide ${isFull ? 'text-gray-400' : 'text-orange-500'}`}>{month}</span>
+                  <span className={`text-lg font-bold leading-tight ${isFull ? 'text-gray-500' : 'text-orange-600'}`}>{day}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{ev.title}</p>
+                  {ev.location && (
+                    <p className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                      <MapPin size={10} /> {ev.location}
+                    </p>
+                  )}
+                  {spotsLeft !== null && (
+                    <p className={`text-xs font-semibold mt-1 ${isFull ? 'text-gray-400' : 'text-green-600'}`}>
+                      {isFull ? "Full" : `${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left`}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigate("/events"); }}
+                  className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition ${isFull
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    }`}
+                >
+                  {isFull ? "Full" : "Join"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// Main Recommendations Component
+// ──────────────────────────────────────────────
+export default function Recommendations() {
+  const [tab, setTab] = useState("people");
+  const [people, setPeople] = useState([]);
+  const [openTeams, setOpenTeams] = useState([]);
+  const [loadingPeople, setLoadingPeople] = useState(true);
+  const [loadingTeams, setLoadingTeams] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get("/users/recommended")
+      .then(({ data }) => setPeople(data))
+      .catch(() => setPeople([]))
+      .finally(() => setLoadingPeople(false));
+
+    // Use the new dedicated /teams/open endpoint with a strict limit for the sidebar
+    api.get("/teams/open?limit=5")
+      .then(({ data }) => setOpenTeams(Array.isArray(data.teams) ? data.teams : []))
+      .catch(() => setOpenTeams([]))
+      .finally(() => setLoadingTeams(false));
   }, []);
 
   return (
-    <aside className="bg-white rounded-xl shadow-sm sticky top-[72px] self-start border border-gray-200 max-h-[calc(100vh-72px)] flex flex-col overflow-hidden">
-      {/* Fixed Header */}
-      <div className="p-5 border-b border-gray-200 flex-shrink-0 bg-gradient-to-r from-blue-50 to-white">
-        <h3 className="font-bold text-gray-900">Recommendations</h3>
-        {/* Tabs */}
-        <div className="flex gap-4 text-sm mt-3">
-          <button className="pb-2 text-blue-600 border-b-2 border-blue-600 font-semibold -mb-[1px]">People</button>
-          <button className="pb-2 text-gray-500 hover:text-gray-800 font-medium transition">Groups</button>
-          <button className="pb-2 text-gray-500 hover:text-gray-800 font-medium transition">Pages</button>
-        </div>
-      </div>
+    <aside className="space-y-4 sticky top-[72px] self-start">
+      {/* ── Trending Events ── */}
+      <TrendingEvents />
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-        {/* People you might know */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">People you might know</p>
-            <button className="text-xs text-blue-600 hover:underline font-semibold">See all</button>
+      {/* ── Recommendations ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Header + Tabs */}
+        <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
+          <h3 className="font-bold text-gray-900 mb-3">Recommendations</h3>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setTab("people")}
+              className={`flex-1 text-sm py-1.5 rounded-md font-semibold transition-all ${tab === "people"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+                }`}
+            >
+              People
+            </button>
+            <button
+              onClick={() => setTab("teams")}
+              className={`flex-1 text-sm py-1.5 rounded-md font-semibold transition-all flex items-center justify-center gap-1.5 ${tab === "teams"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+                }`}
+            >
+              <Users size={14} />
+              Open Teams
+              {openTeams.length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+                  {openTeams.length}
+                </span>
+              )}
+            </button>
           </div>
+        </div>
 
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3 animate-pulse">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-2 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {recommendations.map((p) => (
-                <div key={p._id} className="flex items-center justify-between gap-3 group">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Link to={`/profile/${p.username}`}>
-                      <Avatar
-                        src={p.profilePic}
-                        alt={p.name}
-                        size="custom"
-                        className="w-10 h-10 ring-2 ring-gray-50 flex-shrink-0 hover:opacity-90 transition"
-                      />
-                    </Link>
-                    <div className="min-w-0 flex-1">
-                      <Link to={`/profile/${p.username}`}>
-                        <div className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{p.name}</div>
-                      </Link>
-                      <div className="text-xs text-gray-500 truncate">
-                        {p.skills && p.skills.length > 0 ? p.skills[0].name || p.skills[0] : 'Student'}
+        {/* Content */}
+        <div className="p-5 space-y-4">
+          {/* ── People Tab ── */}
+          {tab === "people" && (
+            <>
+              {loadingPeople ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 animate-pulse">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-gray-200 rounded w-3/4" />
+                        <div className="h-2 bg-gray-200 rounded w-1/2" />
                       </div>
-                      <div className="text-[10px] text-gray-400 truncate mt-0.5">Suggested for you</div>
                     </div>
-                  </div>
-                  <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition flex-shrink-0">
-                    <HiUserAdd size={16} />
+                  ))}
+                </div>
+              ) : people.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-4">No recommendations yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {people.map((p) => (
+                    <div key={p._id} className="flex items-center justify-between gap-3 group">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Link to={`/profile/${p.username}`}>
+                          <Avatar
+                            src={p.profilePic}
+                            alt={p.name}
+                            size="custom"
+                            className="w-10 h-10 ring-2 ring-gray-50 flex-shrink-0 hover:opacity-90 transition"
+                          />
+                        </Link>
+                        <div className="min-w-0 flex-1">
+                          <Link to={`/profile/${p.username}`}>
+                            <div className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{p.name}</div>
+                          </Link>
+                          <div className="text-xs text-gray-500 truncate">
+                            {p.skills && p.skills.length > 0 ? p.skills[0].name || p.skills[0] : "Student"}
+                          </div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">Suggested for you</div>
+                        </div>
+                      </div>
+                      <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition flex-shrink-0">
+                        <HiUserAdd size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Open Teams Tab ── */}
+          {tab === "teams" && (
+            <>
+              {loadingTeams ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="border border-gray-100 rounded-xl p-3 animate-pulse">
+                      <div className="h-3 bg-gray-200 rounded w-3/4 mb-2" />
+                      <div className="h-2 bg-gray-200 rounded w-1/2 mb-3" />
+                      <div className="h-7 bg-gray-200 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              ) : openTeams.length === 0 ? (
+                <div className="text-center py-6">
+                  <Users size={32} className="text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No open teams right now.</p>
+                  <button
+                    onClick={() => navigate("/teams?tab=open")}
+                    className="mt-2 text-xs text-blue-600 font-semibold hover:underline"
+                  >
+                    Browse open teams →
                   </button>
                 </div>
-              ))}
-              {recommendations.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-2">No recommendations yet.</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        <hr className="my-4 border-gray-100" />
-
-        {/* Recommended Pages */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Recommended Pages</p>
-            <button className="text-xs text-blue-600 hover:underline font-semibold">See all</button>
-          </div>
-          <div className="space-y-4">
-            {feeds.map((feed, i) => (
-              <div key={i} className="flex items-center justify-between gap-3 group">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0 shadow-sm border border-blue-100">
-                    {feed.name.charAt(0)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{feed.name}</div>
-                    <div className="text-xs text-gray-500 truncate">{feed.type}</div>
-                  </div>
+              ) : (
+                <div className="space-y-2">
+                  {openTeams.map((team) => (
+                    <OpenTeamCard key={team._id} team={team} />
+                  ))}
+                  <button
+                    onClick={() => navigate("/teams?tab=open")}
+                    className="w-full text-xs text-blue-600 font-semibold pt-2 hover:underline"
+                  >
+                    See More Open Teams →
+                  </button>
                 </div>
-                <button className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition flex-shrink-0">
-                  <HiUserAdd size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </aside>

@@ -35,7 +35,8 @@ export const getNotifications = async (req, res) => {
             .sort({ createdAt: -1 })
             .populate('sender', 'name profilePic')
             .populate('post', 'content')
-            .populate('team', 'name') // Added team population
+            .populate('team', 'name')
+            .populate('event', 'title') // populate event as well just in case
             .limit(20);
 
         res.json(notifications);

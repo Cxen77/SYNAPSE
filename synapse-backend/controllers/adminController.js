@@ -45,6 +45,36 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Organizer specific stats
+    if (req.user.role === 'organizer') {
+        const collegeId = req.user.collegeId;
+        if (!collegeId) {
+            res.status(400);
+            throw new Error('Organizer has no college linked');
+        }
+
+        const [
+            totalEvents,
+            usersInCollege
+        ] = await Promise.all([
+            Event.countDocuments({ collegeId }),
+            User.countDocuments({ collegeId })
+        ]);
+
+        return res.json({
+            totalEvents,
+            usersInCollege,
+            // Zero out irrelevant global stats or provide null
+            totalUsers: usersInCollege,
+            activeToday: 0, // Hard to track active by college efficiently without more queries
+            suspendedUsers: 0,
+            totalPosts: 0,
+            totalForumPosts: 0,
+            messagesToday: 0
+        });
+    }
+
+    // Admin/Moderator Global Stats
     const [
         totalUsers,
         activeToday,
@@ -99,7 +129,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 
     const [users, total] = await Promise.all([
         User.find(query)
-            .select('name username email role isSuspended profilePic college createdAt updatedAt')
+            .select('name username email role isSuspended profilePic college collegeId createdAt updatedAt')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
@@ -119,12 +149,24 @@ export const getUsers = asyncHandler(async (req, res) => {
  * @route   PATCH /api/admin/users/:id/role
  * @desc    Update a user's role
  */
+/**
+ * @route   PATCH /api/admin/users/:id/role
+ * @desc    Update a user's role (Hardened)
+ */
 export const updateUserRole = asyncHandler(async (req, res) => {
     const { role } = req.body;
+    const adminUser = req.user;
 
-    if (!['user', 'moderator', 'admin'].includes(role)) {
+    // Hard block for moderators at the controller level
+    if (adminUser.role === 'moderator') {
+        res.status(403);
+        throw new Error('Moderators cannot assign roles');
+    }
+
+    // 1. Validate Enum
+    if (!['user', 'moderator', 'organizer', 'admin'].includes(role)) {
         res.status(400);
-        throw new Error('Invalid role. Must be: user, moderator, or admin');
+        throw new Error('Invalid role. Must be: user, moderator, organizer, or admin');
     }
 
     const user = await User.findById(req.params.id);
@@ -134,9 +176,29 @@ export const updateUserRole = asyncHandler(async (req, res) => {
     }
 
     const oldRole = user.role;
+
+    // 2. Prevent Self-Demotion check for reliability
+    if (user._id.toString() === adminUser._id.toString() && oldRole === 'admin' && role !== 'admin') {
+        // Ensure there is at least one other admin
+        const adminCount = await User.countDocuments({ role: 'admin' });
+        if (adminCount <= 1) {
+            res.status(400);
+            throw new Error('Cannot demote yourself. You are the last remaining admin.');
+        }
+    }
+
+    // 3. Organizer Constraint Check
+    if (role === 'organizer') {
+        if (!user.collegeId) {
+            res.status(400);
+            throw new Error('Cannot assign Organizer role. User must belong to a college first.');
+        }
+    }
+
     user.role = role;
     await user.save();
 
+    // 4. Detailed Logging
     await logAction(req, {
         action: 'ROLE_CHANGE',
         targetId: user._id,
@@ -144,7 +206,14 @@ export const updateUserRole = asyncHandler(async (req, res) => {
         details: `Changed role from "${oldRole}" to "${role}"`
     });
 
-    res.json({ message: `User role updated to ${role}`, user: { _id: user._id, role: user.role } });
+    res.json({
+        message: `User role updated to ${role}`,
+        user: {
+            _id: user._id,
+            role: user.role,
+            collegeId: user.collegeId
+        }
+    });
 });
 
 /**
@@ -205,6 +274,12 @@ export const unsuspendUser = asyncHandler(async (req, res) => {
  * @desc    Soft-delete a user (suspend + mark)
  */
 export const deleteUser = asyncHandler(async (req, res) => {
+    // Hard block for moderators
+    if (req.user.role === 'moderator') {
+        res.status(403);
+        throw new Error('Moderators cannot delete users');
+    }
+
     const user = await User.findById(req.params.id);
     if (!user) {
         res.status(404);
@@ -250,6 +325,15 @@ export const getEvents = asyncHandler(async (req, res) => {
     if (filter === 'pending') query.isApproved = null;
     if (filter === 'approved') query.isApproved = true;
     if (filter === 'rejected') query.isApproved = false;
+
+    // Organizer Restriction
+    if (req.user.role === 'organizer') {
+        if (!req.user.collegeId) {
+            res.status(403);
+            throw new Error('Organizer has no college linked');
+        }
+        query.collegeId = req.user.collegeId;
+    }
 
     if (search) {
         query.title = { $regex: escapeRegex(search), $options: 'i' };
@@ -490,7 +574,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
     }
 
     const changes = [];
-    const validRoles = ['user', 'moderator', 'admin'];
+    const validRoles = ['user', 'moderator', 'organizer', 'admin'];
 
     for (const [featureName, updates] of Object.entries(features)) {
         if (!settings.features.has(featureName)) continue; // skip unknown features
@@ -500,6 +584,11 @@ export const updateSettings = asyncHandler(async (req, res) => {
         if (typeof updates.enabled === 'boolean' && current.enabled !== updates.enabled) {
             changes.push(`${featureName}.enabled: ${current.enabled} → ${updates.enabled}`);
             current.enabled = updates.enabled;
+        }
+
+        if (typeof updates.isKilled === 'boolean' && current.isKilled !== updates.isKilled) {
+            changes.push(`${featureName}.isKilled: ${current.isKilled} → ${updates.isKilled}`);
+            current.isKilled = updates.isKilled;
         }
 
         if (Array.isArray(updates.rolesAllowed)) {
