@@ -34,8 +34,8 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        if (name.startsWith('social_')) {
-            const socialKey = name.replace('social_', '');
+        if (name.startsWith('socials.')) {
+            const socialKey = name.split('.')[1];
             setFormData(prev => ({
                 ...prev,
                 socials: {
@@ -345,7 +345,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                                 </label>
                                 <input
                                     type="url"
-                                    name="social_github"
+                                    name="socials.github"
                                     value={formData.socials.github}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
@@ -357,7 +357,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                                 </label>
                                 <input
                                     type="url"
-                                    name="social_linkedin"
+                                    name="socials.linkedin"
                                     value={formData.socials.linkedin}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
@@ -369,7 +369,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                                 </label>
                                 <input
                                     type="url"
-                                    name="social_twitter"
+                                    name="socials.twitter"
                                     value={formData.socials.twitter}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
@@ -381,7 +381,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                                 </label>
                                 <input
                                     type="url"
-                                    name="social_instagram"
+                                    name="socials.instagram"
                                     value={formData.socials.instagram}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
@@ -394,7 +394,7 @@ const ProfileEditModal = ({ user, onClose, onUpdate }) => {
                             </label>
                             <input
                                 type="url"
-                                name="social_portfolio"
+                                name="socials.portfolio"
                                 value={formData.socials.portfolio}
                                 onChange={handleChange}
                                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"

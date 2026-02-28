@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import TurnstileWidget from "./TurnstileWidget";
+import Logo from "../assets/logo.png";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -65,20 +66,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 px-4 py-8 sm:py-12" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Subtle decorative blobs */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full bg-blue-100/40 blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-violet-100/30 blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
+    <div className="fixed inset-0 overflow-hidden flex items-center justify-center bg-gray-50/50 px-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Animated Subtle decorative blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-[10%] -left-[10%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-blue-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob"></div>
+        <div className="absolute -bottom-[10%] -right-[10%] w-[400px] h-[400px] bg-violet-300/40 dark:bg-violet-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob animation-delay-2000"></div>
+        <div className="absolute -top-[10%] right-[10%] w-[400px] h-[400px] bg-indigo-300/30 dark:bg-indigo-900/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob animation-delay-4000"></div>
+        <div className="absolute -bottom-[10%] left-[10%] w-[400px] h-[400px] bg-purple-300/30 dark:bg-purple-900/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob animation-delay-[6000ms]"></div>
+      </div>
 
-      <div className="w-full max-w-md animate-fade-in-up relative z-10">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+      <div className="w-full max-w-md animate-fade-in-up relative z-10 max-h-[90vh] overflow-y-auto hidden-scrollbar">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 w-full h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col justify-center">
           {/* Header */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-4 shadow-md shadow-blue-600/20">
-              <span className="text-white font-bold text-lg">S</span>
+          <div className="text-center mb-4">
+            <div className="flex justify-center mb-2">
+              <img src={Logo} alt="Fuseon Logo" className="h-12 w-auto object-contain" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Welcome Back</h1>
-            <p className="text-gray-500 text-sm mt-1">Sign in to your Synapse account</p>
+            <p className="text-gray-500 text-sm mt-1">Sign in to your Fuseon account</p>
           </div>
 
           {error && (
@@ -87,7 +92,7 @@ const Login = () => {
             </div>
           )}
 
-          <form className="flex flex-col gap-4" onSubmit={handleLogin}>
+          <form className="flex flex-col gap-3" onSubmit={handleLogin}>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Email</label>
               <input
@@ -144,7 +149,7 @@ const Login = () => {
           </form>
 
           {/* Divider */}
-          <div className="relative my-5">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
             </div>
@@ -161,7 +166,7 @@ const Login = () => {
             Sign in with Google
           </button>
 
-          <p className="text-center text-sm text-gray-500 mt-5">
+          <p className="text-center text-sm text-gray-500 mt-4">
             Don't have an account?{" "}
             <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
               Create Account

@@ -29,6 +29,7 @@ const formatUserResponse = (user) => {
         location: user.location,
         bio: user.bio,
         skills: user.skills,
+        socials: user.socials,
         followers: user.followers,
         following: user.following,
         settings: user.settings,
@@ -151,23 +152,7 @@ const updateProfilePic = asyncHandler(async (req, res) => {
             throw new Error('No image file provided');
         }
 
-        const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                folder: 'synapse_profiles',
-            },
-            async (error, result) => {
-                if (error) {
-                    console.error('Cloudinary Upload Error:', error);
-                    // We can't really send a response here if we've already sent one or if the async flow is weird,
-                    // but since we are inside the callback, we should handle it carefully.
-                    // Ideally, we wrap this in a promise to await it.
-                } else {
-                    user.profilePic = result.secure_url;
-                    const updatedUser = await user.save();
-                    res.json(formatUserResponse(updatedUser));
-                }
-            }
-        );
+
 
         // Wrap stream in a promise to keep the async/await flow clean for the handler
         const uploadToCloudinary = () => {
@@ -213,6 +198,8 @@ const updateBannerPic = asyncHandler(async (req, res) => {
             res.status(400);
             throw new Error('No image file provided');
         }
+
+
 
         const uploadToCloudinary = () => {
             return new Promise((resolve, reject) => {

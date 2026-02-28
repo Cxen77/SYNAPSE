@@ -6,7 +6,6 @@ import ProjectsSection from './ProjectsSection';
 
 import PostsSection from './PostsSection';
 import AchievementsSection from './AchievementsSection';
-import SocialLinks from './SocialLinks';
 import ProfileScore from './ProfileScore';
 import EventsSection from './EventsSection';
 import TeamsSection from './TeamsSection';
@@ -291,7 +290,6 @@ const Profile = () => {
                                     {!showOwnerControls && <SuggestedConnections />}
 
                                     <AchievementsSection user={user} />
-                                    <SocialLinks user={user} />
                                 </div>
                             </>
                         )}
@@ -326,7 +324,6 @@ const Profile = () => {
                         {!showOwnerControls && <SuggestedConnections />}
 
                         <AchievementsSection user={user} />
-                        <SocialLinks user={user} />
                     </div>
                 </div>
             </div>

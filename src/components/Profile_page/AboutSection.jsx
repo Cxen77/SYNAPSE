@@ -5,7 +5,7 @@ const AboutSection = ({ user }) => {
     if (!user) return null;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full flex flex-col">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -14,7 +14,7 @@ const AboutSection = ({ user }) => {
                 </h3>
             </div>
 
-            <div className="p-6 space-y-6 flex-1">
+            <div className="p-6 space-y-6">
                 {/* Bio */}
                 <div>
                     <h4 className="text-lg font-bold text-gray-900 mb-2">Bio</h4>

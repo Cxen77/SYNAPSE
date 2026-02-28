@@ -83,8 +83,8 @@ function Navbar() {
         <a href="/">
           <img
             src={Logo}
-            alt="Synapse Logo"
-            className="h-16 w-auto object-contain"
+            alt="Fuseon Logo"
+            className="h-12 w-auto object-contain"
           />
         </a>
 
@@ -111,12 +111,12 @@ function Navbar() {
 
           {/* Moderator Panel Link */}
           {currentUser?.role === 'moderator' && (
-            <NavItem to="/moderator" icon={FiShield} label="Mod Panel" />
+            <NavItem to="/admin" icon={FiShield} label="Mod Panel" />
           )}
 
           {/* Organizer Panel Link */}
           {currentUser?.role === 'organizer' && (
-            <NavItem to="/organizer" icon={FiShield} label="Organizer Panel" />
+            <NavItem to="/admin" icon={FiShield} label="Organizer Panel" />
           )}
         </ul>
 

@@ -16,7 +16,12 @@ import {
     FileText,
     Check,
     Calendar,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Github,
+    Linkedin,
+    Twitter,
+    Instagram,
+    Globe
 } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
@@ -100,6 +105,37 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         onUploadSuccess={handleImageUpload}
                     />
                 )}
+
+                {/* Social Links on Banner Bottom Right */}
+                {user.socials && Object.values(user.socials).some(link => link) && (
+                    <div className={`absolute bottom-4 right-4 flex flex-col-reverse md:flex-row gap-2 z-10 ${isOwner ? 'md:mr-16' : ''}`}>
+                        {user.socials.github && (
+                            <a href={user.socials.github} target="_blank" rel="noopener noreferrer" className="bg-black/40 hover:bg-black/60 backdrop-blur-md p-2.5 rounded-full text-white transition-all shadow-md hover:scale-110" title="GitHub">
+                                <Github className="w-5 h-5" />
+                            </a>
+                        )}
+                        {user.socials.linkedin && (
+                            <a href={user.socials.linkedin} target="_blank" rel="noopener noreferrer" className="bg-blue-700/60 hover:bg-blue-700 backdrop-blur-md p-2.5 rounded-full text-white transition-all shadow-md hover:scale-110" title="LinkedIn">
+                                <Linkedin className="w-5 h-5" />
+                            </a>
+                        )}
+                        {user.socials.twitter && (
+                            <a href={user.socials.twitter} target="_blank" rel="noopener noreferrer" className="bg-sky-500/60 hover:bg-sky-500 backdrop-blur-md p-2.5 rounded-full text-white transition-all shadow-md hover:scale-110" title="Twitter">
+                                <Twitter className="w-5 h-5" />
+                            </a>
+                        )}
+                        {user.socials.instagram && (
+                            <a href={user.socials.instagram} target="_blank" rel="noopener noreferrer" className="bg-pink-600/60 hover:bg-pink-600 backdrop-blur-md p-2.5 rounded-full text-white transition-all shadow-md hover:scale-110" title="Instagram">
+                                <Instagram className="w-5 h-5" />
+                            </a>
+                        )}
+                        {user.socials.portfolio && (
+                            <a href={user.socials.portfolio} target="_blank" rel="noopener noreferrer" className="bg-emerald-600/60 hover:bg-emerald-600 backdrop-blur-md p-2.5 rounded-full text-white transition-all shadow-md hover:scale-110" title="Portfolio">
+                                <Globe className="w-5 h-5" />
+                            </a>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Profile Content */}
@@ -112,7 +148,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                             <Avatar
                                 src={user.profilePic}
                                 alt={user.name}
-                                className="w-32 h-32 md:w-48 md:h-48 border-[6px] border-white shadow-2xl bg-white rounded-full object-cover"
+                                className="w-32 h-32 md:w-48 md:h-48 rounded-full object-cover"
                             />
                             {isOwner && (
                                 <div className="absolute bottom-2 right-2">
@@ -159,7 +195,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                                 <Eye className="w-4 h-4 ml-[-2px]" />
                                                 Public View
                                             </button>
-                                            <button onClick={() => setShowEditModal(true)} className="btn-primary flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-gray-200">
+                                            <button onClick={() => setShowEditModal(true)} className="btn-secondary flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
                                                 <Edit3 className="w-4 h-4 ml-[-2px]" />
                                                 Edit Profile
                                             </button>
@@ -198,19 +234,19 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                 {user.bio || "No bio available."}
                             </div>
 
-                            <div className="flex flex-wrap gap-4 text-sm font-medium text-gray-500">
+                            <div className="flex flex-wrap lg:flex-nowrap gap-2 md:gap-4 text-xs md:text-sm font-medium text-gray-500">
                                 {user.course && (
-                                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                        <Briefcase className="w-4 h-4" />
-                                        {user.course} Student
+                                    <div className="flex items-center gap-1.5 md:gap-2 bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-100 whitespace-nowrap">
+                                        <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                        {user.course}
                                     </div>
                                 )}
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                    <MapPin className="w-4 h-4" />
+                                <div className="flex items-center gap-1.5 md:gap-2 bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-100 whitespace-nowrap">
+                                    <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                     {user.location || "Add Location"}
                                 </div>
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                    <Calendar className="w-4 h-4" />
+                                <div className="flex items-center gap-1.5 md:gap-2 bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-100 whitespace-nowrap">
+                                    <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                     Joined {new Date().getFullYear()}
                                 </div>
                             </div>

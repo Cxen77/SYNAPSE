@@ -192,12 +192,12 @@ const ImageUpload = ({ type = 'profile', currentImage, onUploadSuccess }) => {
             <button
                 onClick={handleButtonClick}
                 className={isProfilePic
-                    ? "absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
-                    : "absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+                    ? "absolute bottom-1 right-1 md:bottom-2 md:right-2 bg-blue-500 hover:bg-blue-600 text-white p-2 md:p-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-110"
+                    : "absolute top-4 left-4 md:top-auto md:left-auto md:bottom-4 md:right-4 bg-white/90 hover:bg-white text-gray-700 p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
                 }
                 title={`Edit ${isProfilePic ? 'profile picture' : 'cover image'}`}
             >
-                <FaCamera className={isProfilePic ? "w-4 h-4" : "w-5 h-5"} />
+                <FaCamera className={isProfilePic ? "w-3.5 h-3.5 md:w-4 md:h-4" : "w-5 h-5"} />
             </button>
         </>
     );

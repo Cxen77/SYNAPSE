@@ -185,6 +185,11 @@ html {
 }
 
 /* ── Base ─────────────────────────────────────────── */
+html {
+    background-color: #ffffff;
+}
+
+.dark html,
 .dark body,
 .dark #root {
     background-color: var(--dm-bg);
@@ -563,4 +568,13 @@ html {
     background-color: var(--dm-surf2) !important;
     border-color: var(--dm-border) !important;
     color: var(--dm-text) !important;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hidden-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
