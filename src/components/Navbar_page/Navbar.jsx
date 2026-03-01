@@ -111,12 +111,12 @@ function Navbar() {
 
           {/* Moderator Panel Link */}
           {currentUser?.role === 'moderator' && (
-            <NavItem to="/admin" icon={FiShield} label="Mod Panel" />
+            <NavItem to="/moderator" icon={FiShield} label="Mod Panel" />
           )}
 
           {/* Organizer Panel Link */}
           {currentUser?.role === 'organizer' && (
-            <NavItem to="/admin" icon={FiShield} label="Organizer Panel" />
+            <NavItem to="/organizer" icon={FiShield} label="Organizer Panel" />
           )}
         </ul>
 

@@ -68,7 +68,7 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
 
             <div
                 ref={modalRef}
-                className="bg-white w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] rounded-t-[2rem] sm:rounded-2xl shadow-2xl flex flex-col pointer-events-auto relative transform transition-transform animate-slide-up sm:animate-in sm:zoom-in-95 duration-200"
+                className="bg-white dark:bg-gray-900 w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] rounded-t-[2rem] sm:rounded-2xl shadow-2xl flex flex-col pointer-events-auto relative transform transition-transform animate-slide-up sm:animate-in sm:zoom-in-95 duration-200 border dark:border-gray-800"
             >
                 {/* Drag Handle */}
                 <div className="sm:hidden w-full flex justify-center pt-3 pb-1" onClick={onClose}>
@@ -76,12 +76,12 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
                 </div>
 
                 {/* Header */}
-                <div className="px-5 pb-3 pt-2 sm:pt-4 flex justify-between items-center border-b border-gray-50">
+                <div className="px-5 pb-3 pt-2 sm:pt-4 flex justify-between items-center border-b border-gray-50 dark:border-gray-800">
                     <div>
-                        <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                             Filter Events
                         </h3>
-                        <p className="text-xs text-gray-400 font-medium">Find exactly what you need</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Find exactly what you need</p>
                     </div>
 
                     <button
@@ -96,12 +96,12 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
                 <div className="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-6">
 
                     {/* View Toggle */}
-                    <div className="bg-gray-100 p-1 rounded-xl flex shadow-inner">
+                    <div className="bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl flex shadow-inner">
                         <button
                             onClick={() => { setIsOngoing(true); onToggle?.("All"); }}
                             className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${isOngoing
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                                 }`}
                         >
                             All Events
@@ -109,8 +109,8 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
                         <button
                             onClick={() => { setIsOngoing(false); onToggle?.("Upcoming"); }}
                             className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${!isOngoing
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                                 }`}
                         >
                             Upcoming
@@ -119,9 +119,9 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
 
                     {/* Search */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Search</label>
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Search</label>
                         <div className="relative group">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Search by name..."
@@ -130,22 +130,22 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
                                     setSearchText(e.target.value);
                                     onSearch?.(e.target.value);
                                 }}
-                                className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                className="w-full pl-9 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
                             />
                         </div>
                     </div>
 
                     {/* Categories */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Categories</label>
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Categories</label>
                         <div className="flex flex-wrap gap-2">
                             {categories.map((cat) => (
                                 <button
                                     key={cat}
                                     onClick={() => handleCategoryClick(cat)}
                                     className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all active:scale-95 ${activeCategory === cat
-                                        ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200"
-                                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                                        ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/30"
+                                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                                         }`}
                                 >
                                     {cat}
@@ -226,12 +226,12 @@ const MobileFilterModal = ({ isOpen, onClose, onSearch, onCategory, onToggle, on
                 </div>
 
                 {/* Footer Action */}
-                <div className="p-4 bg-white border-t border-gray-50 safe-area-pb">
+                <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 safe-area-pb">
                     <button
                         onClick={onClose}
-                        className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
+                        className="w-full bg-gray-900 dark:bg-white hover:bg-black dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                        <FaFilter size={12} className="text-gray-400" />
+                        <FaFilter size={12} className="text-gray-400 dark:text-gray-500" />
                         Show Results
                     </button>
                 </div>

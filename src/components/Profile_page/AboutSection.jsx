@@ -1,11 +1,11 @@
 import React from 'react';
 import { FaGraduationCap, FaBriefcase, FaLightbulb } from 'react-icons/fa';
 
-const AboutSection = ({ user }) => {
+const AboutSection = ({ user, className = "" }) => {
     if (!user) return null;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col ${className}`}>
             {/* Header */}
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">

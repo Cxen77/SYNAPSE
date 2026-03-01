@@ -53,6 +53,34 @@ const getUserProfile = asyncHandler(async (req, res) => {
         });
 
     if (user) {
+        // --- Auto-sync teams array ---
+        // The Team document is the source of truth. If any team's members
+        // array includes this user but it's not in user.teams, sync it now.
+        const Team = mongoose.model('Team');
+        const actualTeams = await Team.find({ members: req.user._id }).select('_id');
+        const actualTeamIds = actualTeams.map(t => t._id.toString());
+        const storedTeamIds = (user.teams || []).map(t => (t._id || t).toString());
+
+        const missingIds = actualTeamIds.filter(id => !storedTeamIds.includes(id));
+        if (missingIds.length > 0) {
+            // Silently fix the stale user.teams array
+            await User.findByIdAndUpdate(req.user._id, {
+                $addToSet: { teams: { $each: missingIds } }
+            });
+            // Re-fetch with synced data
+            const syncedUser = await User.findById(req.user._id)
+                .populate({
+                    path: 'teams',
+                    select: 'name category members admins',
+                    populate: { path: 'admins', select: '_id' }
+                });
+            const postsCount = await mongoose.model('Post').countDocuments({ user: req.user._id });
+            const response = formatUserResponse(syncedUser);
+            response.postsCount = postsCount;
+            return res.json(response);
+        }
+        // ----------------------------
+
         // Get post count
         const postsCount = await mongoose.model('Post').countDocuments({ user: req.user._id });
 

@@ -3,7 +3,7 @@ import { FaGithub, FaStar, FaCodeBranch, FaBook, FaUsers } from 'react-icons/fa'
 import api from '../../api/axios';
 import Skeleton from '../common/Skeleton';
 
-const GithubStatsCard = ({ userId }) => {
+const GithubStatsCard = ({ userId, className = "" }) => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -33,7 +33,7 @@ const GithubStatsCard = ({ userId }) => {
 
     if (loading) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${className}`}>
                 <div className="p-5 border-b border-gray-100 flex justify-between items-center">
                     <div className="flex items-center gap-3 w-full">
                         <Skeleton variant="circular" className="h-8 w-8" />
@@ -63,7 +63,7 @@ const GithubStatsCard = ({ userId }) => {
     if (!stats) return null; // Don't show if not connected
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-gray-900 overflow-hidden">
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 text-gray-900 overflow-hidden flex flex-col ${className}`}>
             <div className="p-5 border-b border-gray-100 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <FaGithub className="text-2xl text-gray-800" />
@@ -104,8 +104,8 @@ const GithubStatsCard = ({ userId }) => {
             </div>
 
             {stats.topLanguages.length > 0 && (
-                <div className="px-6 pb-6">
-                    <h4 className="text-sm font-bold text-gray-500 mb-3">Top Languages</h4>
+                <div className="px-6 pb-6 flex-1 overflow-y-auto custom-scrollbar">
+                    <h4 className="text-sm font-bold text-gray-500 mb-3 sticky top-0 bg-white pt-2 z-10">Top Languages</h4>
                     <div className="space-y-3">
                         {stats.topLanguages?.map((lang, index) => (
                             <div key={index} className="space-y-1">

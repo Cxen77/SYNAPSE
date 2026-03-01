@@ -273,12 +273,12 @@ const Profile = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Main Content Area */}
-                    <div className={`lg:col-span-8 space-y-6 ${activeTab === 'posts' ? 'max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar pr-2 pb-2' : ''}`}>
+                    <div className={`lg:col-span-8 space-y-6 h-full flex flex-col ${activeTab === 'posts' ? 'max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar pr-2 pb-2' : ''}`}>
                         {activeTab === 'overview' && (
                             <>
-                                <AboutSection user={user} />
-                                {/* Mobile-only widgets for Overview */}
-                                <div className="lg:hidden space-y-6">
+                                {/* Mobile View (Stacked) */}
+                                <div className="lg:hidden space-y-6 flex flex-col">
+                                    <AboutSection user={user} />
                                     {showOwnerControls && (
                                         <PendingInvites
                                             invites={invites}
@@ -288,27 +288,52 @@ const Profile = () => {
                                     )}
                                     {showOwnerControls && <ProfileScore user={user} />}
                                     {!showOwnerControls && <SuggestedConnections />}
-
                                     <AchievementsSection user={user} />
+                                </div>
+
+                                {/* Desktop View (Dynamic Height matching) - 
+                                    Using mt-0 to override the parent's space-y-6 top margin
+                                    since this is technically the second child but visually the only
+                                    element rendered on desktop. */}
+                                <div className="hidden lg:flex flex-1 flex-col !mt-0 [&>div]:flex-1">
+                                    <AboutSection user={user} className="flex-1 flex flex-col" />
                                 </div>
                             </>
                         )}
-                        {activeTab === 'stats' && <GithubStatsCard userId={user._id} />}
+                        {activeTab === 'stats' && (
+                            <div className="flex-1 flex flex-col !mt-0">
+                                <GithubStatsCard userId={user._id} className="flex-1" />
+                            </div>
+                        )}
                         {activeTab === 'projects' && (
-                            <ProjectsSection
-                                user={user}
-                                onImportClick={showOwnerControls ? handleGithubClick : undefined}
-                            />
+                            <div className="flex-1 flex flex-col !mt-0">
+                                <ProjectsSection
+                                    user={user}
+                                    onImportClick={showOwnerControls ? handleGithubClick : undefined}
+                                    className="flex-1"
+                                />
+                            </div>
                         )}
-                        {activeTab === 'events' && <EventsSection />}
+                        {activeTab === 'events' && (
+                            <div className="flex-1 flex flex-col !mt-0">
+                                <EventsSection className="flex-1" />
+                            </div>
+                        )}
                         {activeTab === 'teams' && (
-                            <TeamsSection
-                                user={user}
-                                isOwner={showOwnerControls}
-                                viewerId={currentUser?._id}
-                            />
+                            <div className="flex-1 flex flex-col !mt-0">
+                                <TeamsSection
+                                    user={user}
+                                    isOwner={showOwnerControls}
+                                    viewerId={currentUser?._id}
+                                    className="flex-1"
+                                />
+                            </div>
                         )}
-                        {activeTab === 'posts' && <PostsSection isOwner={showOwnerControls} user={user} currentUser={currentUser} />}
+                        {activeTab === 'posts' && (
+                            <div className="flex-1 flex flex-col !mt-0">
+                                <PostsSection isOwner={showOwnerControls} user={user} currentUser={currentUser} className="flex-1" />
+                            </div>
+                        )}
                     </div>
 
                     {/* Desktop Sidebar - Always visible on large screens, hidden on mobile */}

@@ -17,7 +17,7 @@ const STATUS_COLORS = {
  *  - isOwner     : boolean — true if viewing own profile (show pending join requests count)
  *  - viewerId    : MongoDB _id of the logged-in visitor (to show "Apply" button for non-members)
  */
-const TeamsSection = ({ user, isOwner, viewerId }) => {
+const TeamsSection = ({ user, isOwner, viewerId, className = "" }) => {
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -32,7 +32,7 @@ const TeamsSection = ({ user, isOwner, viewerId }) => {
 
     if (loading) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${className}`}>
                 <div className="p-5 border-b border-gray-100">
                     <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
                 </div>
@@ -46,7 +46,7 @@ const TeamsSection = ({ user, isOwner, viewerId }) => {
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col ${className}`}>
             {/* Header */}
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -65,7 +65,7 @@ const TeamsSection = ({ user, isOwner, viewerId }) => {
                 )}
             </div>
 
-            <div className="p-6">
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                 {teams.length === 0 ? (
                     <div className="text-center py-10 text-gray-400">
                         <Users size={32} className="mx-auto mb-2 opacity-40" />

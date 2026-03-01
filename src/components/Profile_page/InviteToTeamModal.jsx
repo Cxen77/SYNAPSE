@@ -102,32 +102,58 @@ const InviteToTeamModal = ({ isOpen, onClose, userToInvite }) => {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {teams.map(team => (
-                                <div key={team._id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition group">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                            <FaUsers />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-gray-900">{team.name}</h4>
-                                            <p className="text-xs text-gray-500 font-medium">{team.members.length} members</p>
-                                        </div>
-                                    </div>
+                            {teams.map(team => {
+                                // Check if userToInvite is already in the team
+                                const isMember = team.members?.some(m =>
+                                    String(m._id || m) === String(userToInvite?._id)
+                                );
+                                // Check if there's already a pending invite
+                                const pendingInvite = team.invites?.some(i =>
+                                    String(i.userId?._id || i.userId) === String(userToInvite?._id) && i.status === 'pending'
+                                );
+                                // Check if the user has requested to join
+                                const pendingRequest = team.joinRequests?.some(r =>
+                                    String(r.userId?._id || r.userId) === String(userToInvite?._id) && r.status === 'pending'
+                                );
 
-                                    <button
-                                        onClick={() => handleInvite(team._id)}
-                                        disabled={inviting === team._id}
-                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm ${inviting === team._id
-                                            ? "bg-green-100 text-green-700 cursor-default"
-                                            : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-95"
-                                            }`}
-                                    >
-                                        {inviting === team._id ? (
-                                            <span className="flex items-center gap-2"><FaCheck /> Sent</span>
-                                        ) : "Invite"}
-                                    </button>
-                                </div>
-                            ))}
+                                const isAlreadyLinked = isMember || pendingInvite || pendingRequest;
+                                let buttonText = "Invite";
+                                if (isMember) buttonText = "Member";
+                                else if (pendingInvite) buttonText = "Invited";
+                                else if (pendingRequest) buttonText = "Requested";
+                                else if (inviting === team._id) buttonText = "Sent";
+
+                                return (
+                                    <div key={team._id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition group">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <FaUsers />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-900">{team.name}</h4>
+                                                <p className="text-xs text-gray-500 font-medium">{team.members.length} members</p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleInvite(team._id)}
+                                            disabled={inviting === team._id || isAlreadyLinked}
+                                            className={`px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm ${isAlreadyLinked || inviting === team._id
+                                                    ? "bg-gray-100 text-gray-500 cursor-default shadow-none"
+                                                    : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-95"
+                                                }`}
+                                        >
+                                            {inviting === team._id ? (
+                                                <span className="flex items-center gap-2"><FaCheck /> Sent</span>
+                                            ) : isAlreadyLinked ? (
+                                                <span className="flex items-center gap-2 text-xs uppercase tracking-wide">{buttonText}</span>
+                                            ) : (
+                                                buttonText
+                                            )}
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

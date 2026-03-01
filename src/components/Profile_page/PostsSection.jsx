@@ -4,7 +4,7 @@ import PostCard from '../Home_page/PostCard';
 import toast from 'react-hot-toast';
 import CreatePost from '../Home_page/CreatePost';
 
-const PostsSection = ({ isOwner, user, currentUser }) => {
+const PostsSection = ({ isOwner, user, currentUser, className = "" }) => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -50,7 +50,7 @@ const PostsSection = ({ isOwner, user, currentUser }) => {
     }
 
     return (
-        <div className="h-[490px] flex flex-col space-y-6">
+        <div className={`flex flex-col space-y-6 ${className}`}>
 
             {/* Scrollable Feed Container */}
             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-2 pb-2">

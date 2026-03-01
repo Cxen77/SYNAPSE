@@ -188,7 +188,10 @@ const Settings = () => {
                                     {['admin', 'moderator', 'organizer'].includes(currentUser?.role) && (
                                         <div className="md:hidden pb-2 mb-2 border-b border-gray-100 dark:border-gray-800">
                                             <button
-                                                onClick={() => { window.location.href = '/admin'; }}
+                                                onClick={() => {
+                                                    const role = currentUser?.role;
+                                                    window.location.href = role === 'organizer' ? '/organizer' : role === 'moderator' ? '/moderator' : '/admin';
+                                                }}
                                                 className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 group bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-100 shadow-sm"
                                             >
                                                 <div className="p-1.5 rounded-lg transition-colors bg-white/80 shadow-sm text-purple-600">

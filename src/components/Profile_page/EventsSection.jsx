@@ -2,7 +2,7 @@ import React from 'react';
 import userData from '../userdata';
 import { FaCalendar, FaTrophy, FaCertificate } from 'react-icons/fa';
 
-const EventsSection = () => {
+const EventsSection = ({ className = "" }) => {
     const getStatusColor = (status) => {
         switch (status) {
             case 'Upcoming':
@@ -30,9 +30,9 @@ const EventsSection = () => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col ${className}`}>
             {/* Header */}
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                         <span className="w-1.5 h-6 bg-blue-600 rounded-full block"></span>
@@ -44,45 +44,45 @@ const EventsSection = () => {
                 </div>
             </div>
 
-            <div className="p-6">
-                <div className="space-y-4">
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                     {userData.events.map((event) => (
                         <div
                             key={event.id}
-                            className="flex gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300"
+                            className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-blue-200 transition-all duration-200 flex flex-col group"
                         >
-                            {/* Event Image */}
-                            <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200">
-                                <img
-                                    src={event.image}
-                                    alt={event.name}
-                                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                                />
+                            {/* Top Header Map */}
+                            <div className="flex items-start justify-between mb-3 gap-3">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className="text-xl shrink-0 group-hover:scale-110 transition-transform duration-300">
+                                        {getTypeIcon(event.type)}
+                                    </div>
+                                    <h4 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate" title={event.name}>
+                                        {event.name}
+                                    </h4>
+                                </div>
+                                <span className={`shrink-0 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${getStatusColor(event.status)}`}>
+                                    {event.status}
+                                </span>
                             </div>
 
-                            {/* Event Info */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="text-xl">{getTypeIcon(event.type)}</div>
-                                        <h4 className="text-lg font-bold text-gray-900">{event.name}</h4>
+                            {/* Details Container */}
+                            <div className="flex flex-col flex-1 justify-center space-y-3 mt-1">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600">
+                                    <div className="flex items-center gap-1.5">
+                                        <FaCalendar className="w-3.5 h-3.5 text-gray-400" />
+                                        <span>{event.date}</span>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusColor(event.status)}`}>
-                                        {event.status}
+                                    <span className="hidden sm:inline text-gray-300">•</span>
+                                    <span className="font-semibold text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                                        {event.type}
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                                    <FaCalendar className="w-4 h-4" />
-                                    <span>{event.date}</span>
-                                    <span>•</span>
-                                    <span className="font-medium">{event.type}</span>
-                                </div>
-
                                 {event.achievement && (
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <FaTrophy className="text-yellow-500 w-4 h-4" />
-                                        <span className="text-sm font-semibold text-gray-900">{event.achievement}</span>
+                                    <div className="flex items-center gap-2 bg-yellow-50 text-yellow-800 px-3 py-2 rounded-lg border border-yellow-100 mt-auto">
+                                        <FaTrophy className="text-yellow-500 w-4 h-4 shrink-0" />
+                                        <span className="text-xs font-bold leading-tight line-clamp-2">{event.achievement}</span>
                                     </div>
                                 )}
                             </div>
