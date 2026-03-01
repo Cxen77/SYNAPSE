@@ -20,6 +20,16 @@ function Events() {
   const [selectedDate, setSelectedDate] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [eventToEdit, setEventToEdit] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState(new Set());
+
+  const toggleCategory = (category) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  };
 
 
   const handleEventCreated = (newEvent, isEdit) => {
@@ -164,31 +174,66 @@ function Events() {
                         {eventsOfCategory.length}
                       </span>
                     </h2>
-                    <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</button>
+                    {eventsOfCategory.length > 2 && (
+                      <button
+                        onClick={() => toggleCategory(category)}
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                      >
+                        {expandedCategories.has(category) ? 'Show Less' : 'View All'}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${expandedCategories.has(category) ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
+                      </button>
+                    )}
                   </div>
 
-                  <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 custom-scrollbar scroll-smooth">
-                    {eventsOfCategory.map((event) => (
-                      <div key={event._id} className="flex-shrink-0 w-[280px] sm:w-[350px]">
-                        <Cards
-                          eventData={{
-                            ...event,
-                            organizerName: event.organizer?.name || "Unknown",
-                            organizerTitle: "Organizer",
-                            organizerAvatar: event.organizer?.profilePic,
-                            eventImageUrl: event.imageUrl || "",
-                            eventName: event.title,
-                            eventPrize: event.prize || "No Prize",
-                            eventDescription: event.description,
-                            location: event.location, // Assuming backend has location
-                            date: event.date
-                          }}
-                          onEdit={handleEditEvent}
-                          currentUserId={currentUser?.uid}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {expandedCategories.has(category) ? (
+                    /* Expanded Grid View */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 pb-4">
+                      {eventsOfCategory.map((event) => (
+                        <div key={event._id}>
+                          <Cards
+                            eventData={{
+                              ...event,
+                              organizerName: event.organizer?.name || "Unknown",
+                              organizerTitle: "Organizer",
+                              organizerAvatar: event.organizer?.profilePic,
+                              eventImageUrl: event.imageUrl || "",
+                              eventName: event.title,
+                              eventPrize: event.prize || "No Prize",
+                              eventDescription: event.description,
+                              location: event.location,
+                              date: event.date
+                            }}
+                            onEdit={handleEditEvent}
+                            currentUserId={currentUser?.uid}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    /* Collapsed Horizontal Scroll View */
+                    <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 custom-scrollbar scroll-smooth">
+                      {eventsOfCategory.map((event) => (
+                        <div key={event._id} className="flex-shrink-0 w-[280px] sm:w-[350px]">
+                          <Cards
+                            eventData={{
+                              ...event,
+                              organizerName: event.organizer?.name || "Unknown",
+                              organizerTitle: "Organizer",
+                              organizerAvatar: event.organizer?.profilePic,
+                              eventImageUrl: event.imageUrl || "",
+                              eventName: event.title,
+                              eventPrize: event.prize || "No Prize",
+                              eventDescription: event.description,
+                              location: event.location,
+                              date: event.date
+                            }}
+                            onEdit={handleEditEvent}
+                            currentUserId={currentUser?.uid}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}

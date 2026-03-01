@@ -75,7 +75,7 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
         />
       )}
       <div
-        className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full hover:-translate-y-1 cursor-pointer"
+        className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-[380px] sm:h-[420px] hover:-translate-y-1 cursor-pointer"
         onClick={() => navigate(`/events/${_id}`)}
       >
         {/* Image Section */}
@@ -137,10 +137,7 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
           </div>
 
           {/* Description */}
-          <p className="text-[13px] sm:text-sm text-gray-500 line-clamp-2 mb-4 sm:mb-6 flex-1 hidden sm:block">
-            {eventDescription}
-          </p>
-          <p className="text-[13px] sm:text-sm text-gray-500 line-clamp-2 mb-3 sm:mb-6 flex-1 block sm:hidden">
+          <p className="text-[13px] sm:text-sm text-gray-500 line-clamp-2 mb-3 sm:mb-4 overflow-hidden">
             {eventDescription}
           </p>
 
