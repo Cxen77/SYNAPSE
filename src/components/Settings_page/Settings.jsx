@@ -138,8 +138,6 @@ const Settings = () => {
             id: 'danger',
             label: 'Danger Zone',
             icon: AlertTriangle,
-            className: 'text-red-500 hover:bg-red-50',
-            activeClassName: 'bg-red-50 text-red-600 border-l-4 border-red-500',
             description: "Irreversible and destructive actions."
         },
     ];
@@ -185,7 +183,25 @@ const Settings = () => {
                                 </button>
                             </div>
                             <div className="md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-gray-100 h-full flex flex-col">
-                                <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+                                <nav className="flex-1 overflow-y-auto p-3 pb-28 md:pb-3 space-y-1 custom-scrollbar">
+
+                                    {['admin', 'moderator', 'organizer'].includes(currentUser?.role) && (
+                                        <div className="md:hidden pb-2 mb-2 border-b border-gray-100 dark:border-gray-800">
+                                            <button
+                                                onClick={() => { window.location.href = '/admin'; }}
+                                                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 group bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-100 shadow-sm"
+                                            >
+                                                <div className="p-1.5 rounded-lg transition-colors bg-white/80 shadow-sm text-purple-600">
+                                                    <Shield size={18} strokeWidth={2.5} />
+                                                </div>
+                                                <span className="flex-1 text-left">
+                                                    {currentUser?.role === 'admin' ? 'Admin Panel' : currentUser?.role === 'moderator' ? 'Mod Panel' : 'Organizer Panel'}
+                                                </span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><path d="m9 18 6-6-6-6" /></svg>
+                                            </button>
+                                        </div>
+                                    )}
+
                                     {menuItems.map((item) => (
                                         <button
                                             key={item.id}
@@ -203,16 +219,18 @@ const Settings = () => {
                                             {activeSection === item.id && <ChevronRight size={16} className="text-blue-400" />}
                                         </button>
                                     ))}
-                                </nav>
-                                <div className="p-3 border-t border-gray-100 bg-gray-50/50">
+
+                                    <div className="pt-2 mt-2 border-t border-gray-100"></div>
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-white hover:text-red-600 hover:shadow-sm transition-all duration-200"
+                                        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
                                     >
-                                        <LogOut size={18} />
-                                        Log Out
+                                        <div className="p-1.5 rounded-lg bg-gray-100 group-hover:bg-red-100 transition-colors">
+                                            <LogOut size={18} strokeWidth={2} />
+                                        </div>
+                                        <span className="flex-1 text-left">Log Out</span>
                                     </button>
-                                </div>
+                                </nav>
                             </div>
                         </div>
 
@@ -241,7 +259,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar scroll-smooth">
+                            <div className="flex-1 overflow-y-auto p-4 pb-28 md:p-8 custom-scrollbar scroll-smooth">
                                 <div className="max-w-3xl mx-auto md:mx-0">
                                     {renderSection()}
                                 </div>

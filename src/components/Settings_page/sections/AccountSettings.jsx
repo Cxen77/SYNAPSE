@@ -52,16 +52,7 @@ const AccountSettings = ({ user, setUser }) => {
         updateSettings('/users/profile', formData, "Account updated successfully!");
     };
 
-    const navigate = useNavigate();
-    const handleLogout = async () => {
-        try {
-            await api.post('/auth/logout');
-            navigate('/login');
-        } catch (err) {
-            console.error("Logout failed", err);
-            navigate('/login');
-        }
-    };
+
 
     return (
         <div className="space-y-8 max-w-3xl pb-24 md:pb-0">
@@ -157,15 +148,7 @@ const AccountSettings = ({ user, setUser }) => {
                         </div>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-gray-100 md:hidden">
-                        <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 font-bold bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
-                        >
-                            <LogOut size={20} />
-                            Log Out
-                        </button>
-                    </div>
+
                 </div>
             </div>
         </div>

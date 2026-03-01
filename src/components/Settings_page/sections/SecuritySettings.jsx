@@ -223,36 +223,61 @@ export const DangerZone = () => {
     };
 
     return (
-        <div className="space-y-8 max-w-3xl pb-24 md:pb-0">
-            <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-800">
-                <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />
-                <p className="text-sm">Proceed with caution. These actions are irreversible.</p>
+        <div className="space-y-6 max-w-3xl pb-24 md:pb-0">
+            {/* Header / Warning Block */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-50 to-white dark:from-red-900/20 dark:to-gray-800 border border-red-100 dark:border-red-500/20 p-6 sm:p-8 shadow-sm">
+                <div className="relative z-10 flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400 shadow-inner">
+                        <AlertTriangle strokeWidth={2.5} size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Danger Zone</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
+                            The actions below are irreversible and will permanently affect your account data. Please proceed with absolute certainty.
+                        </p>
+                    </div>
+                </div>
+                {/* Decorative background blurs */}
+                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-red-200 dark:bg-red-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 pointer-events-none"></div>
             </div>
 
-            <div className="space-y-4">
-                <div className="border border-gray-200 bg-white rounded-2xl p-6 flex items-center justify-between shadow-sm">
-                    <div>
-                        <h4 className="text-base font-bold text-gray-900">Reset Profile</h4>
-                        <p className="text-sm text-gray-500 mt-1">Clear all profile information and settings to default.</p>
+            {/* Action Cards List */}
+            <div className="bg-white dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+
+                {/* Reset Data Row */}
+                <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:p-8 border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors gap-4">
+                    <div className="pr-4">
+                        <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                            Reset Profile Data
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                            Clear all personal profile information, returning settings to their default factory states.
+                        </p>
                     </div>
-                    <button className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition-colors">
+                    <button className="flex-shrink-0 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-900 dark:hover:text-white transition-all shadow-sm w-full sm:w-auto text-center">
                         Reset Data
                     </button>
                 </div>
 
-                <div className="border border-red-200 bg-red-50/30 rounded-2xl p-6 flex items-center justify-between shadow-sm">
-                    <div>
-                        <h4 className="text-base font-bold text-red-900">Delete Account</h4>
-                        <p className="text-sm text-red-700/80 mt-1">Permanently delete your account and all data.</p>
+                {/* Delete Account Row */}
+                <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:p-8 hover:bg-red-50/30 dark:hover:bg-red-500/10 transition-colors gap-4">
+                    <div className="pr-4">
+                        <h4 className="text-base font-bold text-red-600 dark:text-red-400 mb-1 flex items-center gap-2">
+                            Delete Account
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm group-hover:text-red-900/70 dark:group-hover:text-red-400/80 transition-colors">
+                            Permanently delete your account, teams, messages, and all associated data from our servers.
+                        </p>
                     </div>
                     <button
                         onClick={handleDeleteAccount}
-                        className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2"
+                        className="flex-shrink-0 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl hover:bg-red-600 dark:hover:bg-red-500 hover:text-white dark:hover:text-white hover:border-red-600 dark:hover:border-red-500 transition-all shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
-                        <LogOut size={16} />
+                        <LogOut size={16} strokeWidth={2.5} />
                         Delete Account
                     </button>
                 </div>
+
             </div>
         </div>
     );

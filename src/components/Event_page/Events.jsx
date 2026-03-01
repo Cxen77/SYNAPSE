@@ -81,7 +81,7 @@ function Events() {
   const categories = [...new Set(filteredEvents.map((e) => e.category || "Upcoming Events"))];
 
   return (
-    <div className="flex pt-0 gap-8 px-4 lg:px-8 min-h-screen bg-gray-50/50 pb-20">
+    <div className="flex pt-0 gap-8 px-4 lg:px-8 min-h-screen bg-gray-50/50 pb-28 lg:pb-20">
       {/* Left Slider (Sidebar) */}
       <div className="hidden lg:block flex-shrink-0 w-80">
         <div className="fixed top-[74px] left-8 w-80 bottom-[10px] z-40 overflow-hidden">
@@ -97,37 +97,37 @@ function Events() {
       {/* Main Content */}
       <div className="flex-1 w-full min-w-0 pt-6">
         {/* Hero Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gray-900 border border-gray-800 shadow-xl mb-10">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900 border border-gray-800 shadow-xl mb-6 sm:mb-10">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-            <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+            <div className="absolute top-0 -left-4 w-56 sm:w-72 h-56 sm:h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+            <div className="absolute top-0 -right-4 w-56 sm:w-72 h-56 sm:h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-20 w-56 sm:w-72 h-56 sm:h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
           </div>
 
-          <div className="relative p-8 sm:p-10 flex flex-col sm:flex-row justify-between items-center z-10 gap-6">
+          <div className="relative p-6 sm:p-10 flex flex-col sm:flex-row justify-between items-center z-10 gap-4 sm:gap-6">
             <div className="text-center sm:text-left">
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
                 Explore Events
               </h1>
-              <p className="text-gray-300 max-w-lg text-lg">
+              <p className="text-gray-300 max-w-lg text-sm sm:text-lg">
                 Join hackathons, workshops, and meetups. Connect with the best minds in the community.
               </p>
             </div>
 
-            <div className="flex flex-row sm:flex-col gap-3 min-w-[140px] w-full sm:w-auto mt-4 sm:mt-0">
+            <div className="flex flex-row sm:flex-col gap-3 min-w-[140px] w-full sm:w-auto mt-2 sm:mt-0">
               <button
                 onClick={handleCreateEvent}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition hover:scale-105 active:scale-95 shadow-lg"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-gray-100 transition hover:scale-105 active:scale-95 shadow-lg text-sm sm:text-base"
               >
-                <FaPlus className="text-blue-600" />
+                <FaPlus className="text-blue-600 w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="whitespace-nowrap">Host Event</span>
               </button>
               <button
                 onClick={() => setIsFilterOpen(true)}
-                className="lg:hidden flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 transition border border-gray-700"
+                className="lg:hidden flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-gray-700 transition border border-gray-700 text-sm sm:text-base"
               >
-                <FaFilter />
+                <FaFilter className="w-3 h-3 sm:w-4 sm:h-4" />
                 Filter
               </button>
             </div>
@@ -167,9 +167,9 @@ function Events() {
                     <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</button>
                   </div>
 
-                  <div className="flex gap-6 overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 custom-scrollbar scroll-smooth">
+                  <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 custom-scrollbar scroll-smooth">
                     {eventsOfCategory.map((event) => (
-                      <div key={event._id} className="flex-shrink-0 w-[320px] sm:w-[350px]">
+                      <div key={event._id} className="flex-shrink-0 w-[280px] sm:w-[350px]">
                         <Cards
                           eventData={{
                             ...event,

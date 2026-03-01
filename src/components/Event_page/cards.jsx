@@ -79,7 +79,7 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
         onClick={() => navigate(`/events/${_id}`)}
       >
         {/* Image Section */}
-        <div className="relative h-48 overflow-hidden bg-gray-100">
+        <div className="relative h-36 sm:h-48 overflow-hidden bg-gray-100">
           {eventImageUrl ? (
             <img
               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -114,35 +114,38 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
         </div>
 
         {/* Content Section */}
-        <div className="p-5 flex flex-col flex-1">
+        <div className="p-4 sm:p-5 flex flex-col flex-1">
           {/* Organizer */}
-          <div className="flex items-center space-x-2 mb-3">
-            <Avatar src={organizerAvatar} alt={organizerName} size="xs" className="ring-2 ring-white" />
-            <span className="text-xs font-medium text-gray-500 truncate">{organizerName}</span>
+          <div className="flex items-center space-x-1.5 sm:space-x-2 mb-2 sm:mb-3">
+            <Avatar src={organizerAvatar} alt={organizerName} size="custom" className="w-5 h-5 sm:w-6 sm:h-6 ring-2 ring-white" />
+            <span className="text-[11px] sm:text-xs font-medium text-gray-500 truncate">{organizerName}</span>
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
             {eventName}
           </h3>
 
           {/* Prize / Info */}
-          <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-gray-600">
             {eventPrize && (
-              <div className="flex items-center gap-1.5 text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-md">
-                <FaTrophy className="text-xs" />
-                <span>{eventPrize}</span>
+              <div className="flex items-center gap-1 sm:gap-1.5 text-amber-600 font-medium bg-amber-50 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md">
+                <FaTrophy className="text-[10px] sm:text-xs" />
+                <span className="text-[11px] sm:text-[13px]">{eventPrize}</span>
               </div>
             )}
           </div>
 
           {/* Description */}
-          <p className="text-sm text-gray-500 line-clamp-2 mb-6 flex-1">
+          <p className="text-[13px] sm:text-sm text-gray-500 line-clamp-2 mb-4 sm:mb-6 flex-1 hidden sm:block">
+            {eventDescription}
+          </p>
+          <p className="text-[13px] sm:text-sm text-gray-500 line-clamp-2 mb-3 sm:mb-6 flex-1 block sm:hidden">
             {eventDescription}
           </p>
 
           {/* Footer Action */}
-          <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+          <div className="flex items-center justify-between mt-auto pt-3 sm:pt-4 border-t border-gray-50">
             <div className="flex -space-x-2">
               {attendees.slice(0, 3).map((att, i) => (
                 <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
@@ -164,7 +167,7 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
                   <button
                     onClick={handleAutoTeamClick}
                     disabled={loading || isQueued}
-                    className={`px-4 py-2 text-sm rounded-xl font-bold transition-all shadow-sm border ${isQueued
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl font-bold transition-all shadow-sm border ${isQueued
                       ? "bg-purple-50 text-purple-700 border-purple-200 cursor-default"
                       : "bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:text-blue-600 hover:-translate-y-0.5"
                       }`}
@@ -183,7 +186,7 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
               <button
                 onClick={handleJoin}
                 disabled={loading || isJoined || isQueued}
-                className={`px-5 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-2 ${isJoined
+                className={`px-3 sm:px-5 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-1.5 sm:gap-2 ${isJoined
                   ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
                   : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
                   }`}
