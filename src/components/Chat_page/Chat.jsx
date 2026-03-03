@@ -308,7 +308,7 @@ function Chat() {
 
     return (
         // Main Container
-        <div className={`bg-gray-50 absolute inset-x-0 top-0 md:top-16 md:bottom-0 flex md:p-6 gap-6`}>
+        <div className="bg-gray-50 absolute inset-x-0 top-0 bottom-[80px] md:bottom-0 md:top-16 flex md:p-6 md:gap-6">
 
             {/* ... (sidebar omitted for brevity) ... */}
 
