@@ -3,16 +3,16 @@ import { FiClock, FiChevronLeft, FiChevronRight, FiUser, FiTarget } from 'react-
 import api from '../../api/axios';
 
 const actionColors = {
-    ROLE_CHANGE: 'bg-blue-500/20 text-blue-400',
-    SUSPEND_USER: 'bg-amber-500/20 text-amber-400',
-    UNSUSPEND_USER: 'bg-emerald-500/20 text-emerald-400',
-    SOFT_DELETE_USER: 'bg-red-500/20 text-red-400',
-    APPROVE_EVENT: 'bg-emerald-500/20 text-emerald-400',
-    REJECT_EVENT: 'bg-red-500/20 text-red-400',
-    SOFT_DELETE_EVENT: 'bg-red-500/20 text-red-400',
-    SOFT_DELETE_POST: 'bg-red-500/20 text-red-400',
-    SOFT_DELETE_FORUM_POST: 'bg-red-500/20 text-red-400',
-    UPDATE_SETTINGS: 'bg-violet-500/20 text-violet-400',
+    ROLE_CHANGE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+    SUSPEND_USER: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+    UNSUSPEND_USER: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20',
+    SOFT_DELETE_USER: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+    APPROVE_EVENT: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20',
+    REJECT_EVENT: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+    SOFT_DELETE_EVENT: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+    SOFT_DELETE_POST: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+    SOFT_DELETE_FORUM_POST: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+    UPDATE_SETTINGS: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-400',
 };
 
 export default function LogsTab() {
@@ -54,39 +54,39 @@ export default function LogsTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiClock className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-bold text-white">Audit Logs</h2>
+                <FiClock className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-bold text-gray-900">Audit Logs</h2>
             </div>
 
             <div className="admin-glass rounded-2xl overflow-hidden">
                 {loading ? (
                     <div className="p-4 space-y-3">
                         {Array.from({ length: 5 }).map((_, i) => (
-                            <div key={i} className="h-16 bg-slate-700/30 rounded-xl animate-pulse" />
+                            <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
                         ))}
                     </div>
                 ) : logs.length === 0 ? (
-                    <div className="text-center text-slate-500 py-12">No audit logs yet</div>
+                    <div className="text-center text-gray-400 py-12">No audit logs yet</div>
                 ) : (
-                    <div className="divide-y divide-white/[0.04]">
+                    <div className="divide-y divide-gray-100">
                         {logs.map(log => (
-                            <div key={log._id} className="px-5 py-4 hover:bg-white/[0.02] transition-colors">
+                            <div key={log._id} className="px-5 py-4 hover:bg-gray-50 transition-colors">
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className={`admin-badge ${actionColors[log.action] || 'bg-slate-500/20 text-slate-400'}`}>
+                                            <span className={`admin-badge ${actionColors[log.action] || 'bg-gray-100 text-gray-500'}`}>
                                                 {log.action?.replace(/_/g, ' ')}
                                             </span>
-                                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                                            <span className="text-xs text-gray-400 flex items-center gap-1">
                                                 <FiUser className="w-3 h-3" />
                                                 {log.adminId?.name || log.adminId?.username || 'System'}
                                             </span>
                                         </div>
                                         {log.details && (
-                                            <p className="text-xs text-slate-400 mt-1.5 truncate">{log.details}</p>
+                                            <p className="text-xs text-gray-500 mt-1.5 truncate">{log.details}</p>
                                         )}
                                     </div>
-                                    <span className="text-[11px] text-slate-500 whitespace-nowrap flex items-center gap-1">
+                                    <span className="text-[11px] text-gray-400 whitespace-nowrap flex items-center gap-1">
                                         <FiClock className="w-3 h-3" />
                                         {formatTime(log.createdAt)}
                                     </span>
@@ -97,8 +97,8 @@ export default function LogsTab() {
                 )}
 
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-                        <p className="text-xs text-slate-500">Page {page} of {totalPages}</p>
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-400">Page {page} of {totalPages}</p>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="admin-btn admin-btn-blue disabled:opacity-30">
                                 <FiChevronLeft className="w-4 h-4" />

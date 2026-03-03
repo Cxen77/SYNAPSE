@@ -5,9 +5,9 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
 const roleColors = {
-    admin: 'bg-emerald-500/20 text-emerald-400',
-    moderator: 'bg-amber-500/20 text-amber-400',
-    user: 'bg-slate-500/20 text-slate-400',
+    admin: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20',
+    moderator: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+    user: 'bg-gray-100 text-gray-500',
 };
 
 export default function UsersTab() {
@@ -78,17 +78,17 @@ export default function UsersTab() {
         <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <FiUsers className="w-5 h-5 text-emerald-400" />
-                    <h2 className="text-lg font-bold text-white">User Management</h2>
+                    <FiUsers className="w-5 h-5 text-emerald-500" />
+                    <h2 className="text-lg font-bold text-gray-900">User Management</h2>
                 </div>
                 <div className="relative w-full sm:w-64">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
                         placeholder="Search users..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); setPage(1); }}
-                        className="w-full pl-9 pr-4 py-2 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
                     />
                 </div>
             </div>
@@ -109,12 +109,12 @@ export default function UsersTab() {
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={5}><div className="h-10 bg-slate-700/30 rounded animate-pulse" /></td>
+                                        <td colSpan={5}><div className="h-10 bg-gray-100 rounded animate-pulse" /></td>
                                     </tr>
                                 ))
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="text-center text-slate-500 py-8">No users found</td>
+                                    <td colSpan={5} className="text-center text-gray-400 py-8">No users found</td>
                                 </tr>
                             ) : users.map(user => (
                                 <tr key={user._id}>
@@ -123,47 +123,47 @@ export default function UsersTab() {
                                             <img
                                                 src={user.profilePic || `https://ui-avatars.com/api/?name=${user.name}&background=1e293b&color=94a3b8&size=32`}
                                                 alt=""
-                                                className="w-8 h-8 rounded-full object-cover border border-white/10"
+                                                className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-200"
                                             />
                                             <div>
-                                                <p className="font-medium text-white text-sm">{user.name}</p>
-                                                <p className="text-xs text-slate-500">@{user.username}</p>
+                                                <p className="font-medium text-gray-900 text-sm">{user.name}</p>
+                                                <p className="text-xs text-gray-400">@{user.username}</p>
                                                 {user.college && (
-                                                    <p className="text-[10px] text-emerald-400/70 mt-0.5 truncate max-w-[150px]" title={user.college}>
+                                                    <p className="text-[10px] text-emerald-600/70 mt-0.5 truncate max-w-[150px]" title={user.college}>
                                                         {user.college}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="text-slate-400 text-xs">{user.email}</td>
+                                    <td className="text-gray-500 text-xs">{user.email}</td>
                                     <td className="text-center">
                                         {currentUser?.role === 'admin' ? (
                                             <select
                                                 value={user.role}
                                                 onChange={e => handleRoleChange(user._id, e.target.value)}
                                                 disabled={actionLoading === user._id || (user._id === currentUser._id && user.role === 'admin')}
-                                                className={`w-full min-w-[140px] bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500/40 cursor-pointer ${user.role === 'admin' ? 'text-emerald-400 font-bold' :
-                                                    user.role === 'moderator' ? 'text-amber-400' :
-                                                        user.role === 'organizer' ? 'text-purple-400' : 'text-slate-400'
+                                                className={`w-full min-w-[140px] bg-white dark:bg-transparent border border-gray-200 dark:border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500/40 cursor-pointer ${user.role === 'admin' ? 'text-emerald-600 font-bold' :
+                                                    user.role === 'moderator' ? 'text-amber-600 dark:text-amber-400' :
+                                                        user.role === 'organizer' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'
                                                     }`}
                                             >
-                                                <option value="user" className="bg-slate-800 text-slate-400">User</option>
-                                                <option value="moderator" className="bg-slate-800 text-amber-400">Moderator</option>
+                                                <option value="user" className="bg-gray-100 text-gray-400">User</option>
+                                                <option value="moderator" className="bg-gray-100 text-amber-400">Moderator</option>
                                                 <option
                                                     value="organizer"
-                                                    className="bg-slate-800 text-purple-400"
+                                                    className="bg-gray-100 text-purple-400"
                                                     disabled={!user.collegeId}
                                                     title={!user.collegeId ? "User must have a linked college (CollegeID) to be an Organizer" : ""}
                                                 >
                                                     Organizer {!user.collegeId ? '(No College Linked)' : ''}
                                                 </option>
-                                                <option value="admin" className="bg-slate-800 text-emerald-400">Admin</option>
+                                                <option value="admin" className="bg-gray-100 text-emerald-400">Admin</option>
                                             </select>
                                         ) : (
-                                            <span className={`text-xs capitalize font-medium ${user.role === 'admin' ? 'text-emerald-400' :
-                                                user.role === 'moderator' ? 'text-amber-400' :
-                                                    user.role === 'organizer' ? 'text-purple-400' : 'text-slate-400'
+                                            <span className={`text-xs capitalize font-medium ${user.role === 'admin' ? 'text-emerald-600' :
+                                                user.role === 'moderator' ? 'text-amber-600 dark:text-amber-400' :
+                                                    user.role === 'organizer' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
                                                 }`}>
                                                 {user.role}
                                             </span>
@@ -205,8 +205,8 @@ export default function UsersTab() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-                        <p className="text-xs text-slate-500">Page {page} of {totalPages}</p>
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-400">Page {page} of {totalPages}</p>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}

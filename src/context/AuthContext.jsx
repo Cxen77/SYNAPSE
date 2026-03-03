@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api, { setAccessToken, getAccessToken } from '../api/axios';
+import api, { setAccessToken, getAccessToken, refreshAccessToken } from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseClient';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -16,14 +16,9 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const loadUser = async () => {
             try {
-                // Use raw axios (not api instance) to avoid interceptor loop
-                const axios = (await import('axios')).default;
-                const { data: refreshData } = await axios.post(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
-                    {},
-                    { withCredentials: true }
-                );
-                setAccessToken(refreshData.accessToken);
+                // Use shared refreshAccessToken so it participates in the same lock
+                // as the axios interceptor — prevents two simultaneous /auth/refresh calls
+                await refreshAccessToken();
 
                 // Now use the api instance (with token) to fetch user profile
                 const { data: userData } = await api.get('/users/me');

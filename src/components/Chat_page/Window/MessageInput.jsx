@@ -1,5 +1,4 @@
-import { FaSmile, FaPaperPlane, FaImage } from "react-icons/fa";
-import { BsMicFill } from "react-icons/bs";
+import { FaSmile, FaArrowUp } from "react-icons/fa";
 
 function MessageInput({
   newMessage,
@@ -11,7 +10,7 @@ function MessageInput({
   isReplying
 }) {
   return (
-    <div className="p-3 bg-white border-t border-gray-200 flex-shrink-0 relative">
+    <div className="p-2 sm:p-3 bg-white border-t border-gray-200 flex-shrink-0 relative w-full box-border">
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
@@ -45,31 +44,23 @@ function MessageInput({
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Message..."
-          className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="flex-1 min-w-0 bg-gray-100 border-none rounded-full px-3 py-2 sm:px-4 sm:py-2.5 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           disabled={isReplying}
         />
 
-        {/* Mic */}
-        <button className="p-2 text-blue-600 rounded-lg hover:bg-blue-50 transition" title="Voice message">
-          <BsMicFill size={20} />
-        </button>
 
-        {/* Image Send */}
-        <button className="p-2 text-blue-600 rounded-lg hover:bg-blue-50 transition" title="Send image">
-          <FaImage size={20} />
-        </button>
 
         {/* Send */}
         <button
           onClick={sendMessage}
           disabled={!newMessage.trim() || isReplying}
-          className={`p-2 rounded-lg transition shadow-sm ${newMessage.trim() && !isReplying
+          className={`p-2.5 rounded-full transition shadow-sm flex items-center justify-center ${newMessage.trim() && !isReplying
             ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           title="Send message"
         >
-          <FaPaperPlane size={20} />
+          <FaArrowUp size={18} />
         </button>
       </div>
     </div>

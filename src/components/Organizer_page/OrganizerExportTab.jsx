@@ -64,17 +64,17 @@ export default function OrganizerExportTab() {
     };
 
     return (
-        <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 sm:p-8 max-w-3xl">
-            <h2 className="text-2xl font-bold text-white mb-2">Export Data</h2>
-            <p className="text-slate-400 mb-8">Download a structured CSV with academic data and registration types.</p>
+        <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8 max-w-3xl">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Export Data</h2>
+            <p className="text-gray-400 dark:text-gray-500 mb-8">Download a structured CSV with academic data and registration types.</p>
 
             {/* Event selector */}
             <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-300 mb-2">Select Event</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Select Event</label>
                 <select
                     value={selectedEventId}
                     onChange={e => setSelectedEventId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
                 >
                     <option value="">-- Choose an Event --</option>
                     {events.map(ev => (
@@ -84,17 +84,17 @@ export default function OrganizerExportTab() {
             </div>
 
             {/* Filter Controls */}
-            <div className="bg-slate-800/50 border border-white/5 rounded-xl p-5 mb-6 space-y-4">
-                <h3 className="text-sm font-semibold text-slate-300">Export Filters (Optional)</h3>
+            <div className="bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5 mb-6 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">Export Filters (Optional)</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">Registration Type</label>
+                        <label className="block text-xs text-gray-400 mb-1">Registration Type</label>
                         <select
                             name="teamType"
                             value={filters.teamType}
                             onChange={handleFilterChange}
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm outline-none"
+                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
                         >
                             {TEAM_TYPES.map(t => (
                                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -102,36 +102,36 @@ export default function OrganizerExportTab() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">College (Partial match)</label>
+                        <label className="block text-xs text-gray-400 mb-1">College (Partial match)</label>
                         <input
                             type="text"
                             name="college"
                             value={filters.college}
                             onChange={handleFilterChange}
                             placeholder="e.g. MIT"
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm outline-none"
+                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">Year (Exact)</label>
+                        <label className="block text-xs text-gray-400 mb-1">Year (Exact)</label>
                         <input
                             type="text"
                             name="year"
                             value={filters.year}
                             onChange={handleFilterChange}
                             placeholder="e.g. 3rd"
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm outline-none"
+                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs text-slate-400 mb-1">Section (Exact)</label>
+                        <label className="block text-xs text-gray-400 mb-1">Section (Exact)</label>
                         <input
                             type="text"
                             name="section"
                             value={filters.section}
                             onChange={handleFilterChange}
                             placeholder="e.g. A"
-                            className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm outline-none"
+                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
                         />
                     </div>
                 </div>
@@ -140,7 +140,7 @@ export default function OrganizerExportTab() {
             <button
                 onClick={handleExport}
                 disabled={!selectedEventId || downloading}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-xl font-medium transition shadow-lg shadow-emerald-600/20"
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl font-medium transition"
             >
                 <FiDownload />
                 {downloading ? 'Preparing Download...' : 'Export to CSV'}

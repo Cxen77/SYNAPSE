@@ -15,6 +15,7 @@ const Events = lazy(() => import('./components/Event_page/Events.jsx'));
 const EventDetails = lazy(() => import('./components/Event_page/EventDetails.jsx'));
 const Chat = lazy(() => import('./components/Chat_page/Chat.jsx'));
 const Profile = lazy(() => import('./components/Profile_page/Profile.jsx'));
+// No change to Profile import itself, we'll wrap the Route instead
 const Login = lazy(() => import('./components/Login.jsx'));
 const Signup = lazy(() => import('./components/Signup.jsx'));
 const Settings = lazy(() => import('./components/Settings_page/Settings.jsx'));
@@ -35,6 +36,7 @@ const Unauthorized = lazy(() => import('./components/Unauthorized.jsx'));
 
 
 import Skeleton from './components/common/Skeleton';
+import ProfileSkeleton from './components/Profile_page/ProfileSkeleton';
 import InAppNotification from './components/common/InAppNotification';
 import FeatureGate from './components/common/FeatureGate';
 
@@ -212,8 +214,20 @@ function App() {
             <Route path="/chat" element={<ProtectedRoute><FeatureGate featureKey="chat" fallback={<Navigate to="/" replace />}><Chat /></FeatureGate></ProtectedRoute>} />
             <Route path="/chat/:id" element={<ProtectedRoute><FeatureGate featureKey="chat" fallback={<Navigate to="/" replace />}><Chat /></FeatureGate></ProtectedRoute>} />
 
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Suspense fallback={<ProfileSkeleton />}>
+                  <Profile />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/:username" element={
+              <ProtectedRoute>
+                <Suspense fallback={<ProfileSkeleton />}>
+                  <Profile />
+                </Suspense>
+              </ProtectedRoute>
+            } />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
             {/* Admin Route - Strict List */}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ProfileHero from './ProfileHero';
+import ProfileSkeleton from './ProfileSkeleton';
 import AboutSection from './AboutSection';
 import ProjectsSection from './ProjectsSection';
 
@@ -20,119 +22,99 @@ import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {
     const { username } = useParams();
-    const { currentUser: firebaseUser } = useAuth(); // Get Firebase user
-    const [user, setUser] = useState(null);
-    const [currentUser, setCurrentUser] = useState(null); // The backend user
-    const [loading, setLoading] = useState(true);
-    const [isOwnProfile, setIsOwnProfile] = useState(false);
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [viewAsPublic, setViewAsPublic] = useState(false); // Only for owner
+    const { currentUser: firebaseUser } = useAuth();
+    const queryClient = useQueryClient();
+
+    // UI State
+    const [activeTab, setActiveTab] = useState('overview');
+    const [viewAsPublic, setViewAsPublic] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
 
-    const [invites, setInvites] = useState([]);
-    const [activeTab, setActiveTab] = useState('overview');
+    // Queries
+    const {
+        data: currentUser,
+        isLoading: isCurrentUserLoading
+    } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: async () => {
+            const res = await api.get('/users/profile');
+            return res.data;
+        },
+        retry: false,
+        staleTime: 60000 // Cache for 1 minute
+    });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // 1. Fetch the profile to display
-                let endpoint = '/users/profile';
-                if (username) {
-                    endpoint = `/users/${username}`;
-                }
-                const profileRes = await api.get(endpoint);
-                const profileData = profileRes.data;
+    const {
+        data: profileUser,
+        isLoading: isProfileLoading,
+        error: profileError
+    } = useQuery({
+        queryKey: ['profile', username || 'me'],
+        queryFn: async () => {
+            const endpoint = username ? `/users/${username}` : '/users/profile';
+            const res = await api.get(endpoint);
+            return res.data;
+        },
+        retry: false,
+        staleTime: 60000 // Cache for 1 minute
+    });
 
-                // 2. Fetch current user (me) to check ownership and following status
-                let meData = null;
-                try {
-                    const meRes = await api.get('/users/profile');
-                    meData = meRes.data;
-                    setCurrentUser(meData);
-                } catch (e) {
-                    console.error("Failed to fetch current user", e);
-                }
+    // Determine ownership early so we conditionally fetch invites
+    const isOwnProfile = profileUser && currentUser ? profileUser._id === currentUser._id : (!username);
 
-                setUser(profileData);
+    const {
+        data: invitesData,
+        isLoading: isInvitesLoading
+    } = useQuery({
+        queryKey: ['teamInvites'],
+        queryFn: async () => {
+            const res = await api.get('/teams/invites');
+            return res.data.map(team => ({
+                id: team._id,
+                name: team.name,
+                skill: team.category || 'Team Invite',
+                img: team.createdBy?.profilePic || '',
+                type: 'team'
+            }));
+        },
+        enabled: isOwnProfile, // Only fetch if it's our own profile
+        staleTime: 60000
+    });
 
-                // 3. Determine Ownership
-                if (username && meData) {
-                    const isMe = profileData._id === meData._id;
-                    setIsOwnProfile(isMe);
-                    if (isMe) {
-                        setIsFollowing(false);
-                    } else {
-                        setIsFollowing(profileData.followers.includes(meData._id));
-                    }
-                } else {
-                    // /profile route -> It's me
-                    setIsOwnProfile(true);
-                    setIsFollowing(false);
-                }
+    // Fallback user logic 
+    const user = profileError && firebaseUser && (!username || username === firebaseUser.email?.split('@')[0])
+        ? {
+            _id: firebaseUser.uid,
+            name: firebaseUser.displayName,
+            username: firebaseUser.email?.split('@')[0],
+            email: firebaseUser.email,
+            profilePic: firebaseUser.photoURL,
+            followers: [],
+            following: [],
+            skills: [],
+            bio: "Welcome to your profile!",
+            profession: "Member",
+            stats: { followers: 0, following: 0 },
+            projects: [],
+            teams: []
+        }
+        : profileUser;
 
-                // 4. Fetch "Invites" (Team Invites)
-                try {
-                    const invitesRes = await api.get('/teams/invites');
-                    const mappedInvites = invitesRes.data.map(team => ({
-                        id: team._id,
-                        name: team.name,
-                        skill: team.category || 'Team Invite',
-                        img: team.createdBy?.profilePic || '', // Use creator's pic or team avatar if available
-                        type: 'team'
-                    }));
-                    setInvites(mappedInvites);
-                } catch (e) {
-                    console.error("Failed to fetch invites", e);
-                }
+    const isFollowing = user && currentUser && !isOwnProfile
+        ? user.followers.includes(currentUser._id)
+        : false;
 
-            } catch (err) {
-                console.error("Failed to fetch profile", err);
+    const invites = invitesData || [];
 
-                // FALLBACK: If backend fails but we have Firebase user, use that!
-                if (firebaseUser && (!username || username === firebaseUser.email?.split('@')[0])) {
-                    console.log("Using Firebase user fallback");
-                    const fallbackUser = {
-                        _id: firebaseUser.uid,
-                        name: firebaseUser.displayName,
-                        username: firebaseUser.email?.split('@')[0],
-                        email: firebaseUser.email,
-                        profilePic: firebaseUser.photoURL,
-                        followers: [],
-                        following: [],
-                        skills: [],
-                        bio: "Welcome to your profile!",
-                        profession: "Member",
-                        stats: { followers: 0, following: 0 },
-                        projects: [], // Initialize empty arrays for fallback
-                        teams: []
-                    };
-                    setUser(fallbackUser);
-                    setIsOwnProfile(true);
-                } else {
-                    if (err.response && err.response.status === 404) {
-                        setUser(null);
-                    } else {
-                        setUser(null);
-                    }
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [username, firebaseUser]);
+    const loading = isProfileLoading || isCurrentUserLoading || (isOwnProfile && isInvitesLoading);
 
     // Check for GitHub OAuth Success
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('github') === 'success') {
             toast.success("GitHub connected successfully!");
-            // Remove query param
             window.history.replaceState({}, document.title, window.location.pathname);
-            // Open Import Modal
             setIsGithubModalOpen(true);
         }
     }, []);
@@ -207,14 +189,7 @@ const Profile = () => {
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading profile...</p>
-                </div>
-            </div>
-        );
+        return <ProfileSkeleton />;
     }
 
     if (!user) {

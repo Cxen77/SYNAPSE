@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { FaPhone, FaVideo, FaEllipsisV, FaArrowLeft, FaTrash, FaSignOutAlt, FaUserPlus } from "react-icons/fa";
+import { FaEllipsisV, FaArrowLeft, FaTrash, FaSignOutAlt, FaUserPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 import toast from "react-hot-toast";
@@ -76,12 +76,7 @@ function ChatHeader({ chat, onBack }) {
             </div>
 
             <div className="flex items-center gap-2 md:gap-4 text-gray-400 relative">
-                <button className="p-2 hover:bg-gray-100 rounded-full hover:text-gray-600 transition-colors">
-                    <FaPhone size={16} />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-full hover:text-gray-600 transition-colors">
-                    <FaVideo size={16} />
-                </button>
+
 
                 <div ref={menuRef} className="relative">
                     <button

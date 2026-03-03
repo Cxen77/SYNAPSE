@@ -45,6 +45,15 @@ export const refreshLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Google Auth Limiter - More lenient since token is validated server-side by Firebase
+export const googleAuthLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // 20 requests per window -- generous for normal use
+    message: { message: 'Too many Google auth attempts, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Role Assignment Limiter - Prevent mass role changes (Security)
 export const roleLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour

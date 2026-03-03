@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { FiGrid, FiUsers, FiCalendar, FiFileText, FiMessageCircle, FiToggleRight, FiClock, FiArrowLeft, FiShield } from 'react-icons/fi';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiGrid, FiUsers, FiCalendar, FiFileText, FiMessageCircle, FiToggleRight, FiClock, FiArrowLeft, FiShield, FiMenu, FiX } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import OverviewTab from './OverviewTab';
@@ -8,139 +9,145 @@ import EventsTab from './EventsTab';
 import PostsTab from './PostsTab';
 import ForumsTab from './ForumsTab';
 import SettingsTab from './SettingsTab';
-
 import LogsTab from './LogsTab';
 import CollegesTab from './CollegesTab';
 import './admin.css';
 
-const tabs = [
-    { id: 'overview', label: 'Overview', icon: FiGrid },
-    { id: 'users', label: 'Users', icon: FiUsers },
-    { id: 'events', label: 'Events', icon: FiCalendar },
-    { id: 'posts', label: 'Posts', icon: FiFileText },
-    { id: 'forums', label: 'Forums', icon: FiMessageCircle },
-    { id: 'settings', label: 'Flags', icon: FiToggleRight },
-    { id: 'logs', label: 'Logs', icon: FiClock },
-    { id: 'colleges', label: 'Colleges', icon: FiUsers },
+const ALL_TABS = [
+    { id: 'overview', label: 'Overview', icon: FiGrid, component: OverviewTab },
+    { id: 'users', label: 'Users', icon: FiUsers, component: UsersTab },
+    { id: 'events', label: 'Events', icon: FiCalendar, component: EventsTab },
+    { id: 'posts', label: 'Posts', icon: FiFileText, component: PostsTab },
+    { id: 'forums', label: 'Forums', icon: FiMessageCircle, component: ForumsTab },
+    { id: 'settings', label: 'Flags', icon: FiToggleRight, component: SettingsTab },
+    { id: 'logs', label: 'Logs', icon: FiClock, component: LogsTab },
+    { id: 'colleges', label: 'Colleges', icon: FiShield, component: CollegesTab },
 ];
+
+const MODERATOR_TAB_IDS = ['overview', 'events', 'posts', 'forums'];
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const navigate = useNavigate();
-    const { currentUser } = useAuth(); // Get current user for role check
+    const { currentUser } = useAuth();
 
-    // Set body background to match dark theme and prevent white flash on scroll
-    useEffect(() => {
-        const prev = document.body.style.backgroundColor;
-        document.body.style.backgroundColor = '#0f172a';
-        document.documentElement.style.backgroundColor = '#0f172a';
-        return () => {
-            document.body.style.backgroundColor = prev;
-            document.documentElement.style.backgroundColor = '';
-        };
-    }, []);
-
-    // Filter tabs based on role
-    const visibleTabs = tabs.filter(tab => {
+    const visibleTabs = ALL_TABS.filter(tab => {
         if (currentUser?.role === 'admin') return true;
-        // Moderators: Show Overview, Events, Posts, Forums. Hide others.
-        if (currentUser?.role === 'moderator') {
-            return ['overview', 'events', 'posts', 'forums'].includes(tab.id);
-        }
+        if (currentUser?.role === 'moderator') return MODERATOR_TAB_IDS.includes(tab.id);
         return false;
     });
 
-    const renderTab = () => {
-        // Security fallback: don't render restricted tabs even if activeTab is set
-        if (currentUser?.role !== 'admin' && ['users', 'settings', 'logs', 'colleges'].includes(activeTab)) {
-            return <div className="text-white">Unauthorized</div>;
-        }
+    const safeActiveTab = visibleTabs.find(t => t.id === activeTab) ? activeTab : visibleTabs[0]?.id || 'overview';
+    const ActiveComponent = visibleTabs.find(t => t.id === safeActiveTab)?.component || OverviewTab;
 
-        switch (activeTab) {
-            case 'overview': return <OverviewTab />;
-            case 'users': return <UsersTab />;
-            case 'events': return <EventsTab />;
-            case 'posts': return <PostsTab />;
-            case 'forums': return <ForumsTab />;
-            case 'settings': return <SettingsTab />;
-            case 'logs': return <LogsTab />;
-            case 'colleges': return <CollegesTab />;
-            default: return <OverviewTab />;
-        }
-    };
+    const isAdmin = currentUser?.role === 'admin';
+    const panelTitle = isAdmin ? 'Admin' : 'Moderator';
 
     return (
-        <div className="admin-dashboard min-h-screen bg-[#0f172a]">
-            {/* Top Bar */}
-            <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0f172a] backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+        <div className="min-h-screen bg-gray-50 text-gray-900 flex font-sans">
+            {/* Mobile Overlay */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Sidebar */}
+            <motion.aside
+                className={`fixed lg:sticky top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+            >
+                {/* Header */}
+                <div className="p-5 border-b border-gray-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200"
-                            title="Back to Home"
-                        >
-                            <FiArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                <FiShield className="w-4.5 h-4.5 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-base font-bold text-white leading-tight tracking-tight">Admin</h1>
-                                <p className="text-[9px] text-emerald-400/70 uppercase tracking-[0.2em] font-semibold leading-tight">Control Panel</p>
-                            </div>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg ${isAdmin ? 'bg-gradient-to-br from-emerald-400 to-green-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
+                            <FiShield className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-base leading-tight text-gray-900">{panelTitle}</h1>
+                            <p className="text-xs text-gray-400">Control Panel</p>
                         </div>
                     </div>
-
-                    {/* Desktop Tabs */}
-                    <nav className="hidden md:flex items-center gap-0.5 bg-white/[0.04] rounded-xl p-1 border border-white/[0.04]">
-                        {visibleTabs.map(tab => {
-                            const Icon = tab.icon;
-                            const isActive = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${isActive
-                                        ? 'bg-emerald-500/15 text-emerald-400 shadow-sm shadow-emerald-500/10'
-                                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-                                        }`}
-                                >
-                                    <Icon className="w-3.5 h-3.5" />
-                                    {tab.label}
-                                </button>
-                            );
-                        })}
-                    </nav>
+                    <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100">
+                        <FiX size={18} />
+                    </button>
                 </div>
-            </header>
 
-            {/* Mobile Tab Bar */}
-            <div className="md:hidden flex admin-tabs-scroll overflow-x-auto gap-1 p-2 bg-[#0f172a] border-b border-white/5">
-                {visibleTabs.map(tab => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 ${isActive
-                                ? 'bg-emerald-500/15 text-emerald-400'
-                                : 'text-slate-500 hover:text-slate-300'
-                                }`}
-                        >
-                            <Icon className="w-3.5 h-3.5" />
-                            {tab.label}
+                {/* Nav */}
+                <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto custom-scrollbar">
+                    <p className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2 mt-1">
+                        {isAdmin ? 'Administration' : 'Moderation'}
+                    </p>
+                    {visibleTabs.map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = safeActiveTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
+                                    ? isAdmin
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                        : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
+                                    }`}
+                            >
+                                <Icon className={`w-4 h-4 shrink-0 ${isActive
+                                    ? isAdmin ? 'text-emerald-600' : 'text-indigo-600'
+                                    : 'text-gray-400 group-hover:text-gray-700'
+                                    }`}
+                                />
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-gray-200 shrink-0">
+                    <div className="flex items-center gap-3 px-1 mb-3">
+                        <img
+                            src={currentUser?.profilePic || `https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`}
+                            alt=""
+                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                        />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 truncate">{currentUser?.name}</p>
+                            <p className="text-xs text-gray-400 capitalize truncate">{currentUser?.role}</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                    >
+                        <FiArrowLeft size={14} /> Back to Home
+                    </button>
+                </div>
+            </motion.aside>
+
+            {/* Main */}
+            <main className="flex-1 min-w-0 bg-gray-50 flex flex-col" style={{ minHeight: '100vh', overflowX: 'hidden' }}>
+                {/* Mobile Top Bar */}
+                <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-1 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <FiMenu size={20} />
                         </button>
-                    );
-                })}
-            </div>
+                        <span className="font-bold text-gray-900">{panelTitle} Panel</span>
+                    </div>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isAdmin ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
+                        <FiShield className={`w-4 h-4 ${isAdmin ? 'text-emerald-600' : 'text-indigo-600'}`} />
+                    </div>
+                </div>
 
-            {/* Content Area */}
-            <main className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-                <div key={activeTab} className="admin-fade-in">
-                    {renderTab()}
+                <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto">
+                    <div key={safeActiveTab} className="admin-fade-in">
+                        <ActiveComponent />
+                    </div>
                 </div>
             </main>
         </div>

@@ -19,6 +19,7 @@ const api = axios.create({
 
 // Track if a refresh is already in progress to avoid duplicate calls
 let isRefreshing = false;
+let refreshPromise = null; // Shared promise so all callers wait on the same refresh
 let refreshSubscribers = [];
 
 const onRefreshed = (newToken) => {
@@ -28,6 +29,28 @@ const onRefreshed = (newToken) => {
 
 const addRefreshSubscriber = (cb) => {
     refreshSubscribers.push(cb);
+};
+
+// Shared refresh function — used by both the interceptor AND AuthContext
+// This ensures only one /auth/refresh call is ever in-flight at a time
+export const refreshAccessToken = () => {
+    if (isRefreshing && refreshPromise) {
+        return refreshPromise;
+    }
+    isRefreshing = true;
+    refreshPromise = axios.post(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
+        {},
+        { withCredentials: true }
+    ).then(({ data }) => {
+        setAccessToken(data.accessToken);
+        onRefreshed(data.accessToken);
+        return data.accessToken;
+    }).finally(() => {
+        isRefreshing = false;
+        refreshPromise = null;
+    });
+    return refreshPromise;
 };
 
 // REQUEST INTERCEPTOR — attach access token
@@ -68,19 +91,8 @@ api.interceptors.response.use(
                 });
             }
 
-            isRefreshing = true;
-
             try {
-                const { data } = await axios.post(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
-                    {},
-                    { withCredentials: true }
-                );
-
-                const newToken = data.accessToken;
-                setAccessToken(newToken);
-                onRefreshed(newToken);
-
+                const newToken = await refreshAccessToken();
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
             } catch (refreshError) {

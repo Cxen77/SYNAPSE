@@ -56,16 +56,16 @@ export default function OrganizerParticipantsTab() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-white mb-6">Event Participants</h2>
+            <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Event Participants</h2>
 
                 {/* Event Selector */}
                 <div className="mb-6 max-w-sm">
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Select Event</label>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Select Event</label>
                     <select
                         value={selectedEventId}
                         onChange={e => { setSelectedEventId(e.target.value); setData(null); }}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                        className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
                     >
                         <option value="">-- Choose an Event --</option>
                         {events.map(ev => (
@@ -85,7 +85,7 @@ export default function OrganizerParticipantsTab() {
                         ].map(stat => (
                             <div key={stat.label} className={`bg-${stat.color}-500/10 border border-${stat.color}-500/20 rounded-xl p-4 text-center`}>
                                 <p className={`text-3xl font-bold text-${stat.color}-400`}>{stat.value ?? '—'}</p>
-                                <p className="text-xs text-slate-400 mt-1">{stat.label}</p>
+                                <p className="text-xs text-gray-400 mt-1">{stat.label}</p>
                             </div>
                         ))}
                     </div>
@@ -99,8 +99,8 @@ export default function OrganizerParticipantsTab() {
                                 key={f.value}
                                 onClick={() => handleFilterChange(f.value)}
                                 className={`px-4 py-2 rounded-lg text-sm font-semibold border transition ${activeFilter === f.value
-                                        ? 'bg-indigo-600 border-indigo-500 text-white'
-                                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-200'
                                     }`}
                             >
                                 {f.label}
@@ -113,16 +113,16 @@ export default function OrganizerParticipantsTab() {
                 {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
                 {/* Loading */}
-                {loading && <p className="text-slate-400 animate-pulse">Loading participants...</p>}
+                {loading && <p className="text-gray-400 animate-pulse">Loading participants...</p>}
 
                 {/* Participant Table */}
                 {!loading && data && (
-                    <div className="animate-in fade-in duration-300 bg-slate-800 border border-white/5 rounded-xl overflow-x-auto">
+                    <div className="animate-in fade-in duration-300 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl overflow-x-auto">
                         {data.participants.length === 0 ? (
-                            <p className="text-slate-500 text-center py-10">No participants found for this filter.</p>
+                            <p className="text-gray-400 dark:text-gray-500 text-center py-10">No participants found for this filter.</p>
                         ) : (
-                            <table className="w-full text-left text-sm text-slate-300 min-w-[640px]">
-                                <thead className="bg-slate-700/50 text-xs uppercase text-slate-400">
+                            <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300 min-w-[640px]">
+                                <thead className="bg-gray-200/50 dark:bg-black text-xs uppercase text-gray-400 dark:text-gray-500">
                                     <tr>
                                         <th className="px-5 py-3">Name</th>
                                         <th className="px-5 py-3">Username</th>
@@ -135,13 +135,13 @@ export default function OrganizerParticipantsTab() {
                                 </thead>
                                 <tbody>
                                     {data.participants.map((p, i) => (
-                                        <tr key={p.user._id || i} className="border-b border-white/5 hover:bg-white/5 transition">
-                                            <td className="px-5 py-3 font-medium text-white">{p.user.name}</td>
+                                        <tr key={p.user._id || i} className="border-b border-gray-100 dark:border-gray-800 hover:bg-white/5 dark:hover:bg-white/5 transition">
+                                            <td className="px-5 py-3 font-medium text-gray-900 dark:text-white">{p.user.name}</td>
                                             <td className="px-5 py-3">@{p.user.username}</td>
-                                            <td className="px-5 py-3 text-slate-400">{p.user.college || 'N/A'}</td>
-                                            <td className="px-5 py-3 text-slate-400">{p.user.year || '—'}</td>
-                                            <td className="px-5 py-3 text-slate-400">{p.user.section || '—'}</td>
-                                            <td className="px-5 py-3 text-slate-400">{p.teamInfo?.teamName || 'Solo'}</td>
+                                            <td className="px-5 py-3 text-gray-400 dark:text-gray-500">{p.user.college || 'N/A'}</td>
+                                            <td className="px-5 py-3 text-gray-400 dark:text-gray-500">{p.user.year || '—'}</td>
+                                            <td className="px-5 py-3 text-gray-400 dark:text-gray-500">{p.user.section || '—'}</td>
+                                            <td className="px-5 py-3 text-gray-400 dark:text-gray-500">{p.teamInfo?.teamName || 'Solo'}</td>
                                             <td className="px-5 py-3">
                                                 <span className={`px-2 py-0.5 rounded border text-xs font-semibold ${TYPE_COLORS[p.registrationType]}`}>
                                                     {p.registrationType}

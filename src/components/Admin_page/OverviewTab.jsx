@@ -6,14 +6,14 @@ const StatCard = ({ icon: Icon, label, value, gradient, loading }) => (
     <div className="admin-stat-card admin-glass rounded-2xl p-5 flex items-center gap-4 hover:scale-[1.02] transition-all duration-300 cursor-default"
         style={{ '--admin-accent': gradient?.split(' ')[0] || '#34d399' }}>
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br ${gradient} shadow-lg`}>
-            <Icon className="w-5 h-5 text-white" />
+            <Icon className="w-5 h-5 text-gray-900" />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-xs text-slate-400 font-medium truncate">{label}</p>
+            <p className="text-xs text-gray-500 font-medium truncate">{label}</p>
             {loading ? (
-                <div className="h-7 w-16 bg-slate-700/50 rounded-lg animate-pulse mt-1" />
+                <div className="h-7 w-16 bg-gray-200 rounded-lg animate-pulse mt-1" />
             ) : (
-                <p className="text-2xl font-bold text-white tracking-tight">{value?.toLocaleString() || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 tracking-tight">{value?.toLocaleString() || 0}</p>
             )}
         </div>
     </div>
@@ -50,8 +50,8 @@ export default function OverviewTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiTrendingUp className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-bold text-white">Dashboard Overview</h2>
+                <FiTrendingUp className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-bold text-gray-900">Dashboard Overview</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {cards.map((card, i) => (

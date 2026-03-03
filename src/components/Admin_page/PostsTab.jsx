@@ -40,8 +40,8 @@ export default function PostsTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiFileText className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-bold text-white">Post Moderation</h2>
+                <FiFileText className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-bold text-gray-900">Post Moderation</h2>
             </div>
 
             <div className="admin-glass rounded-2xl overflow-hidden">
@@ -61,12 +61,12 @@ export default function PostsTab() {
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={6}><div className="h-10 bg-slate-700/30 rounded animate-pulse" /></td>
+                                        <td colSpan={6}><div className="h-10 bg-gray-100 rounded animate-pulse" /></td>
                                     </tr>
                                 ))
                             ) : posts.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="text-center text-slate-500 py-8">No posts found</td>
+                                    <td colSpan={6} className="text-center text-gray-400 py-8">No posts found</td>
                                 </tr>
                             ) : posts.map(post => (
                                 <tr key={post._id}>
@@ -75,23 +75,23 @@ export default function PostsTab() {
                                             <img
                                                 src={post.user?.profilePic || `https://ui-avatars.com/api/?name=${post.user?.name || 'U'}&background=1e293b&color=94a3b8&size=24`}
                                                 alt=""
-                                                className="w-6 h-6 rounded-full object-cover border border-white/10"
+                                                className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-200"
                                             />
-                                            <span className="text-xs text-slate-300">{post.user?.name || 'Unknown'}</span>
+                                            <span className="text-xs text-gray-700">{post.user?.name || 'Unknown'}</span>
                                         </div>
                                     </td>
                                     <td>
-                                        <p className="text-sm text-slate-300 truncate max-w-[250px]">{post.content || '(no content)'}</p>
+                                        <p className="text-sm text-gray-700 truncate max-w-[250px]">{post.content || '(no content)'}</p>
                                     </td>
                                     <td className="text-center">
-                                        <span className="text-xs text-slate-400">{post.likes?.length || 0}</span>
+                                        <span className="text-xs text-gray-500">{post.likes?.length || 0}</span>
                                     </td>
                                     <td className="text-center">
-                                        <span className={`admin-badge ${post.isDeleted ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                        <span className={`admin-badge ${post.isDeleted ? 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20'}`}>
                                             {post.isDeleted ? 'Deleted' : 'Active'}
                                         </span>
                                     </td>
-                                    <td className="text-center text-xs text-slate-500">
+                                    <td className="text-center text-xs text-gray-400">
                                         {new Date(post.createdAt).toLocaleDateString()}
                                     </td>
                                     <td>
@@ -113,8 +113,8 @@ export default function PostsTab() {
                 </div>
 
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-                        <p className="text-xs text-slate-500">Page {page} of {totalPages}</p>
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-400">Page {page} of {totalPages}</p>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="admin-btn admin-btn-blue disabled:opacity-30">
                                 <FiChevronLeft className="w-4 h-4" />

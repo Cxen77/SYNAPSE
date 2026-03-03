@@ -16,7 +16,7 @@ import {
 import passport from 'passport';
 import { protect } from '../middleware/authMiddleware.js';
 import User from '../models/User.js';
-import { authLimiter, refreshLimiter } from '../middleware/rateLimiters.js';
+import { authLimiter, refreshLimiter, googleAuthLimiter } from '../middleware/rateLimiters.js';
 import verifyCaptcha from '../middleware/captchaMiddleware.js';
 
 const router = express.Router();
@@ -30,8 +30,8 @@ router.post('/forgot-password', authLimiter, verifyCaptcha, forgotPassword);
 router.post('/reset-password', authLimiter, verifyCaptcha, resetPassword);
 router.post('/resend-otp', authLimiter, resendOtp);
 
-// Google Auth Route
-router.post('/google', authLimiter, googleAuth);
+// Google Auth Route — uses its own limiter (Firebase validates token server-side, not brute-forceable)
+router.post('/google', googleAuthLimiter, googleAuth);
 
 // Session management
 router.post('/refresh', refreshLimiter, refreshToken);

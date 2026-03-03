@@ -392,14 +392,12 @@ const TeamDetails = () => {
                     {/* ── Main Card ── */}
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-8">
                         {/* Banner */}
-                        <div className="bg-gradient-to-br from-blue-700 via-indigo-600 to-indigo-800 p-8 sm:p-12 text-white relative overflow-hidden rounded-t-3xl">
+                        <div className="bg-white p-8 sm:p-12 text-gray-900 relative overflow-hidden rounded-t-3xl border-b border-gray-200">
                             {/* Decorative Background Elements */}
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-                            <div className="absolute -top-24 -right-24 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl shadow-2xl"></div>
-                            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-400 opacity-10 rounded-full blur-3xl shadow-2xl"></div>
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-normal pointer-events-none"></div>
 
-                            {/* Abstract Geometric Icon Instead of FaUsers */}
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 transform translate-x-12 opacity-10 md:opacity-20 pointer-events-none">
+                            {/* Abstract Geometric Icon */}
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 transform translate-x-12 opacity-5 pointer-events-none">
                                 <svg width="240" height="240" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
                                     <polygon points="12 2 2 7 12 12 22 7 12 2" fill="currentColor" fillOpacity="0.2" />
                                     <polyline points="2 17 12 22 22 17" />
@@ -410,25 +408,25 @@ const TeamDetails = () => {
                             <div className="relative z-10 flex flex-col h-full justify-end">
                                 {/* Top Badges Row */}
                                 <div className="flex items-center gap-2 mb-6 flex-wrap">
-                                    <span className="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border border-white/20 shadow-sm flex items-center gap-1.5">
-                                        {team.visibility === 'public' ? <Globe size={12} className="text-blue-200" /> : <Lock size={12} className="text-blue-200" />}
+                                    <span className="bg-gray-100 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border border-gray-200 shadow-sm flex items-center gap-1.5 text-gray-700">
+                                        {team.visibility === 'public' ? <Globe size={12} className="text-gray-500" /> : <Lock size={12} className="text-gray-500" />}
                                         {team.visibility}
                                     </span>
-                                    <span className="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border border-white/20 shadow-sm flex items-center gap-1.5">
-                                        <Layers size={12} className="text-blue-200" /> {team.category}
+                                    <span className="bg-gray-100 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border border-gray-200 shadow-sm flex items-center gap-1.5 text-gray-700">
+                                        <Layers size={12} className="text-gray-500" /> {team.category}
                                     </span>
 
                                     {team.teamStatus && team.teamStatus !== 'active' && (
-                                        <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest shadow-sm ${STATUS_COLORS[team.teamStatus]}`}>
+                                        <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest shadow-sm border border-gray-200 ${STATUS_COLORS[team.teamStatus]}`}>
                                             {team.teamStatus}
                                         </span>
                                     )}
 
                                     {team.isLookingForMembers && (
-                                        <span className="flex items-center gap-2 bg-emerald-500/20 backdrop-blur-md border border-emerald-400/30 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-emerald-100 shadow-sm">
+                                        <span className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-emerald-700 shadow-sm">
                                             <span className="relative flex h-2 w-2">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                             </span>
                                             Hiring
                                         </span>
@@ -436,22 +434,22 @@ const TeamDetails = () => {
                                 </div>
 
                                 {/* Main Title & Description */}
-                                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-blue-100 drop-shadow-sm leading-tight">
+                                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-sm leading-tight text-gray-900">
                                     {team.name}
                                 </h1>
-                                <p className="text-blue-100/90 text-lg md:text-xl max-w-3xl leading-relaxed font-medium">
+                                <p className="text-gray-500 text-lg md:text-xl max-w-3xl leading-relaxed font-medium">
                                     {team.description || 'No description provided.'}
                                 </p>
 
                                 {/* currentFocus block */}
                                 {team.currentFocus && (
-                                    <div className="mt-8 inline-flex items-stretch bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-inner max-w-fit">
-                                        <div className="bg-yellow-500/20 px-4 flex items-center justify-center border-r border-white/10">
-                                            <Zap size={20} className="text-yellow-400" />
+                                    <div className="mt-8 inline-flex items-stretch bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-sm max-w-fit">
+                                        <div className="bg-yellow-100 px-4 flex items-center justify-center border-r border-gray-200">
+                                            <Zap size={20} className="text-yellow-600" />
                                         </div>
                                         <div className="px-5 py-3">
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-blue-200/80 mb-0.5">Focusing on</p>
-                                            <p className="text-sm text-white font-semibold">{team.currentFocus}</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Focusing on</p>
+                                            <p className="text-sm font-semibold">{team.currentFocus}</p>
                                         </div>
                                     </div>
                                 )}

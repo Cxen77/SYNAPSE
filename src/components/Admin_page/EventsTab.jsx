@@ -47,10 +47,10 @@ export default function EventsTab() {
     };
 
     const getStatus = (event) => {
-        if (event.isDeleted) return { label: 'Deleted', cls: 'bg-slate-500/20 text-slate-400' };
-        if (event.isApproved === true) return { label: 'Approved', cls: 'bg-emerald-500/20 text-emerald-400' };
-        if (event.isApproved === false) return { label: 'Rejected', cls: 'bg-red-500/20 text-red-400' };
-        return { label: 'Pending', cls: 'bg-amber-500/20 text-amber-400' };
+        if (event.isDeleted) return { label: 'Deleted', cls: 'bg-gray-100 text-gray-500' };
+        if (event.isApproved === true) return { label: 'Approved', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20' };
+        if (event.isApproved === false) return { label: 'Rejected', cls: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' };
+        return { label: 'Pending', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' };
     };
 
     const filters = [
@@ -64,30 +64,30 @@ export default function EventsTab() {
         <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <FiCalendar className="w-5 h-5 text-emerald-400" />
-                    <h2 className="text-lg font-bold text-white">Event Moderation</h2>
+                    <FiCalendar className="w-5 h-5 text-emerald-500" />
+                    <h2 className="text-lg font-bold text-gray-900">Event Moderation</h2>
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Search */}
                     <div className="relative">
-                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search events..."
                             value={search}
                             onChange={e => { setSearch(e.target.value); setPage(1); }}
-                            className="pl-9 pr-4 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all w-44"
+                            className="pl-9 pr-4 py-1.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all w-44"
                         />
                     </div>
                     {/* Filter Pills */}
-                    <div className="flex items-center gap-1 bg-white/[0.04] rounded-xl p-1 border border-white/[0.04]">
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 border border-gray-200">
                         {filters.map(f => (
                             <button
                                 key={f.value}
                                 onClick={() => { setFilter(f.value); setPage(1); }}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filter === f.value
-                                    ? 'bg-emerald-500/15 text-emerald-400'
-                                    : 'text-slate-400 hover:text-white'
+                                    ? 'bg-emerald-500/15 text-emerald-600'
+                                    : 'text-gray-500 hover:text-gray-900'
                                     }`}
                             >
                                 {f.label}
@@ -113,12 +113,12 @@ export default function EventsTab() {
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={5}><div className="h-10 bg-slate-700/30 rounded animate-pulse" /></td>
+                                        <td colSpan={5}><div className="h-10 bg-gray-100 rounded animate-pulse" /></td>
                                     </tr>
                                 ))
                             ) : events.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="text-center text-slate-500 py-8">No events found</td>
+                                    <td colSpan={5} className="text-center text-gray-400 py-8">No events found</td>
                                 </tr>
                             ) : events.map(event => {
                                 const status = getStatus(event);
@@ -126,8 +126,8 @@ export default function EventsTab() {
                                     <tr key={event._id}>
                                         <td>
                                             <div>
-                                                <p className="font-medium text-white text-sm truncate max-w-[200px]">{event.title}</p>
-                                                <p className="text-xs text-slate-500">{event.category || 'Uncategorized'}</p>
+                                                <p className="font-medium text-gray-900 text-sm truncate max-w-[200px]">{event.title}</p>
+                                                <p className="text-xs text-gray-400">{event.category || 'Uncategorized'}</p>
                                             </div>
                                         </td>
                                         <td>
@@ -135,12 +135,12 @@ export default function EventsTab() {
                                                 <img
                                                     src={event.organizer?.profilePic || `https://ui-avatars.com/api/?name=${event.organizer?.name || 'U'}&background=1e293b&color=94a3b8&size=24`}
                                                     alt=""
-                                                    className="w-6 h-6 rounded-full object-cover border border-white/10"
+                                                    className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-200"
                                                 />
-                                                <span className="text-xs text-slate-300">{event.organizer?.name || 'Unknown'}</span>
+                                                <span className="text-xs text-gray-700">{event.organizer?.name || 'Unknown'}</span>
                                             </div>
                                         </td>
-                                        <td className="text-center text-xs text-slate-400">
+                                        <td className="text-center text-xs text-gray-400">
                                             {event.date ? new Date(event.date).toLocaleDateString() : '—'}
                                         </td>
                                         <td className="text-center">
@@ -190,8 +190,8 @@ export default function EventsTab() {
                 </div>
 
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-                        <p className="text-xs text-slate-500">Page {page} of {totalPages}</p>
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-400">Page {page} of {totalPages}</p>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="admin-btn admin-btn-blue disabled:opacity-30">
                                 <FiChevronLeft className="w-4 h-4" />

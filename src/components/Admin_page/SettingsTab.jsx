@@ -97,8 +97,8 @@ export default function SettingsTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiSettings className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-bold text-white">Feature Control Engine</h2>
+                <FiSettings className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-lg font-bold text-gray-900">Feature Control Engine</h2>
             </div>
 
             <div className="space-y-3">
@@ -123,15 +123,15 @@ export default function SettingsTab() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className="text-base">{meta.icon}</span>
-                                        <h3 className="text-sm font-semibold text-white">{meta.label}</h3>
+                                        <h3 className="text-sm font-semibold text-gray-900">{meta.label}</h3>
                                         <span className={`admin-badge ${isOn
-                                            ? (isMaint ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400')
-                                            : 'bg-slate-500/20 text-slate-400'
+                                            ? (isMaint ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700')
+                                            : 'bg-gray-100 text-gray-500'
                                             }`}>
                                             {isOn ? (isMaint ? 'ACTIVE' : 'ON') : 'OFF'}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                         <FiInfo className="w-3 h-3 flex-shrink-0" />
                                         {meta.desc}
                                     </p>
@@ -152,7 +152,7 @@ export default function SettingsTab() {
                                 <div className="flex flex-col items-end gap-3 flex-shrink-0">
                                     {/* Enable Toggle */}
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Status</span>
+                                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</span>
                                         <button
                                             onClick={() => toggleEnabled(name)}
                                             disabled={saving === name}
@@ -161,7 +161,7 @@ export default function SettingsTab() {
                                             {isOn ? (
                                                 <FiToggleRight className={`w-8 h-8 ${isMaint ? 'text-red-400' : 'text-emerald-400'}`} />
                                             ) : (
-                                                <FiToggleLeft className="w-8 h-8 text-slate-500" />
+                                                <FiToggleLeft className="w-8 h-8 text-gray-300" />
                                             )}
                                         </button>
                                     </div>
@@ -178,7 +178,7 @@ export default function SettingsTab() {
                                                 {isKilled ? (
                                                     <FiToggleRight className="w-8 h-8 text-red-500" />
                                                 ) : (
-                                                    <FiToggleLeft className="w-8 h-8 text-slate-500" />
+                                                    <FiToggleLeft className="w-8 h-8 text-gray-300" />
                                                 )}
                                             </button>
                                         </div>
@@ -188,10 +188,10 @@ export default function SettingsTab() {
 
                             {/* Role checkboxes (only for features that support it, and only when enabled AND NOT KILLED) */}
                             {meta.hasRoles && isOn && !isKilled && (
-                                <div className="mt-3 pt-3 border-t border-white/5">
+                                <div className="mt-3 pt-3 border-t border-gray-100">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <FiShield className="w-3 h-3 text-slate-400" />
-                                        <span className="text-xs text-slate-400 font-medium">Allowed Roles</span>
+                                        <FiShield className="w-3 h-3 text-gray-400" />
+                                        <span className="text-xs text-gray-500 font-medium">Allowed Roles</span>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {ALL_ROLES.map(role => {
@@ -201,8 +201,8 @@ export default function SettingsTab() {
                                                     key={role}
                                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 border
                                                         ${checked
-                                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                            : 'bg-white/[0.02] border-white/5 text-slate-500 hover:text-slate-300'
+                                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                            : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-900'
                                                         }`}
                                                 >
                                                     <input
@@ -213,7 +213,7 @@ export default function SettingsTab() {
                                                         className="hidden"
                                                     />
                                                     <span className={`w-3 h-3 rounded border flex items-center justify-center text-[8px]
-                                                        ${checked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-600'}`}>
+                                                        ${checked ? 'bg-emerald-500 border-emerald-500 text-gray-900' : 'border-gray-200'}`}>
                                                         {checked && '✓'}
                                                     </span>
                                                     {role.charAt(0).toUpperCase() + role.slice(1)}

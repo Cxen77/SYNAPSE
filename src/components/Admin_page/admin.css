@@ -1,25 +1,16 @@
-/* Admin Dashboard — Custom Styles */
+/* Admin Dashboard — Themed via site CSS variables (--dm-*) */
+/* index.css handles dark mode via .dark selectors automatically */
 
-/* Dark scrollbar for Admin */
-.admin-dashboard ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
 }
 
-.admin-dashboard ::-webkit-scrollbar-track {
-    background: #1a1a2e;
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.admin-dashboard ::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 3px;
-}
-
-.admin-dashboard ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
-}
-
-/* Fade-in animation for tab content */
+/* Fade-in animation */
 @keyframes adminFadeIn {
     from {
         opacity: 0;
@@ -33,10 +24,10 @@
 }
 
 .admin-fade-in {
-    animation: adminFadeIn 0.3s ease-out;
+    animation: adminFadeIn 0.25s ease-out;
 }
 
-/* Pulse glow for active indicators */
+/* Glow */
 @keyframes adminGlow {
 
     0%,
@@ -53,14 +44,22 @@
     animation: adminGlow 2s ease-in-out infinite;
 }
 
-/* Glassmorphism card */
+/* ─── Card ─────────────────────────────────────────── */
+/* Light mode: white card with border */
 .admin-glass {
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-/* Stat card gradient borders */
+/* Dark mode: site surface color */
+.dark .admin-glass {
+    background: var(--dm-surface);
+    border: 1px solid var(--dm-border);
+    box-shadow: none;
+}
+
+/* Stat card accent bar on hover */
 .admin-stat-card {
     position: relative;
     overflow: hidden;
@@ -82,7 +81,7 @@
     opacity: 1;
 }
 
-/* Toggle switch */
+/* ─── Toggle switch ────────────────────────────────── */
 .admin-toggle {
     position: relative;
     width: 44px;
@@ -113,35 +112,41 @@
 }
 
 .admin-toggle.inactive {
-    background-color: #475569;
+    background-color: #9ca3af;
 }
 
-/* Hide scrollbar for mobile tabs */
-.admin-tabs-scroll::-webkit-scrollbar {
-    display: none;
+.dark .admin-toggle.inactive {
+    background-color: #374151;
 }
 
-.admin-tabs-scroll {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* Table styles */
+/* ─── Table ────────────────────────────────────────── */
 .admin-table th {
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #94a3b8;
+    color: #6b7280;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.dark .admin-table th {
+    color: var(--dm-text3);
+    border-bottom: 1px solid var(--dm-border);
+    background: var(--dm-surf2);
 }
 
 .admin-table td {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid #f3f4f6;
     font-size: 0.85rem;
-    color: #e2e8f0;
+    color: #374151;
+}
+
+.dark .admin-table td {
+    border-bottom: 1px solid var(--dm-border);
+    color: var(--dm-text);
 }
 
 .admin-table tr {
@@ -149,10 +154,14 @@
 }
 
 .admin-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: #f9fafb;
 }
 
-/* Action buttons */
+.dark .admin-table tbody tr:hover {
+    background-color: var(--dm-surf2);
+}
+
+/* ─── Action Buttons ───────────────────────────────── */
 .admin-btn {
     font-size: 0.75rem;
     font-weight: 500;
@@ -162,6 +171,9 @@
     cursor: pointer;
     border: none;
     outline: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .admin-btn:active {
@@ -169,46 +181,73 @@
 }
 
 .admin-btn-emerald {
-    background: rgba(52, 211, 153, 0.15);
-    color: #34d399;
+    background: rgba(52, 211, 153, 0.12);
+    color: #059669;
 }
 
 .admin-btn-emerald:hover {
-    background: rgba(52, 211, 153, 0.25);
+    background: rgba(52, 211, 153, 0.22);
+}
+
+.dark .admin-btn-emerald {
+    background: rgba(52, 211, 153, 0.1);
+    color: #34d399;
 }
 
 .admin-btn-red {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
 }
 
 .admin-btn-red:hover {
-    background: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.dark .admin-btn-red {
+    color: #f87171;
 }
 
 .admin-btn-blue {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
 }
 
 .admin-btn-blue:hover {
-    background: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.18);
+}
+
+.dark .admin-btn-blue {
+    color: #60a5fa;
 }
 
 .admin-btn-amber {
-    background: rgba(245, 158, 11, 0.15);
-    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
 }
 
 .admin-btn-amber:hover {
-    background: rgba(245, 158, 11, 0.25);
+    background: rgba(245, 158, 11, 0.18);
 }
 
-/* Badge styles */
+.dark .admin-btn-amber {
+    color: #fbbf24;
+}
+
+/* ─── Badge ────────────────────────────────────────── */
 .admin-badge {
     font-size: 0.65rem;
     font-weight: 600;
     padding: 0.15rem 0.5rem;
     border-radius: 9999px;
     letter-spacing: 0.03em;
+}
+
+/* Hide scrollbar on mobile tabs */
+.admin-tabs-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-tabs-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
