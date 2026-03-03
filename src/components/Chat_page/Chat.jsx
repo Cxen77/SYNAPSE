@@ -308,7 +308,7 @@ function Chat() {
 
     return (
         // Main Container
-        <div className="bg-gray-50 absolute inset-x-0 top-0 bottom-[80px] md:bottom-0 md:top-16 flex md:p-6 md:gap-6">
+        <div className="bg-gray-50 absolute inset-x-0 top-0 bottom-0 md:top-16 flex md:p-6 md:gap-6">
 
             {/* ... (sidebar omitted for brevity) ... */}
 
@@ -321,7 +321,7 @@ function Chat() {
             />
 
             {/* LEFT SIDEBAR */}
-            <div className={`${activeChat ? 'hidden' : 'flex'} md:flex w-full md:w-96 flex-col bg-white md:border border-gray-200 md:rounded-2xl shadow-sm overflow-hidden h-full`}>
+            <div className={`${activeChat ? 'hidden' : 'flex'} md:flex w-full md:w-96 flex-col bg-white md:border border-gray-200 md:rounded-2xl shadow-sm overflow-hidden h-full pb-[60px] md:pb-0`}>
                 <div className="flex items-center gap-2 p-4 pb-0">
                     <div className="flex-1">
                         <ChatSearch search={search} setSearch={setSearch} />
