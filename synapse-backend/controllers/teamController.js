@@ -32,9 +32,9 @@ const createTeam = asyncHandler(async (req, res) => {
 // @access  Private
 const getMyTeams = asyncHandler(async (req, res) => {
     const teams = await Team.find({ members: req.user._id })
-        .populate('members', 'name username profilePic')
-        .populate('admins', 'name username profilePic')
-        .populate('createdBy', 'name username profilePic');
+        .populate('members', 'name username profilePic collegeVerified')
+        .populate('admins', 'name username profilePic collegeVerified')
+        .populate('createdBy', 'name username profilePic collegeVerified');
     res.json(teams);
 });
 
@@ -53,8 +53,8 @@ const getUserTeams = asyncHandler(async (req, res) => {
 
     const teams = await Team.find(filter)
         .select('name description category visibility isLookingForMembers teamStatus currentFocus openRoles members createdBy memberRoles')
-        .populate('members', 'name username profilePic')
-        .populate('createdBy', 'name username profilePic');
+        .populate('members', 'name username profilePic collegeVerified')
+        .populate('createdBy', 'name username profilePic collegeVerified');
 
     res.json(teams);
 });
@@ -64,12 +64,12 @@ const getUserTeams = asyncHandler(async (req, res) => {
 // @access  Private
 const getTeamById = asyncHandler(async (req, res) => {
     const team = await Team.findById(req.params.id)
-        .populate('members', 'name username profilePic')
-        .populate('admins', 'name username profilePic')
-        .populate('invites.userId', 'name username profilePic')
-        .populate('createdBy', 'name username profilePic')
-        .populate('joinRequests.userId', 'name username profilePic email')
-        .populate('memberRoles.userId', 'name username profilePic');
+        .populate('members', 'name username profilePic collegeVerified')
+        .populate('admins', 'name username profilePic collegeVerified')
+        .populate('invites.userId', 'name username profilePic collegeVerified')
+        .populate('createdBy', 'name username profilePic collegeVerified')
+        .populate('joinRequests.userId', 'name username profilePic email collegeVerified')
+        .populate('memberRoles.userId', 'name username profilePic collegeVerified');
 
     if (team) {
         res.json(team);
@@ -392,7 +392,7 @@ const searchTeams = asyncHandler(async (req, res) => {
         name: { $regex: searchQuery, $options: 'i' },
         visibility: 'public' // Only search public teams
     })
-        .populate('members', 'name username profilePic')
+        .populate('members', 'name username profilePic collegeVerified')
         .limit(10);
 
     res.json(teams);
@@ -410,8 +410,8 @@ const getMyInvites = asyncHandler(async (req, res) => {
             }
         }
     })
-        .populate('createdBy', 'name username profilePic')
-        .populate('members', 'name username profilePic')
+        .populate('createdBy', 'name username profilePic collegeVerified')
+        .populate('members', 'name username profilePic collegeVerified')
         .select('name description category members createdBy invites'); // Select necessary fields
 
     // Filter the invites array in the response to only show the user's invite (optional, but cleaner)
@@ -425,8 +425,8 @@ const getMyInvites = asyncHandler(async (req, res) => {
 // @access  Private
 const getEventTeams = asyncHandler(async (req, res) => {
     const teams = await Team.find({ eventId: req.params.id })
-        .populate('members', 'name username profilePic skills college') // Added skills/college as per prompt
-        .populate('admins', 'name username profilePic');
+        .populate('members', 'name username profilePic skills college collegeVerified') // Added skills/college as per prompt
+        .populate('admins', 'name username profilePic collegeVerified');
 
     res.json(teams);
 });

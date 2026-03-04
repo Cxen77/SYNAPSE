@@ -10,6 +10,7 @@ import Avatar from '../common/Avatar';
 import Skeleton from '../common/Skeleton';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import VerifiedBadge from '../common/VerifiedBadge';
 
 const STATUS_COLORS = {
     active: 'bg-green-100 text-green-700',
@@ -501,7 +502,10 @@ const TeamDetails = () => {
                                                 >
                                                     <Avatar src={member.profilePic} alt={member.name} size="md" />
                                                     <div>
-                                                        <p className="font-bold text-gray-900 group-hover:text-blue-600 transition text-sm">{member.name}</p>
+                                                        <div className="flex items-center gap-1">
+                                                            <p className="font-bold text-gray-900 group-hover:text-blue-600 transition text-sm">{member.name}</p>
+                                                            <VerifiedBadge verified={member.collegeVerified} />
+                                                        </div>
                                                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isThisOwner ? 'bg-purple-100 text-purple-700'
                                                             : roleMeta?.role === 'co-lead' ? 'bg-blue-100 text-blue-700'
                                                                 : 'bg-gray-100 text-gray-500'

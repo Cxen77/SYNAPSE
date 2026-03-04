@@ -14,7 +14,8 @@ import {
     getOnlineUsers,
     getGithubRepos,
     disconnectGithub,
-    getGithubStats
+    getGithubStats,
+    requestVerification
 } from '../controllers/userController.js';
 import { updatePushToken } from '../controllers/notificationController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -38,6 +39,7 @@ router.route('/recommended').get(protect, getRecommendedUsers);
 router.route('/online').get(protect, getOnlineUsers);
 router.route('/github/repos').get(protect, getGithubRepos);
 router.delete('/github', protect, disconnectGithub);
+router.post('/verify-request', protect, requestVerification);
 
 // Public routes (or semi-public)
 router.get('/:id/stats', getUserStats);

@@ -66,14 +66,14 @@ const getPosts = asyncHandler(async (req, res) => {
 
     const count = await Post.countDocuments(query);
     const posts = await Post.find(query)
-        .populate('user', 'name username profilePic')
+        .populate('user', 'name username profilePic collegeVerified')
         .populate({
             path: 'comments.user',
-            select: 'name username profilePic'
+            select: 'name username profilePic collegeVerified'
         })
         .populate({
             path: 'comments.replies.user',
-            select: 'name username profilePic'
+            select: 'name username profilePic collegeVerified'
         })
         .limit(pageSize)
         .skip(pageSize * (page - 1))
@@ -166,8 +166,8 @@ const addComment = asyncHandler(async (req, res) => {
 
         // Populate the user in the new comment for immediate display
         const updatedPost = await Post.findById(req.params.id)
-            .populate('comments.user', 'name username profilePic')
-            .populate('comments.replies.user', 'name username profilePic');
+            .populate('comments.user', 'name username profilePic collegeVerified')
+            .populate('comments.replies.user', 'name username profilePic collegeVerified');
 
         res.status(201).json(updatedPost.comments);
     } else {
@@ -241,8 +241,8 @@ const replyToComment = asyncHandler(async (req, res) => {
 
         // Return updated comments with population
         const updatedPost = await Post.findById(req.params.id)
-            .populate('comments.user', 'name username profilePic')
-            .populate('comments.replies.user', 'name username profilePic');
+            .populate('comments.user', 'name username profilePic collegeVerified')
+            .populate('comments.replies.user', 'name username profilePic collegeVerified');
 
         res.status(201).json(updatedPost.comments);
     } else {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axios';
 import { FiUsers, FiUser, FiZap, FiGrid } from 'react-icons/fi';
+import VerifiedBadge from '../common/VerifiedBadge';
 
 const FILTERS = [
     { label: 'All', value: 'all' },
@@ -136,7 +137,12 @@ export default function OrganizerParticipantsTab() {
                                 <tbody>
                                     {data.participants.map((p, i) => (
                                         <tr key={p.user._id || i} className="border-b border-gray-100 dark:border-gray-800 hover:bg-white/5 dark:hover:bg-white/5 transition">
-                                            <td className="px-5 py-3 font-medium text-gray-900 dark:text-white">{p.user.name}</td>
+                                            <td className="px-5 py-3 font-medium text-gray-900 dark:text-white">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span>{p.user.name}</span>
+                                                    <VerifiedBadge verified={p.user.collegeVerified} />
+                                                </div>
+                                            </td>
                                             <td className="px-5 py-3">@{p.user.username}</td>
                                             <td className="px-5 py-3 text-gray-400 dark:text-gray-500">{p.user.college || 'N/A'}</td>
                                             <td className="px-5 py-3 text-gray-400 dark:text-gray-500">{p.user.year || '—'}</td>

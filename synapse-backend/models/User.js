@@ -16,6 +16,14 @@ const userSchema = mongoose.Schema({
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
 
+    // Student Verification
+    collegeVerified: {
+        type: mongoose.Schema.Types.Mixed, // true | false | "pending" | "rejected"
+        default: false,
+        index: true
+    },
+    verificationNote: { type: String, default: '' }, // Rejection reason set by admin/mod
+
     // Auth & Verification
     isEmailVerified: { type: Boolean, default: false },
     otpHash: { type: String },

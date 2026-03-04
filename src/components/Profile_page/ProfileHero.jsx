@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../api/axios';
+import api from '../../api/axios';
 import Avatar from '../common/Avatar';
+import VerifiedBadge from '../common/VerifiedBadge';
 import {
     Edit3,
     Share2,
@@ -26,13 +27,72 @@ import {
 import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
 
+// ─── Verify Button — appears on own profile when not yet verified ───────────────
+const VerifyButton = ({ status, onSuccess }) => {
+    const [loading, setLoading] = React.useState(false);
+    const [localStatus, setLocalStatus] = React.useState(status);
+
+    const handleRequest = async () => {
+        setLoading(true);
+        try {
+            const { data } = await api.post('/users/verify-request');
+            setLocalStatus('pending');
+            if (onSuccess) onSuccess(data);
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Request failed';
+            alert(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const currentStatus = localStatus;
+
+    if (currentStatus === 'pending') {
+        return (
+            <button disabled className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-50 border border-amber-200 text-amber-600 cursor-not-allowed">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
+                Verification Pending
+            </button>
+        );
+    }
+
+    if (currentStatus === 'rejected') {
+        return (
+            <button
+                onClick={handleRequest}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-all disabled:opacity-60"
+                title="Your previous request was rejected. You can reapply.">
+                {loading ? <span className="w-3.5 h-3.5 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" /> : '↩'}
+                Rejected — Reapply
+            </button>
+        );
+    }
+
+    return (
+        <button
+            onClick={handleRequest}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-60"
+        >
+            {loading
+                ? <span className="w-3.5 h-3.5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+                : <span>✓</span>
+            }
+            Verify Student Status
+        </button>
+    );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInvite, onToggleView, onProfileUpdate }) => {
     const navigate = useNavigate();
     const [showEditModal, setShowEditModal] = useState(false);
 
     const handleMessage = async () => {
         try {
-            const { data } = await axios.post('/chat', { userId: user._id }); // ensure using _id
+            const { data } = await api.post('/chat', { userId: user._id }); // ensure using _id
             navigate(`/chat/${data._id}`);
         } catch (error) {
             console.error("Error accessing chat", error);
@@ -163,7 +223,10 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
 
                         {/* Name & Title (Mobile Only Centered, Desktop Left) */}
                         <div className="mt-4 text-center md:text-left md:hidden">
-                            <h1 className="text-2xl font-bold text-gray-900 leading-tight">{user.name}</h1>
+                            <div className="flex items-center justify-center md:justify-start gap-1.5">
+                                <h1 className="text-2xl font-bold text-gray-900 leading-tight">{user.name}</h1>
+                                <VerifiedBadge verified={user.collegeVerified} />
+                            </div>
                             <p className="text-gray-500 font-medium">@{user.username}</p>
                         </div>
                     </div>
@@ -178,10 +241,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                             <div className="hidden md:block">
                                 <div className="flex items-center gap-3 mb-1">
                                     <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{user.name}</h1>
-                                    <span className="px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200 flex items-center gap-1.5 uppercase tracking-wide">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse"></div>
-                                        Online
-                                    </span>
+                                    <VerifiedBadge verified={user.collegeVerified} />
                                 </div>
                                 <p className="text-lg text-gray-500 font-medium">@{user.username}</p>
                             </div>
@@ -199,6 +259,17 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                                 <Edit3 className="w-4 h-4 ml-[-2px]" />
                                                 Edit Profile
                                             </button>
+                                            {/* Verification button — only visible when not yet verified */}
+                                            {user.collegeVerified !== true && (
+                                                <VerifyButton
+                                                    status={user.collegeVerified}
+                                                    userId={user._id}
+                                                    onSuccess={(updatedUser) => {
+                                                        // Bubble up to parent update if available, otherwise force a page reload
+                                                        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('verification-requested', { detail: updatedUser }));
+                                                    }}
+                                                />
+                                            )}
                                         </>
                                     ) : (
                                         <button onClick={onToggleView} className="btn-secondary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">

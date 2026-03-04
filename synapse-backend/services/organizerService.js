@@ -32,7 +32,7 @@ export async function buildParticipantView(eventId, requesterId, filters = {}) {
 
     // ─── 2. Fetch Teams for this Event (lean, safe field selection) ────────────
     const teams = await Team.find({ eventId: event._id })
-        .populate('members', 'name email username college year section className collegeId')
+        .populate('members', 'name email username college year section className collegeId collegeVerified')
         .select('name members isAutoCreated')
         .lean();
 
@@ -47,7 +47,7 @@ export async function buildParticipantView(eventId, requesterId, filters = {}) {
     // ─── 3. Fetch Solo Attendees (not in any team) ──────────────────────────────
     // Populate attendees with lean academic fields only
     const eventWithAttendees = await Event.findById(eventId)
-        .populate('attendees', 'name email username college year section className collegeId')
+        .populate('attendees', 'name email username college year section className collegeId collegeVerified')
         .lean();
 
     const allAttendees = eventWithAttendees.attendees || [];

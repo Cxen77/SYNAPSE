@@ -7,6 +7,7 @@ import Avatar from "../common/Avatar";
 import useIsMobile from "../../hooks/useIsMobile";
 import MobileCommentsSheet from "./MobileCommentsSheet";
 import CommentItem from "./CommentItem";
+import VerifiedBadge from "../common/VerifiedBadge";
 
 export default function PostCard({ post, currentUser = {}, onDelete }) {
   const isMobile = useIsMobile();
@@ -17,6 +18,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
     author: post.author || post.user?.name || "Unknown User",
     username: post.username || post.user?.username || "user",
     avatar: post.avatar || post.user?.profilePic,
+    collegeVerified: post.user?.collegeVerified ?? false,
     role: post.role || (post.user?.course ? `${post.user.course} Student` : "Member"),
     time: post.time || (post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "Just now"),
     text: post.text || post.content,
@@ -125,9 +127,12 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
         </Link>
         <div className="flex-1 min-w-0">
           <Link to={`/profile/${displayPost.username}`}>
-            <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition truncate text-sm md:text-base">
-              {displayPost.author}
-            </h4>
+            <div className="flex items-center gap-1">
+              <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition truncate text-sm md:text-base">
+                {displayPost.author}
+              </h4>
+              <VerifiedBadge verified={displayPost.collegeVerified} />
+            </div>
           </Link>
           <p className="text-xs text-gray-500 truncate">
             {displayPost.role} • {displayPost.time}

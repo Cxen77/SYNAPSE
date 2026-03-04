@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
+import VerifiedBadge from '../common/VerifiedBadge';
 
 const CommentItem = ({ comment, isReply = false, parentId = null, onReply, currentUser }) => {
     const [showReplies, setShowReplies] = useState(false);
@@ -33,11 +34,14 @@ const CommentItem = ({ comment, isReply = false, parentId = null, onReply, curre
 
             <div className="flex-1 min-w-0">
                 <div className={`rounded-2xl px-3.5 py-2.5 inline-block ${isMention ? 'bg-blue-50 border border-blue-100' : 'bg-gray-100'}`}>
-                    <Link to={`/profile/${comment.user?.username}`}>
-                        <h5 className="font-bold text-xs text-gray-900 hover:underline cursor-pointer">
-                            {comment.user?.name || 'Unknown User'}
-                        </h5>
-                    </Link>
+                    <div className="flex items-center gap-1">
+                        <Link to={`/profile/${comment.user?.username}`}>
+                            <h5 className="font-bold text-xs text-gray-900 hover:underline cursor-pointer">
+                                {comment.user?.name || 'Unknown User'}
+                            </h5>
+                        </Link>
+                        <VerifiedBadge verified={comment.user?.collegeVerified} />
+                    </div>
                     <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap mt-0.5">
                         {comment.text.split(' ').map((word, i) => (
                             word.startsWith('@') ? <span key={i} className="text-blue-600 font-medium">{word} </span> : word + ' '

@@ -11,11 +11,13 @@ import ForumsTab from './ForumsTab';
 import SettingsTab from './SettingsTab';
 import LogsTab from './LogsTab';
 import CollegesTab from './CollegesTab';
+import VerificationsTab from './VerificationsTab';
 import './admin.css';
 
 const ALL_TABS = [
     { id: 'overview', label: 'Overview', icon: FiGrid, component: OverviewTab },
     { id: 'users', label: 'Users', icon: FiUsers, component: UsersTab },
+    { id: 'verifications', label: 'Verifications', icon: FiShield, component: VerificationsTab },
     { id: 'events', label: 'Events', icon: FiCalendar, component: EventsTab },
     { id: 'posts', label: 'Posts', icon: FiFileText, component: PostsTab },
     { id: 'forums', label: 'Forums', icon: FiMessageCircle, component: ForumsTab },
@@ -24,7 +26,7 @@ const ALL_TABS = [
     { id: 'colleges', label: 'Colleges', icon: FiShield, component: CollegesTab },
 ];
 
-const MODERATOR_TAB_IDS = ['overview', 'events', 'posts', 'forums'];
+const MODERATOR_TAB_IDS = ['overview', 'events', 'posts', 'forums', 'verifications'];
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');

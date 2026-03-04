@@ -20,7 +20,10 @@ import {
     deleteForumPost,
     getSettings,
     updateSettings,
-    getLogs
+    getLogs,
+    getVerificationRequests,
+    approveVerification,
+    rejectVerification
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -50,6 +53,11 @@ router.delete('/forumPosts/:id', requireRole('admin', 'moderator'), deleteForumP
 router.get('/users', requireRole('admin', 'moderator'), getUsers);
 router.patch('/users/:id/suspend', requireRole('admin', 'moderator'), suspendUser);
 router.patch('/users/:id/unsuspend', requireRole('admin', 'moderator'), unsuspendUser);
+
+// Student Verification
+router.get('/verifications', requireRole('admin', 'moderator'), getVerificationRequests);
+router.patch('/verifications/:id/approve', requireRole('admin', 'moderator'), approveVerification);
+router.patch('/verifications/:id/reject', requireRole('admin', 'moderator'), rejectVerification);
 
 // ============================================================
 // ADMIN ONLY ROUTES

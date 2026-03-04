@@ -129,7 +129,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 
     const [users, total] = await Promise.all([
         User.find(query)
-            .select('name username email role isSuspended profilePic college collegeId createdAt updatedAt')
+            .select('name username email role isSuspended profilePic college collegeId collegeVerified verificationNote createdAt updatedAt')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
@@ -617,8 +617,87 @@ export const updateSettings = asyncHandler(async (req, res) => {
 });
 
 // ============================================================
-// AUDIT LOGS
+// STUDENT VERIFICATION
 // ============================================================
+
+/**
+ * @route   GET /api/admin/verifications?status=pending|approved|rejected&page=1
+ * @desc    Get paginated student verification requests
+ */
+export const getVerificationRequests = asyncHandler(async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const status = req.query.status || 'pending'; // 'pending' | 'approved' | 'rejected'
+
+    let query = {};
+    if (status === 'pending') query.collegeVerified = 'pending';
+    else if (status === 'approved') query.collegeVerified = true;
+    else if (status === 'rejected') query.collegeVerified = 'rejected';
+    else query.collegeVerified = { $in: ['pending', true, 'rejected'] }; // 'all'
+
+    const [users, total] = await Promise.all([
+        User.find(query)
+            .select('name username email profilePic college collegeId year section collegeVerified verificationNote createdAt')
+            .sort({ updatedAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean(),
+        User.countDocuments(query)
+    ]);
+
+    res.json({ users, total, page, pages: Math.ceil(total / limit) });
+});
+
+/**
+ * @route   PATCH /api/admin/verifications/:id/approve
+ * @desc    Approve a student verification request
+ */
+export const approveVerification = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    user.collegeVerified = true;
+    user.verificationNote = '';
+    await user.save();
+
+    await logAction(req, {
+        action: 'APPROVE_VERIFICATION',
+        targetId: user._id,
+        targetType: 'User',
+        details: `Approved student verification for ${user.username}`
+    });
+
+    res.json({ message: `Verification approved for ${user.name}`, collegeVerified: true });
+});
+
+/**
+ * @route   PATCH /api/admin/verifications/:id/reject
+ * @desc    Reject a student verification request
+ * @body    { reason?: string }
+ */
+export const rejectVerification = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    user.collegeVerified = 'rejected';
+    user.verificationNote = (req.body.reason || '').slice(0, 300);
+    await user.save();
+
+    await logAction(req, {
+        action: 'REJECT_VERIFICATION',
+        targetId: user._id,
+        targetType: 'User',
+        details: `Rejected student verification for ${user.username}. Reason: ${user.verificationNote || 'None given'}`
+    });
+
+    res.json({ message: `Verification rejected for ${user.name}`, collegeVerified: 'rejected' });
+});
 
 /**
  * @route   GET /api/admin/logs

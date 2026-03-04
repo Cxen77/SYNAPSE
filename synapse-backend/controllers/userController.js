@@ -37,6 +37,8 @@ const formatUserResponse = (user) => {
         projects: user.projects || [],
         role: user.role,
         isSuspended: user.isSuspended,
+        collegeVerified: user.collegeVerified, // Badge field
+        verificationNote: user.verificationNote || '',
         githubId: user.githubId // Include this to check connection status
     };
 };
@@ -341,7 +343,7 @@ const searchUsers = asyncHandler(async (req, res) => {
             { username: { $regex: safe, $options: 'i' } }
         ]
     })
-        .select('-password')
+        .select('name username profilePic skills collegeVerified')
         .limit(10);
 
     res.json(users);
@@ -378,7 +380,7 @@ const getRecommendedUsers = asyncHandler(async (req, res) => {
     const random = Math.floor(Math.random() * count);
 
     const users = await User.find({ _id: { $ne: req.user._id } })
-        .select('name username profilePic skills')
+        .select('name username profilePic skills collegeVerified')
         .limit(5);
     // .skip(random); // Skip is expensive on large datasets, but fine for small. 
     // For now, just getting first 5 is fine or use aggregation for true random.
@@ -550,6 +552,34 @@ const getGithubStats = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Request student verification
+// @route   POST /api/users/verify-request
+// @access  Private
+const requestVerification = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    if (user.collegeVerified === true) {
+        res.status(400);
+        throw new Error('You are already verified.');
+    }
+
+    if (user.collegeVerified === 'pending') {
+        res.status(400);
+        throw new Error('Your verification request is already pending review.');
+    }
+
+    user.collegeVerified = 'pending';
+    user.verificationNote = '';
+    const updatedUser = await user.save();
+
+    res.json(formatUserResponse(updatedUser));
+});
+
 export {
     getUserProfile,
     updateUserProfile,
@@ -564,5 +594,6 @@ export {
     getOnlineUsers,
     getGithubRepos,
     disconnectGithub,
-    getGithubStats
+    getGithubStats,
+    requestVerification
 };

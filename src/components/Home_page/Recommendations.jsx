@@ -5,6 +5,7 @@ import { Users, CalendarDays, MapPin, Briefcase, CheckCircle } from "lucide-reac
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
 import OpenTeamCard from "../Team_page/OpenTeamCard";
+import VerifiedBadge from "../common/VerifiedBadge";
 
 // ──────────────────────────────────────────────
 // Trending Events Card (unchanged)
@@ -197,7 +198,10 @@ export default function Recommendations() {
                         </Link>
                         <div className="min-w-0 flex-1">
                           <Link to={`/profile/${p.username}`}>
-                            <div className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{p.name}</div>
+                            <div className="flex items-center gap-1">
+                              <div className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{p.name}</div>
+                              <VerifiedBadge verified={p.collegeVerified} />
+                            </div>
                           </Link>
                           <div className="text-xs text-gray-500 truncate">
                             {p.skills && p.skills.length > 0 ? p.skills[0].name || p.skills[0] : "Student"}
