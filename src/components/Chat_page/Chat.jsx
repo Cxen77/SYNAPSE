@@ -196,7 +196,8 @@ function Chat() {
     // Auto-scroll
     useEffect(() => {
         if (!historyLoading) {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            // Use auto behavior instead of smooth to prevent the animated scroll down effect on initial load
+            chatEndRef.current?.scrollIntoView({ behavior: "auto" });
         }
     }, [historyMessages, historyLoading, activeChat]);
 
@@ -308,7 +309,7 @@ function Chat() {
 
     return (
         // Main Container
-        <div className="bg-gray-50 absolute inset-x-0 top-0 bottom-0 md:top-16 flex md:p-6 md:gap-6">
+        <div className="bg-gray-50 absolute inset-x-0 top-0 bottom-0 md:top-16 flex md:p-6 md:gap-6" style={{ overscrollBehaviorY: 'none' }}>
 
             {/* ... (sidebar omitted for brevity) ... */}
 
@@ -375,7 +376,7 @@ function Chat() {
                     )
                 ) : (
                     // TEAMS TAB CONTENT
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'none' }}>
                         {teamsLoading ? (
                             <div className="p-4 space-y-4">
                                 <Skeleton variant="rectangular" className="h-12 w-full rounded-xl" />
@@ -420,24 +421,16 @@ function Chat() {
                     <>
                         <ChatHeader chat={windowChat} onBack={() => navigate('/chat')} />
 
-                        {(showLoaders && historyMessages.length === 0) ? (
-                            <div className="flex-1 p-6 space-y-4">
-                                <Skeleton variant="rectangular" className="h-10 w-2/3 rounded-xl" />
-                                <Skeleton variant="rectangular" className="h-10 w-1/2 rounded-xl self-end" />
-                                <Skeleton variant="rectangular" className="h-10 w-3/4 rounded-xl" />
-                            </div>
-                        ) : (
-                            <MessageList
-                                chat={windowChat}
-                                emojis={emojis}
-                                reactingToMsg={reactingToMsg}
-                                setReactingToMsg={setReactingToMsg}
-                                handleReact={handleReact}
-                                chatEndRef={chatEndRef}
-                                isReplying={isReplying || historyLoading}
-                                loadMore={loadMore}
-                            />
-                        )}
+                        <MessageList
+                            chat={windowChat}
+                            emojis={emojis}
+                            reactingToMsg={reactingToMsg}
+                            setReactingToMsg={setReactingToMsg}
+                            handleReact={handleReact}
+                            chatEndRef={chatEndRef}
+                            isReplying={isReplying || historyLoading}
+                            loadMore={loadMore}
+                        />
 
                         <MessageInput
                             newMessage={newMessage}

@@ -10,7 +10,7 @@ function MessageList({
   isReplying
 }) {
   return (
-    <div className="flex-1 p-4 overflow-y-auto bg-gray-50 min-h-0 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="flex-1 p-4 overflow-y-auto bg-gray-50 min-h-0 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'none' }}>
       <div className="flex flex-col gap-3">
         <div className="text-center text-gray-500 text-xs">Fri 23:07</div>
 
