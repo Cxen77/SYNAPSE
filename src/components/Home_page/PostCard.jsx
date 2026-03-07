@@ -18,7 +18,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
     author: post.author || post.user?.name || "Unknown User",
     username: post.username || post.user?.username || "user",
     avatar: post.avatar || post.user?.profilePic,
-    collegeVerified: post.user?.collegeVerified ?? false,
+    collegeVerified: post.collegeVerified ?? post.user?.collegeVerified ?? false,
     role: post.role || (post.user?.course ? `${post.user.course} Student` : "Member"),
     time: post.time || (post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "Just now"),
     text: post.text || post.content,
@@ -74,26 +74,46 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
     }
   };
 
-  const handleCommentSubmit = async (e) => {
+  const handleCommentSubmit = async (e, customText) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    const textToSubmit = customText || newComment;
+    if (!textToSubmit.trim()) return;
 
     setSubmittingComment(true);
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticComment = {
+      _id: tempId,
+      text: textToSubmit,
+      user: currentUser,
+      createdAt: new Date().toISOString(),
+      likes: [],
+      replies: [],
+      isOptimistic: true
+    };
+
+    // Optimistically add root comments
+    if (!replyingTo) {
+      setComments(prev => [...prev, optimisticComment]);
+    }
+
+    if (!customText) setNewComment(""); // Clear desktop input
+
     try {
       let updatedComments;
       if (replyingTo) {
-        const { data } = await api.post(`/posts/${displayPost.id}/comments/${replyingTo.id}/replies`, { text: newComment });
+        const { data } = await api.post(`/posts/${displayPost.id}/comments/${replyingTo.id}/replies`, { text: textToSubmit });
         updatedComments = data;
       } else {
-        const { data } = await api.post(`/posts/${displayPost.id}/comments`, { text: newComment });
+        const { data } = await api.post(`/posts/${displayPost.id}/comments`, { text: textToSubmit });
         updatedComments = data;
       }
 
       setComments(updatedComments);
-      setNewComment("");
       setReplyingTo(null);
     } catch (err) {
       console.error("Failed to add comment/reply", err);
+      if (!replyingTo) setComments(prev => prev.filter(c => c._id !== tempId));
     } finally {
       setSubmittingComment(false);
     }
@@ -127,8 +147,8 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
         </Link>
         <div className="flex-1 min-w-0">
           <Link to={`/profile/${displayPost.username}`}>
-            <div className="flex items-center gap-1">
-              <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition truncate text-sm md:text-base">
+            <div className="flex items-center gap-1 text-sm md:text-base">
+              <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition truncate">
                 {displayPost.author}
               </h4>
               <VerifiedBadge verified={displayPost.collegeVerified} />
@@ -260,8 +280,6 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
           currentUser={currentUser}
           onReply={handleReply}
           onSubmit={handleCommentSubmit}
-          newComment={newComment}
-          setNewComment={setNewComment}
           replyingTo={replyingTo}
           cancelReply={cancelReply}
           submitting={submittingComment}

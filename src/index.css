@@ -185,15 +185,21 @@ html {
 }
 
 /* ── Base ─────────────────────────────────────────── */
-html {
-    background-color: #ffffff;
+html,
+body,
+#root {
+    background-color: #f9fafb;
+    /* App gray-50 equivalent */
+    color: #111827;
+    /* App text-gray-900 equivalent */
+    min-height: 100dvh;
 }
 
 .dark html,
 .dark body,
 .dark #root {
-    background-color: var(--dm-bg);
-    color: var(--dm-text);
+    background-color: var(--dm-bg) !important;
+    color: var(--dm-text) !important;
 }
 
 /* ── Backgrounds ─────────────────────────────────── */

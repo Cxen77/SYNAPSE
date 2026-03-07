@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import { FaTimes, FaPaperPlane } from 'react-icons/fa';
@@ -12,22 +12,50 @@ const MobileCommentsSheet = ({
     currentUser,
     onReply,
     onSubmit,
-    newComment,
-    setNewComment,
     replyingTo,
     cancelReply,
     submitting
 }) => {
+    const [shouldRender, setShouldRender] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+    const [localComment, setLocalComment] = useState("");
     const inputRef = useRef(null);
     const commentsEndRef = useRef(null);
 
-    // Auto-focus input when opening or replying
+    // Handle mount/unmount animations natively with CSS keyframes
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            // Small delay to allow animation
+        if (isOpen) {
+            setShouldRender(true);
+            setIsClosing(false);
+        } else if (shouldRender) {
+            setIsClosing(true);
+            const timer = setTimeout(() => {
+                setShouldRender(false);
+            }, 300); // Wait for the slide-down animation to finish
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, shouldRender]);
+
+    // Handle replyingTo setting the input
+    useEffect(() => {
+        if (replyingTo) {
+            setLocalComment(`@${replyingTo.username} `);
+            inputRef.current?.focus();
+        }
+    }, [replyingTo]);
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(e, localComment);
+        setLocalComment("");
+    };
+
+    // Auto-focus input when opening
+    useEffect(() => {
+        if (isOpen && !replyingTo) {
             setTimeout(() => inputRef.current?.focus(), 300);
         }
-    }, [isOpen, replyingTo]);
+    }, [isOpen]);
 
     // Scroll to bottom on new comment
     useEffect(() => {
@@ -36,18 +64,20 @@ const MobileCommentsSheet = ({
         }
     }, [comments.length, isOpen]);
 
-    if (!isOpen) return null;
+    if (!shouldRender) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none">
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end pointer-events-none">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity animate-in fade-in duration-200"
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity duration-300 ease-in-out ${isClosing ? 'opacity-0' : 'opacity-100 animate-in fade-in'}`}
                 onClick={onClose}
             />
 
             {/* Sheet */}
-            <div className="bg-white w-full h-[85vh] rounded-t-[2rem] shadow-xl overflow-hidden pointer-events-auto relative animate-slide-up duration-300 flex flex-col">
+            <div
+                className={`bg-white w-full h-[80vh] rounded-t-[2rem] shadow-xl overflow-hidden pointer-events-auto flex flex-col transform ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
+            >
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0 bg-white z-10 rounded-t-[2rem]">
@@ -68,10 +98,7 @@ const MobileCommentsSheet = ({
                 {/* Comments List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white custom-scrollbar">
                     {comments.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-12">
-                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                <span className="text-2xl">💭</span>
-                            </div>
+                        <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 pb-12">
                             <p className="font-medium text-gray-900">No comments yet</p>
                             <p className="text-sm mt-1">Be the first to start the conversation!</p>
                         </div>
@@ -97,7 +124,7 @@ const MobileCommentsSheet = ({
                         </div>
                     )}
 
-                    <form onSubmit={onSubmit} className="flex gap-3 items-end">
+                    <form onSubmit={handleFormSubmit} className="flex gap-3 items-end">
                         <Avatar
                             src={currentUser?.profilePic}
                             alt="You"
@@ -108,14 +135,14 @@ const MobileCommentsSheet = ({
                             <input
                                 ref={inputRef}
                                 type="text"
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
+                                value={localComment}
+                                onChange={(e) => setLocalComment(e.target.value)}
                                 placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
                                 className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-2xl px-5 py-3.5 pr-12 text-sm focus:outline-none transition-all shadow-sm ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
                             />
                             <button
                                 type="submit"
-                                disabled={!newComment.trim() || submitting}
+                                disabled={!localComment.trim() || submitting}
                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md"
                             >
                                 <FaPaperPlane size={14} className="" />
@@ -136,8 +163,6 @@ MobileCommentsSheet.propTypes = {
     currentUser: PropTypes.object,
     onReply: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
-    newComment: PropTypes.string.isRequired,
-    setNewComment: PropTypes.func.isRequired,
     replyingTo: PropTypes.object,
     cancelReply: PropTypes.func.isRequired,
     submitting: PropTypes.bool

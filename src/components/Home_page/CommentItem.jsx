@@ -17,7 +17,7 @@ const CommentItem = ({ comment, isReply = false, parentId = null, onReply, curre
     const hasReplies = !isReply && comment.replies && comment.replies.length > 0;
 
     return (
-        <div className={`flex gap-3 group ${isReply ? 'mt-3' : ''}`}>
+        <div className={`flex gap-3 group ${isReply ? 'mt-3' : ''} ${comment.isOptimistic ? 'animate-in fade-in slide-in-from-bottom-2 duration-300' : ''}`}>
             <div className="flex-shrink-0 flex flex-col items-center">
                 <Link to={`/profile/${comment.user?.username}`}>
                     <Avatar
@@ -34,9 +34,9 @@ const CommentItem = ({ comment, isReply = false, parentId = null, onReply, curre
 
             <div className="flex-1 min-w-0">
                 <div className={`rounded-2xl px-3.5 py-2.5 inline-block ${isMention ? 'bg-blue-50 border border-blue-100' : 'bg-gray-100'}`}>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 text-xs">
                         <Link to={`/profile/${comment.user?.username}`}>
-                            <h5 className="font-bold text-xs text-gray-900 hover:underline cursor-pointer">
+                            <h5 className="font-bold text-gray-900 hover:underline cursor-pointer">
                                 {comment.user?.name || 'Unknown User'}
                             </h5>
                         </Link>

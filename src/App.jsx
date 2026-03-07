@@ -42,7 +42,7 @@ import FeatureGate from './components/common/FeatureGate';
 
 // Loading Fallback with Skeleton Layout
 const PageLoader = () => (
-  <div className="min-h-screen bg-gray-50 flex flex-col">
+  <div className="min-h-[100dvh] bg-gray-50 flex flex-col">
     {/* Navbar Skeleton */}
     <div className="h-16 bg-white border-b border-gray-200 w-full fixed top-0 z-50 px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -178,7 +178,7 @@ function App() {
   }, [socket, currentUser]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-[100dvh] bg-gray-50 text-gray-900">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} containerStyle={{ zIndex: 99999 }} />
       {!isAuthPage && !isAdminPage && (
         <div className={isChatPage ? "hidden md:block" : ""}>

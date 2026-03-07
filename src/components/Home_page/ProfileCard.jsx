@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Users, CalendarDays, PlusCircle, ClipboardList, Search } from "lucide-react";
 import { FaGraduationCap } from "react-icons/fa";
 import Avatar from "../common/Avatar";
+import VerifiedBadge from "../common/VerifiedBadge";
 
 // ── helpers ─────────────────────────────────────
 function SkeletonCard() {
@@ -99,8 +100,9 @@ export default function ProfileCard({ user, loading }) {
         <div className="px-5 pb-5 pt-12">
           {/* Name + subtitle */}
           <div className="flex flex-col items-center mb-3">
-            <Link to="/profile" className="text-base font-bold text-gray-900 hover:text-blue-600 transition text-center">
-              {user.name}
+            <Link to="/profile" className="flex items-center justify-center gap-1.5 text-base font-bold text-gray-900 hover:text-blue-600 transition">
+              <span>{user.name}</span>
+              <VerifiedBadge verified={user.collegeVerified} />
             </Link>
             <p className="text-sm text-blue-600 font-semibold">{subtitle}</p>
             {user.college && (

@@ -637,7 +637,7 @@ export const getVerificationRequests = asyncHandler(async (req, res) => {
 
     const [users, total] = await Promise.all([
         User.find(query)
-            .select('name username email profilePic college collegeId year section collegeVerified verificationNote createdAt')
+            .select('name username email profilePic college collegeId year section collegeVerified collegeVerificationMethod collegeVerifiedAt collegeIdCardUrl verificationNote createdAt')
             .sort({ updatedAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)

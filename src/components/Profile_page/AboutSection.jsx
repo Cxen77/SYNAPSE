@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaGraduationCap, FaBriefcase, FaLightbulb } from 'react-icons/fa';
+import VerificationModal from './VerificationModal';
 
-const AboutSection = ({ user, className = "" }) => {
+const AboutSection = ({ user, isOwner, onProfileUpdate, className = "" }) => {
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+
     if (!user) return null;
 
     return (
@@ -32,7 +35,34 @@ const AboutSection = ({ user, className = "" }) => {
                                 </div>
                             </div>
                             <div className="flex flex-col">
-                                {user.college && <h5 className="font-bold text-gray-900 text-[17px] leading-tight mb-1">{user.college}</h5>}
+                                {user.college && (
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <h5 className="font-bold text-gray-900 text-[17px] leading-tight">{user.college}</h5>
+                                        {isOwner && user.collegeVerified !== 'true' && (
+                                            user.collegeVerified === 'pending' ? (
+                                                <span className="text-sm font-medium text-amber-600 flex items-center gap-1.5 cursor-wait ml-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse block"></span>
+                                                    Verification Pending
+                                                </span>
+                                            ) : user.collegeVerified === 'rejected' ? (
+                                                <button
+                                                    onClick={() => setShowVerifyModal(true)}
+                                                    className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline transition-all ml-2"
+                                                    title="Your previous request was rejected. You can reapply."
+                                                >
+                                                    Reapply Verification
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setShowVerifyModal(true)}
+                                                    className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-all ml-2"
+                                                >
+                                                    Verify Student Status
+                                                </button>
+                                            )
+                                        )}
+                                    </div>
+                                )}
                                 {user.course && <span className="text-gray-700 font-medium mb-0.5">{user.course}</span>}
                                 {(user.year || user.section) && (
                                     <span className="text-gray-500 text-sm flex items-center gap-2 mt-0.5">
@@ -74,6 +104,18 @@ const AboutSection = ({ user, className = "" }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Verification Modal */}
+            {showVerifyModal && (
+                <VerificationModal
+                    user={user}
+                    onClose={() => setShowVerifyModal(false)}
+                    onVerified={(updatedUser) => {
+                        if (onProfileUpdate) onProfileUpdate(updatedUser);
+                        setShowVerifyModal(false);
+                    }}
+                />
+            )}
         </div>
     );
 };

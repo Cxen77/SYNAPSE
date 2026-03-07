@@ -10,20 +10,8 @@ import VerifiedBadge from "../common/VerifiedBadge";
 // ──────────────────────────────────────────────
 // Trending Events Card (unchanged)
 // ──────────────────────────────────────────────
-function TrendingEvents() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+function TrendingEvents({ events = [], loading = false }) {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    api.get("/events")
-      .then(({ data }) => {
-        const evList = Array.isArray(data) ? data : data.events ?? [];
-        setEvents(evList.slice(0, 3));
-      })
-      .catch(() => setEvents([]))
-      .finally(() => setLoading(false));
-  }, []);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -105,31 +93,19 @@ function TrendingEvents() {
 
 // Main Recommendations Component
 // ──────────────────────────────────────────────
-export default function Recommendations() {
+export default function Recommendations({ initialData }) {
   const [tab, setTab] = useState("people");
-  const [people, setPeople] = useState([]);
-  const [openTeams, setOpenTeams] = useState([]);
-  const [loadingPeople, setLoadingPeople] = useState(true);
-  const [loadingTeams, setLoadingTeams] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    api.get("/users/recommended")
-      .then(({ data }) => setPeople(data))
-      .catch(() => setPeople([]))
-      .finally(() => setLoadingPeople(false));
-
-    // Use the new dedicated /teams/open endpoint with a strict limit for the sidebar
-    api.get("/teams/open?limit=5")
-      .then(({ data }) => setOpenTeams(Array.isArray(data.teams) ? data.teams : []))
-      .catch(() => setOpenTeams([]))
-      .finally(() => setLoadingTeams(false));
-  }, []);
+  const people = initialData?.recommendedPeople || [];
+  const openTeams = initialData?.openTeams || [];
+  const events = initialData?.trendingEvents || [];
+  const loading = !initialData;
 
   return (
-    <aside className="space-y-4 sticky top-[72px] self-start">
+    <aside className="space-y-4">
       {/* ── Trending Events ── */}
-      <TrendingEvents />
+      <TrendingEvents events={events} loading={loading} />
 
       {/* ── Recommendations ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -169,7 +145,7 @@ export default function Recommendations() {
           {/* ── People Tab ── */}
           {tab === "people" && (
             <>
-              {loadingPeople ? (
+              {loading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center gap-3 animate-pulse">
@@ -198,8 +174,8 @@ export default function Recommendations() {
                         </Link>
                         <div className="min-w-0 flex-1">
                           <Link to={`/profile/${p.username}`}>
-                            <div className="flex items-center gap-1">
-                              <div className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{p.name}</div>
+                            <div className="flex items-center gap-1 text-sm">
+                              <div className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition">{p.name}</div>
                               <VerifiedBadge verified={p.collegeVerified} />
                             </div>
                           </Link>
@@ -222,7 +198,7 @@ export default function Recommendations() {
           {/* ── Open Teams Tab ── */}
           {tab === "teams" && (
             <>
-              {loadingTeams ? (
+              {loading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="border border-gray-100 rounded-xl p-3 animate-pulse">

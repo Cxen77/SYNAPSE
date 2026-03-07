@@ -19,7 +19,7 @@ export const usePosts = (feedType) => {
         getNextPageParam: (lastPage) => {
             return lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined;
         },
-        staleTime: 0, // Always fetch fresh data on invalidation
+        staleTime: 1000 * 60, // 1 minute stale time to prevent immediate background refetch when seeded
     });
 
     // Flatten pages into a single list of posts
@@ -34,7 +34,8 @@ export const usePosts = (feedType) => {
         likes: post.likes.length,
         comments: post.comments,
         avatar: post.user.profilePic,
-        userId: post.user._id
+        userId: post.user._id,
+        collegeVerified: post.user.collegeVerified
     }))) || [];
 
     return {

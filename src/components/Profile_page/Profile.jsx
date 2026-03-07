@@ -19,6 +19,7 @@ import GithubImportModal from './GithubImportModal';
 import GithubStatsCard from './GithubStatsCard';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { calculateProfileScore } from '../../utils/profileUtils';
 
 const Profile = () => {
     const { username } = useParams();
@@ -253,7 +254,11 @@ const Profile = () => {
                             <>
                                 {/* Mobile View (Stacked) */}
                                 <div className="lg:hidden space-y-6 flex flex-col">
-                                    <AboutSection user={user} />
+                                    <AboutSection
+                                        user={user}
+                                        isOwner={showOwnerControls}
+                                        onProfileUpdate={handleProfileUpdate}
+                                    />
                                     {showOwnerControls && (
                                         <PendingInvites
                                             invites={invites}
@@ -261,7 +266,12 @@ const Profile = () => {
                                             onDecline={handleDeclineInvite}
                                         />
                                     )}
-                                    {showOwnerControls && <ProfileScore user={user} />}
+                                    {showOwnerControls && (
+                                        (() => {
+                                            const { score } = calculateProfileScore(user);
+                                            return score === 100 ? <SuggestedConnections /> : <ProfileScore user={user} />;
+                                        })()
+                                    )}
                                     {!showOwnerControls && <SuggestedConnections />}
                                     <AchievementsSection user={user} />
                                 </div>
@@ -271,7 +281,12 @@ const Profile = () => {
                                     since this is technically the second child but visually the only
                                     element rendered on desktop. */}
                                 <div className="hidden lg:flex flex-1 flex-col !mt-0 [&>div]:flex-1">
-                                    <AboutSection user={user} className="flex-1 flex flex-col" />
+                                    <AboutSection
+                                        user={user}
+                                        isOwner={showOwnerControls}
+                                        onProfileUpdate={handleProfileUpdate}
+                                        className="flex-1 flex flex-col"
+                                    />
                                 </div>
                             </>
                         )}
@@ -320,7 +335,12 @@ const Profile = () => {
                                 onDecline={handleDeclineInvite}
                             />
                         )}
-                        {showOwnerControls && <ProfileScore user={user} />}
+                        {showOwnerControls && (
+                            (() => {
+                                const { score } = calculateProfileScore(user);
+                                return score === 100 ? <SuggestedConnections /> : <ProfileScore user={user} />;
+                            })()
+                        )}
                         {!showOwnerControls && <SuggestedConnections />}
 
                         <AchievementsSection user={user} />

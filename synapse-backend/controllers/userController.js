@@ -6,6 +6,9 @@ import { getOnlineUserIds } from '../socket/socketServer.js';
 import cloudinary from '../config/cloudinary.js';
 import stream from 'stream';
 import axios from 'axios';
+import bcrypt from 'bcryptjs';
+import generateOTP from '../utils/generateOTP.js';
+import { sendEmailAsync } from '../utils/sendEmail.js';
 
 // Security: Escape regex special characters to prevent ReDoS
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -37,7 +40,9 @@ const formatUserResponse = (user) => {
         projects: user.projects || [],
         role: user.role,
         isSuspended: user.isSuspended,
-        collegeVerified: user.collegeVerified, // Badge field
+        collegeVerified: user.collegeVerified,
+        collegeVerificationMethod: user.collegeVerificationMethod || null,
+        collegeVerifiedAt: user.collegeVerifiedAt || null,
         verificationNote: user.verificationNote || '',
         githubId: user.githubId // Include this to check connection status
     };
@@ -552,28 +557,217 @@ const getGithubStats = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Request student verification
-// @route   POST /api/users/verify-request
-// @access  Private
-const requestVerification = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id);
+// ─── Email domain validator ───────────────────────────────────────────────────
+const VALID_EDU_PATTERNS = [
+    /\.edu$/i,
+    /\.ac\.in$/i,
+    /\.edu\.in$/i,
+    /\.ac\.np$/i,
+    /\.edu\.np$/i,
+    /\.ac\.uk$/i,
+];
 
-    if (!user) {
-        res.status(404);
-        throw new Error('User not found');
+// Specific whitelisted college domains (allows personal Gmail-style domains used by colleges)
+const WHITELISTED_COLLEGE_DOMAINS = [
+    'bmsit.in',
+    'bmsce.ac.in',
+    'rvce.edu.in',
+    'msrit.edu',
+    'nie.ac.in',
+    'vtu.ac.in',
+];
+
+const isEduEmail = (email, collegeName) => {
+    const domain = email.split('@')[1]?.toLowerCase() || '';
+    if (VALID_EDU_PATTERNS.some(p => p.test(domain))) return true;
+    if (WHITELISTED_COLLEGE_DOMAINS.includes(domain)) return true;
+    // fuzzy: college name words appear in domain
+    if (collegeName) {
+        const words = collegeName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        if (words.some(w => domain.includes(w))) return true;
+    }
+    return false;
+};
+
+// @desc    Start college email OTP verification
+// @route   POST /api/users/verify-email-start
+// @access  Private
+const startEmailVerification = asyncHandler(async (req, res) => {
+    const { collegeEmail } = req.body;
+
+    if (!collegeEmail || !collegeEmail.includes('@')) {
+        res.status(400);
+        throw new Error('Please provide a valid college email address.');
     }
 
-    if (user.collegeVerified === true) {
+    const user = await User.findById(req.user._id);
+    if (!user) { res.status(404); throw new Error('User not found'); }
+
+    if (user.collegeVerified === 'true') {
         res.status(400);
         throw new Error('You are already verified.');
     }
-
     if (user.collegeVerified === 'pending') {
         res.status(400);
-        throw new Error('Your verification request is already pending review.');
+        throw new Error('You have a pending ID card review. Wait for admin approval or contact support.');
+    }
+
+    const normalised = collegeEmail.trim().toLowerCase();
+    if (!isEduEmail(normalised, user.college)) {
+        res.status(400);
+        throw new Error('Email must be from a recognised educational institution (.edu, .ac.in, bmsit.in, etc.) or match your college name.');
+    }
+
+    // One-email-per-account: ensure no OTHER verified account already uses this college email
+    const existingVerified = await User.findOne({
+        _id: { $ne: user._id },
+        collegeEmailForVerification: normalised,
+        collegeVerified: 'true',
+    });
+    if (existingVerified) {
+        res.status(400);
+        throw new Error('This college email is already linked to another verified account.');
+    }
+
+    // OTP lockout check
+    if (user.otpLockUntil && user.otpLockUntil > Date.now()) {
+        res.status(429);
+        throw new Error('Too many attempts. Please try again later.');
+    }
+
+    const otp = generateOTP();
+    user.otpHash = await bcrypt.hash(otp, 10);
+    user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.otpAttempts = 0;
+    user.otpLockUntil = undefined;
+    user.collegeEmailForVerification = normalised;
+    await user.save();
+
+    sendEmailAsync({
+        email: normalised,
+        subject: 'Your Student Verification Code — Synapse',
+        message: `Your student verification OTP is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not request this, please ignore this email.`
+    });
+
+    res.json({ message: 'OTP sent to your college email. It expires in 10 minutes.' });
+});
+
+// @desc    Verify college email OTP → auto-approves
+// @route   POST /api/users/verify-email-otp
+// @access  Private
+const verifyCollegeEmailOtp = asyncHandler(async (req, res) => {
+    const { otp } = req.body;
+    if (!otp) { res.status(400); throw new Error('OTP is required'); }
+
+    const user = await User.findById(req.user._id);
+    if (!user) { res.status(404); throw new Error('User not found'); }
+
+    if (user.collegeVerified === 'true') {
+        res.status(400);
+        throw new Error('Already verified.');
+    }
+
+    if (!user.otpHash || !user.otpExpiresAt) {
+        res.status(400);
+        throw new Error('No OTP found. Please request a new one via college email.');
+    }
+
+    if (user.otpLockUntil && user.otpLockUntil > Date.now()) {
+        res.status(429);
+        throw new Error('Too many failed attempts. Please try again later.');
+    }
+
+    if (user.otpExpiresAt < Date.now()) {
+        res.status(400);
+        throw new Error('OTP expired. Please request a new verification email.');
+    }
+
+    const isMatch = await bcrypt.compare(String(otp), user.otpHash);
+    if (!isMatch) {
+        user.otpAttempts = (user.otpAttempts || 0) + 1;
+        if (user.otpAttempts >= 5) {
+            user.otpLockUntil = new Date(Date.now() + 15 * 60 * 1000);
+            user.otpAttempts = 0;
+        }
+        await user.save();
+        res.status(400);
+        throw new Error('Invalid OTP. Please check and try again.');
+    }
+
+    // Final uniqueness check — prevent two accounts verifying with the same email
+    const alreadyUsed = await User.findOne({
+        _id: { $ne: user._id },
+        collegeEmailForVerification: user.collegeEmailForVerification,
+        collegeVerified: 'true',
+    });
+    if (alreadyUsed) {
+        res.status(400);
+        throw new Error('This college email is already linked to another verified account.');
+    }
+
+    // ✅ Auto-approve
+    user.collegeVerified = 'true';
+    user.collegeVerificationMethod = 'email';
+    user.collegeVerifiedAt = new Date();
+    user.verificationNote = '';
+    // Clear OTP fields, keep collegeEmailForVerification as permanent record
+    user.otpHash = undefined;
+    user.otpExpiresAt = undefined;
+    user.otpAttempts = 0;
+    user.otpLockUntil = undefined;
+    const updatedUser = await user.save();
+
+    res.json(formatUserResponse(updatedUser));
+});
+
+// @desc    Submit ID card for verification (goes to admin queue)
+// @route   POST /api/users/verify-id  (multipart/form-data, field: idCard)
+// @access  Private
+const submitIdVerification = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    if (!user) { res.status(404); throw new Error('User not found'); }
+
+    if (user.collegeVerified === 'true') {
+        res.status(400);
+        throw new Error('You are already verified.');
+    }
+    if (user.collegeVerified === 'pending') {
+        res.status(400);
+        throw new Error('Your ID card is already under review. Please wait for admin approval.');
+    }
+    if (!req.file) {
+        res.status(400);
+        throw new Error('Please upload an image of your college ID card.');
+    }
+
+    // Upload to Cloudinary — same pattern as updateProfilePic / updateBannerPic
+    const uploadToCloudinary = () => {
+        return new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                { folder: 'verification_ids', resource_type: 'image' },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(req.file.buffer);
+            bufferStream.pipe(uploadStream);
+        });
+    };
+
+    let result;
+    try {
+        result = await uploadToCloudinary();
+    } catch (uploadError) {
+        console.error('Cloudinary upload error (verify-id):', uploadError);
+        res.status(500);
+        throw new Error('Failed to upload ID card image. Please try again.');
     }
 
     user.collegeVerified = 'pending';
+    user.collegeVerificationMethod = 'id_card';
+    user.collegeIdCardUrl = result.secure_url;
     user.verificationNote = '';
     const updatedUser = await user.save();
 
@@ -595,5 +789,7 @@ export {
     getGithubRepos,
     disconnectGithub,
     getGithubStats,
-    requestVerification
+    startEmailVerification,
+    verifyCollegeEmailOtp,
+    submitIdVerification
 };

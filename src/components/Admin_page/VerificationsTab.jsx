@@ -106,6 +106,7 @@ export default function VerificationsTab() {
                                 <th className="text-left">User</th>
                                 <th className="text-left">College</th>
                                 <th className="text-center">Year / Section</th>
+                                <th className="text-center">ID Card</th>
                                 <th className="text-center">Status</th>
                                 <th className="text-left">Note</th>
                                 <th className="text-right">Actions</th>
@@ -135,7 +136,17 @@ export default function VerificationsTab() {
                                             />
                                             <div>
                                                 <p className="font-medium text-gray-900 text-sm">{user.name}</p>
-                                                <p className="text-xs text-gray-400">@{user.username}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <p className="text-xs text-gray-400">@{user.username}</p>
+                                                    {user.collegeVerificationMethod && (
+                                                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${user.collegeVerificationMethod === 'email'
+                                                                ? 'bg-blue-50 text-blue-600'
+                                                                : 'bg-purple-50 text-purple-600'
+                                                            }`}>
+                                                            {user.collegeVerificationMethod === 'email' ? 'Email' : 'ID Card'}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -148,6 +159,21 @@ export default function VerificationsTab() {
                                         <span className="text-sm text-gray-500">
                                             {[user.year, user.section].filter(Boolean).join(' · ') || '—'}
                                         </span>
+                                    </td>
+                                    {/* ID Card thumbnail */}
+                                    <td className="text-center">
+                                        {user.collegeIdCardUrl ? (
+                                            <a href={user.collegeIdCardUrl} target="_blank" rel="noopener noreferrer">
+                                                <img
+                                                    src={user.collegeIdCardUrl}
+                                                    alt="ID Card"
+                                                    className="w-16 h-10 object-cover rounded-lg border border-gray-200 mx-auto hover:opacity-80 transition-opacity cursor-pointer"
+                                                    title="Click to view full image"
+                                                />
+                                            </a>
+                                        ) : (
+                                            <span className="text-gray-300 text-xs">—</span>
+                                        )}
                                     </td>
                                     <td className="text-center">{statusBadge(user.collegeVerified)}</td>
                                     <td>

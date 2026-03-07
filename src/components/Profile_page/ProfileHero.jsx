@@ -27,63 +27,6 @@ import {
 import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
 
-// ─── Verify Button — appears on own profile when not yet verified ───────────────
-const VerifyButton = ({ status, onSuccess }) => {
-    const [loading, setLoading] = React.useState(false);
-    const [localStatus, setLocalStatus] = React.useState(status);
-
-    const handleRequest = async () => {
-        setLoading(true);
-        try {
-            const { data } = await api.post('/users/verify-request');
-            setLocalStatus('pending');
-            if (onSuccess) onSuccess(data);
-        } catch (err) {
-            const msg = err.response?.data?.message || 'Request failed';
-            alert(msg);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const currentStatus = localStatus;
-
-    if (currentStatus === 'pending') {
-        return (
-            <button disabled className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-50 border border-amber-200 text-amber-600 cursor-not-allowed">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
-                Verification Pending
-            </button>
-        );
-    }
-
-    if (currentStatus === 'rejected') {
-        return (
-            <button
-                onClick={handleRequest}
-                disabled={loading}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-all disabled:opacity-60"
-                title="Your previous request was rejected. You can reapply.">
-                {loading ? <span className="w-3.5 h-3.5 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" /> : '↩'}
-                Rejected — Reapply
-            </button>
-        );
-    }
-
-    return (
-        <button
-            onClick={handleRequest}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-60"
-        >
-            {loading
-                ? <span className="w-3.5 h-3.5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
-                : <span>✓</span>
-            }
-            Verify Student Status
-        </button>
-    );
-};
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInvite, onToggleView, onProfileUpdate }) => {
@@ -223,8 +166,8 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
 
                         {/* Name & Title (Mobile Only Centered, Desktop Left) */}
                         <div className="mt-4 text-center md:text-left md:hidden">
-                            <div className="flex items-center justify-center md:justify-start gap-1.5">
-                                <h1 className="text-2xl font-bold text-gray-900 leading-tight">{user.name}</h1>
+                            <div className="flex items-center justify-center md:justify-start gap-1.5 text-2xl">
+                                <h1 className="font-bold text-gray-900 leading-tight">{user.name}</h1>
                                 <VerifiedBadge verified={user.collegeVerified} />
                             </div>
                             <p className="text-gray-500 font-medium">@{user.username}</p>
@@ -239,63 +182,52 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
 
                             {/* Desktop Name */}
                             <div className="hidden md:block">
-                                <div className="flex items-center gap-3 mb-1">
-                                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{user.name}</h1>
+                                <div className="flex items-center gap-3 mb-1 text-3xl">
+                                    <h1 className="font-extrabold text-gray-900 tracking-tight">{user.name}</h1>
                                     <VerifiedBadge verified={user.collegeVerified} />
                                 </div>
                                 <p className="text-lg text-gray-500 font-medium">@{user.username}</p>
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
+                            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
                                 {isOwnProfile ? (
                                     isOwner ? (
-                                        <>
-                                            <button onClick={onToggleView} className="btn-secondary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
-                                                <Eye className="w-4 h-4 ml-[-2px]" />
-                                                Public View
+                                        <div className="flex gap-2 w-full md:w-auto">
+                                            <button onClick={onToggleView} className="flex-1 md:flex-none btn-secondary flex items-center justify-center gap-2 px-3 md:px-5 py-2.5 rounded-xl font-bold text-[13px] md:text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                                                <Eye className="w-4 h-4" />
+                                                <span className="truncate">Public View</span>
                                             </button>
-                                            <button onClick={() => setShowEditModal(true)} className="btn-secondary flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
-                                                <Edit3 className="w-4 h-4 ml-[-2px]" />
-                                                Edit Profile
+                                            <button onClick={() => setShowEditModal(true)} className="flex-1 md:flex-none btn-secondary flex items-center justify-center gap-2 px-3 md:px-6 py-2.5 rounded-xl font-bold text-[13px] md:text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                                                <Edit3 className="w-4 h-4" />
+                                                <span className="truncate">Edit Profile</span>
                                             </button>
-                                            {/* Verification button — only visible when not yet verified */}
-                                            {user.collegeVerified !== true && (
-                                                <VerifyButton
-                                                    status={user.collegeVerified}
-                                                    userId={user._id}
-                                                    onSuccess={(updatedUser) => {
-                                                        // Bubble up to parent update if available, otherwise force a page reload
-                                                        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('verification-requested', { detail: updatedUser }));
-                                                    }}
-                                                />
-                                            )}
-                                        </>
+                                        </div>
                                     ) : (
-                                        <button onClick={onToggleView} className="btn-secondary flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                                        <button onClick={onToggleView} className="flex-1 md:flex-none btn-secondary flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
                                             <Edit3 className="w-4 h-4" />
                                             Admin View
                                         </button>
                                     )
                                 ) : (
-                                    <>
-                                        <button onClick={onFollow} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${isFollowing ? "bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-gray-200"}`}>
-                                            {isFollowing ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                                            {isFollowing ? "Following" : "Follow"}
+                                    <div className="flex gap-1.5 md:gap-3 w-full md:w-auto">
+                                        <button onClick={onFollow} className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 rounded-xl font-bold text-[13px] md:text-sm transition-all shadow-sm ${isFollowing ? "bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-gray-200"}`}>
+                                            {isFollowing ? <Check className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+                                            <span className="truncate">{isFollowing ? "Following" : "Follow"}</span>
                                         </button>
-                                        <button onClick={handleMessage} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-white border border-gray-200 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
-                                            <Mail className="w-4 h-4" />
-                                            Message
+                                        <button onClick={handleMessage} className="flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 rounded-xl font-bold text-[13px] md:text-sm bg-white border border-gray-200 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+                                            <Mail className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                            <span className="truncate">Message</span>
                                         </button>
-                                        <button onClick={onInvite} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
-                                            <UserPlus className="w-4 h-4" />
-                                            Invite
+                                        <button onClick={onInvite} className="flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 rounded-xl font-bold text-[13px] md:text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+                                            <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                            <span className="truncate">Invite</span>
                                         </button>
-                                    </>
+                                        <button onClick={handleShare} className="flex-shrink-0 p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all shadow-sm">
+                                            <Share2 className="w-5 h-5 md:w-5 md:h-5" />
+                                        </button>
+                                    </div>
                                 )}
-                                <button onClick={handleShare} className="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all shadow-sm">
-                                    <Share2 className="w-5 h-5" />
-                                </button>
                             </div>
                         </div>
 

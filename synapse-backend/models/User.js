@@ -18,10 +18,15 @@ const userSchema = mongoose.Schema({
 
     // Student Verification
     collegeVerified: {
-        type: mongoose.Schema.Types.Mixed, // true | false | "pending" | "rejected"
-        default: false,
+        type: String,
+        enum: ['false', 'pending', 'rejected', 'true'],
+        default: 'false',
         index: true
     },
+    collegeVerificationMethod: { type: String, enum: ['email', 'id_card'], default: null },
+    collegeVerifiedAt: { type: Date },
+    collegeIdCardUrl: { type: String, default: '' },
+    collegeEmailForVerification: { type: String, default: '' }, // Temp: college email during OTP flow
     verificationNote: { type: String, default: '' }, // Rejection reason set by admin/mod
 
     // Auth & Verification

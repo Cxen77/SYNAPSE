@@ -502,8 +502,8 @@ const TeamDetails = () => {
                                                 >
                                                     <Avatar src={member.profilePic} alt={member.name} size="md" />
                                                     <div>
-                                                        <div className="flex items-center gap-1">
-                                                            <p className="font-bold text-gray-900 group-hover:text-blue-600 transition text-sm">{member.name}</p>
+                                                        <div className="flex items-center gap-1 text-sm">
+                                                            <p className="font-bold text-gray-900 group-hover:text-blue-600 transition">{member.name}</p>
                                                             <VerifiedBadge verified={member.collegeVerified} />
                                                         </div>
                                                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isThisOwner ? 'bg-purple-100 text-purple-700'
