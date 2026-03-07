@@ -50,12 +50,7 @@ const MobileCommentsSheet = ({
         setLocalComment("");
     };
 
-    // Auto-focus input when opening
-    useEffect(() => {
-        if (isOpen && !replyingTo) {
-            setTimeout(() => inputRef.current?.focus(), 300);
-        }
-    }, [isOpen]);
+
 
     // Scroll to bottom on new comment
     useEffect(() => {
