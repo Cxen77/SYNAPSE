@@ -71,7 +71,7 @@ const MobileCommentsSheet = ({
 
             {/* Sheet */}
             <div
-                className={`bg-white w-full h-[80vh] rounded-t-[2rem] shadow-xl overflow-hidden pointer-events-auto flex flex-col transform ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
+                className={`bg-white w-full h-[80dvh] rounded-t-[2rem] shadow-xl overflow-hidden pointer-events-auto flex flex-col transform ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
             >
 
                 {/* Header */}
