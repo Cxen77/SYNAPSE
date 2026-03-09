@@ -35,7 +35,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
 
     const handleMessage = async () => {
         try {
-            const { data } = await api.post('/chat', { userId: user._id }); // ensure using _id
+            const { data } = await api.post(`/chat/direct/${user._id}`);
             navigate(`/chat/${data._id}`);
         } catch (error) {
             console.error("Error accessing chat", error);

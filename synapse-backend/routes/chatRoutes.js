@@ -5,7 +5,8 @@ import {
     getChatHistory,
     sendMessage,
     markRead,
-    accessChat,
+    accessDirectChat,
+    accessTeamChat,
     getChatById,
     createGroupChat,
     renameGroup,
@@ -19,7 +20,9 @@ const router = express.Router();
 
 router.use(protect); // All chat routes protected
 
-router.route('/').get(getChats).post(accessChat);
+router.route('/').get(getChats);
+router.post('/direct/:userId', accessDirectChat);
+router.post('/team/:teamId', accessTeamChat);
 router.get('/history/:chatId', getChatHistory);
 router.post('/send', sendMessage);
 router.post('/read', markRead);

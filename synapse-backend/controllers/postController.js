@@ -80,7 +80,19 @@ const getPosts = asyncHandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .lean();
 
-    res.json({ posts, page, pages: Math.ceil(count / pageSize) });
+    const formattedPosts = posts.map(post => {
+        const likesList = post.likes || [];
+        const likedByUser = likesList.some(id => id.toString() === req.user._id.toString());
+        const formatted = {
+            ...post,
+            likesCount: likesList.length,
+            likedByUser
+        };
+        delete formatted.likes;
+        return formatted;
+    });
+
+    res.json({ posts: formattedPosts, page, pages: Math.ceil(count / pageSize) });
 });
 
 // @desc    Delete post
@@ -111,31 +123,53 @@ const deletePost = asyncHandler(async (req, res) => {
 // @route   PUT /api/posts/:id/like
 // @access  Private
 const likePost = asyncHandler(async (req, res) => {
-    const post = await Post.findById(req.params.id);
+    const userId = req.user._id;
+    const postId = req.params.id;
 
-    if (post) {
-        if (post.likes.includes(req.user._id)) {
-            post.likes = post.likes.filter(id => id.toString() !== req.user._id.toString());
-        } else {
-            post.likes.push(req.user._id);
+    // Fast atomic check if the user already liked the post
+    const postWithUserLike = await Post.findOne({ _id: postId, likes: userId });
 
-            // Create Notification
-            if (post.user.toString() !== req.user._id.toString()) {
-                await Notification.create({
-                    recipient: post.user,
-                    sender: req.user._id,
-                    type: 'like',
-                    post: post._id
-                });
-            }
-        }
+    let updatedPost;
+    let likedByUser;
 
-        await post.save();
-        res.json(post.likes);
+    if (postWithUserLike) {
+        // User already liked it -> secure atomic pull
+        updatedPost = await Post.findByIdAndUpdate(
+            postId,
+            { $pull: { likes: userId } },
+            { new: true }
+        );
+        likedByUser = false;
     } else {
+        // User hasn't liked it -> secure atomic push
+        updatedPost = await Post.findByIdAndUpdate(
+            postId,
+            { $addToSet: { likes: userId } },
+            { new: true }
+        );
+        likedByUser = true;
+
+        // Create Notification
+        if (updatedPost && updatedPost.user.toString() !== userId.toString()) {
+            await Notification.create({
+                recipient: updatedPost.user,
+                sender: userId,
+                type: 'like',
+                post: updatedPost._id
+            });
+        }
+    }
+
+    if (!updatedPost) {
         res.status(404);
         throw new Error('Post not found');
     }
+
+    res.json({
+        postId: updatedPost._id,
+        likesCount: updatedPost.likes.length,
+        likedByUser
+    });
 });
 
 // @desc    Add comment to post

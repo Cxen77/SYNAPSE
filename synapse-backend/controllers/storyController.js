@@ -40,3 +40,27 @@ export const createStory = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Delete a user's story
+// @route   DELETE /api/stories/:id
+// @access  Private
+export const deleteStory = async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+
+        if (!story) {
+            return res.status(404).json({ message: 'Story not found' });
+        }
+
+        // Check if user owns the story
+        if (story.userId.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized to delete this story' });
+        }
+
+        await story.deleteOne();
+
+        res.json({ message: 'Story removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

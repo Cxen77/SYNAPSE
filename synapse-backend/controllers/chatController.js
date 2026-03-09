@@ -1,6 +1,7 @@
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
+import Team from '../models/Team.js';
 import { getIO, isUserOnline } from '../socket/socketServer.js';
 import { admin } from '../config/firebaseAdmin.js';
 
@@ -21,18 +22,19 @@ export const getChats = async (req, res) => {
     }
 };
 
-// @desc    Access or create a one-on-one chat
-// @route   POST /api/chat
+// @desc    Access or create a one-on-one direct chat
+// @route   POST /api/chat/direct/:userId
 // @access  Private
-export const accessChat = async (req, res) => {
-    const { userId } = req.body;
+export const accessDirectChat = async (req, res) => {
+    const { userId } = req.params;
 
     if (!userId) {
-        return res.status(400).json({ message: "UserId param not sent with request" });
+        return res.status(400).json({ message: "UserId param not sent in request" });
     }
 
     try {
         let isChat = await Chat.find({
+            isGroupChat: false,
             participants: { $all: [req.user._id, userId] }
         })
             .populate("participants", "name email profilePic")
@@ -44,23 +46,102 @@ export const accessChat = async (req, res) => {
         });
 
         if (isChat.length > 0) {
-            res.send(isChat[0]);
-        } else {
-            var chatData = {
-                participants: [req.user._id, userId],
-                unreadCounts: {
-                    [req.user._id]: 0,
-                    [userId]: 0
-                }
-            };
-
-            const createdChat = await Chat.create(chatData);
-            const fullChat = await Chat.findOne({ _id: createdChat._id }).populate(
-                "participants",
-                "name email profilePic"
-            );
-            res.status(200).send(fullChat);
+            // Because $all matches *any* array that contains these two, we must also ensure EXACTLY two
+            // to prevent overlapping bugs if groups somehow lacked isGroupChat.
+            const exactMatch = isChat.find(c => c.participants.length === 2);
+            if (exactMatch) {
+                return res.status(200).send(exactMatch);
+            }
         }
+
+        // Create new direct chat
+        var chatData = {
+            isGroupChat: false,
+            teamId: null,
+            participants: [req.user._id, userId],
+            unreadCounts: {
+                [req.user._id]: 0,
+                [userId]: 0
+            }
+        };
+
+        const createdChat = await Chat.create(chatData);
+        const fullChat = await Chat.findOne({ _id: createdChat._id }).populate(
+            "participants",
+            "name email profilePic"
+        );
+        res.status(200).send(fullChat);
+
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Access or create a team chat
+// @route   POST /api/chat/team/:teamId
+// @access  Private
+export const accessTeamChat = async (req, res) => {
+    const { teamId } = req.params;
+
+    if (!teamId) {
+        return res.status(400).json({ message: "TeamId param not sent in request" });
+    }
+
+    try {
+        // Validate team exists
+        const team = await Team.findById(teamId);
+        if (!team) {
+            return res.status(404).json({ message: "Team not found" });
+        }
+
+        // Verify requesting user is a member/owner
+        const currentUserIdStr = req.user._id.toString();
+        const isOwner = team.createdBy?.toString() === currentUserIdStr;
+        const isMember = team.members.some(m => m.toString() === currentUserIdStr);
+
+        if (!isOwner && !isMember) {
+            return res.status(403).json({ message: "Only team members can access its chat" });
+        }
+
+        // Search for existing team chat
+        let existingChat = await Chat.findOne({
+            teamId: team._id,
+            isGroupChat: true
+        })
+            .populate("participants", "name email profilePic")
+            .populate("lastMessage");
+
+        existingChat = await User.populate(existingChat, {
+            path: "lastMessage.senderId",
+            select: "name profilePic email",
+        });
+
+        if (existingChat) {
+            return res.status(200).send(existingChat);
+        }
+
+        // Create new team chat using active members
+        const uniqueUsers = [...new Set([
+            team.createdBy?.toString(),
+            ...team.members.map(m => m.toString())
+        ])].filter(Boolean); // Clean any nulls/undefined
+
+        var chatData = {
+            chatName: team.name,
+            isGroupChat: true,
+            teamId: team._id,
+            groupAdmin: team.createdBy,
+            participants: uniqueUsers,
+            unreadCounts: uniqueUsers.reduce((acc, currentId) => ({ ...acc, [currentId]: 0 }), {})
+        };
+
+        const createdChat = await Chat.create(chatData);
+        const fullChat = await Chat.findOne({ _id: createdChat._id }).populate(
+            "participants",
+            "name email profilePic"
+        );
+        res.status(200).send(fullChat);
+
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

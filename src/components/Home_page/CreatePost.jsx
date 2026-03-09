@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { HiPhotograph, HiVideoCamera, HiEmojiHappy, HiX } from "react-icons/hi";
+import { HiPhotograph, HiX } from "react-icons/hi";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
 
@@ -150,12 +150,7 @@ export default function CreatePost({ user, onPostCreated }) {
                             >
                                 <HiPhotograph size={20} className="md:w-6 md:h-6" />
                             </button>
-                            <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors" title="Add Video">
-                                <HiVideoCamera size={20} className="md:w-6 md:h-6" />
-                            </button>
-                            <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors" title="Feeling/Activity">
-                                <HiEmojiHappy size={20} className="md:w-6 md:h-6" />
-                            </button>
+
                         </div>
 
                         {/* Submit Button */}

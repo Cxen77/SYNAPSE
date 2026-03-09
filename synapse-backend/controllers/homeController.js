@@ -4,6 +4,21 @@ import Post from '../models/Post.js';
 import Team from '../models/Team.js';
 import Event from '../models/Event.js';
 
+// Helper function to format posts with likes metrics
+const formatPosts = (posts, currentUserId) => {
+    return posts.map(post => {
+        const likesList = post.likes || [];
+        const likedByUser = likesList.some(id => id.toString() === currentUserId.toString());
+        const formatted = {
+            ...post,
+            likesCount: likesList.length,
+            likedByUser
+        };
+        delete formatted.likes;
+        return formatted;
+    });
+};
+
 // Helper function to format user response (matches userController)
 const formatUserResponse = (user) => {
     return {
@@ -66,12 +81,12 @@ const getHomeData = asyncHandler(async (req, res) => {
 
     if (isMobile) {
         // Mobile only needs Feed data
-        const posts = await feedPromise;
+        const rawPosts = await feedPromise;
         const count = await Post.countDocuments(postQuery);
 
         return res.json({
             feed: {
-                posts,
+                posts: formatPosts(rawPosts, userId),
                 page: 1,
                 pages: Math.ceil(count / pageSize)
             }
@@ -110,13 +125,15 @@ const getHomeData = asyncHandler(async (req, res) => {
         .lean();
 
     // Execute all queries in parallel
-    const [posts, profileUser, events, recommendedPeople, openTeams] = await Promise.all([
+    const [rawPosts, profileUser, events, recommendedPeople, openTeams] = await Promise.all([
         feedPromise,
         profilePromise,
         eventsPromise,
         recommendedUsersPromise,
         openTeamsPromise
     ]);
+
+    const posts = formatPosts(rawPosts, userId);
 
     // Format profile and get post count
     let profile = null;

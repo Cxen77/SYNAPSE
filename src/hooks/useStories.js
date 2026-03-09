@@ -30,5 +30,15 @@ export const useStories = () => {
         }
     };
 
-    return { stories, loading, createStory, refreshStories: fetchStories };
+    const deleteStory = async (storyId) => {
+        try {
+            await api.delete(`/stories/${storyId}`);
+            setStories(prev => prev.filter(story => story._id !== storyId));
+        } catch (err) {
+            console.error("Failed to delete story:", err);
+            throw err;
+        }
+    };
+
+    return { stories, loading, createStory, deleteStory, refreshStories: fetchStories };
 };

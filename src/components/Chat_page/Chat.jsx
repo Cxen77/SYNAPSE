@@ -39,27 +39,6 @@ function Chat() {
 
     // TEAMS TAB STATE
     const [activeTab, setActiveTab] = useState('messages');
-    const [teams, setTeams] = useState([]);
-    const [teamsLoading, setTeamsLoading] = useState(false);
-
-    useEffect(() => {
-        if (activeTab === 'teams' && teams.length === 0) {
-            setTeamsLoading(true);
-            api.get('/teams')
-                .then(({ data }) => setTeams(data))
-                .catch(err => console.error("Failed to fetch teams", err))
-                .finally(() => setTeamsLoading(false));
-        }
-    }, [activeTab]);
-
-    // Flatten unique members for "Teammates" list (excluding self)
-    const uniqueTeammates = Array.from(
-        new Map(
-            teams.flatMap(t => t.members)
-                .filter(m => m._id !== currentUser._id)
-                .map(m => [m._id, m])
-        ).values()
-    );
 
     const handleStartChat = async (userId) => {
         try {
@@ -346,9 +325,9 @@ function Chat() {
                         <Skeleton variant="rectangular" className="h-16 w-full rounded-xl" />
                     </div>
                 ) : activeTab === 'messages' ? (
-                    mappedChats.length > 0 ? (
+                    mappedChats.filter(c => !c.isGroupChat).length > 0 ? (
                         <ChatList
-                            chats={filteredChats}
+                            chats={filteredChats.filter(chat => !chat.isGroupChat)}
                             activeChat={windowChat || activeChat}
                             setActiveChat={handleChatSelect}
                         />
@@ -376,38 +355,23 @@ function Chat() {
                     )
                 ) : (
                     // TEAMS TAB CONTENT
-                    <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'none' }}>
-                        {teamsLoading ? (
-                            <div className="p-4 space-y-4">
-                                <Skeleton variant="rectangular" className="h-12 w-full rounded-xl" />
-                                <Skeleton variant="rectangular" className="h-12 w-full rounded-xl" />
+                    mappedChats.filter(c => c.isGroupChat).length > 0 ? (
+                        <ChatList
+                            chats={filteredChats.filter(chat => chat.isGroupChat)}
+                            activeChat={windowChat || activeChat}
+                            setActiveChat={handleChatSelect}
+                        />
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
+                            <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-6 shadow-sm group cursor-pointer hover:bg-purple-100 transition-colors">
+                                <FaEdit size={32} className="text-purple-500 group-hover:scale-110 transition-transform -ml-1 mt-1" />
                             </div>
-                        ) : uniqueTeammates.length > 0 ? (
-                            uniqueTeammates
-                                .filter(m => m.name.toLowerCase().includes(search.toLowerCase()))
-                                .map(member => (
-                                    <div
-                                        key={member._id}
-                                        onClick={() => handleStartChat(member._id)}
-                                        className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0"
-                                    >
-                                        <img
-                                            src={member.profilePic || "https://via.placeholder.com/150"}
-                                            alt={member.name}
-                                            className="w-10 h-10 rounded-full object-cover border border-gray-100"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-semibold text-gray-900 text-sm truncate">{member.name}</h4>
-                                            <p className="text-xs text-gray-500 truncate">Tap to message</p>
-                                        </div>
-                                    </div>
-                                ))
-                        ) : (
-                            <div className="p-8 text-center text-gray-500 text-sm">
-                                No teammates found. Join a team to see members here!
-                            </div>
-                        )}
-                    </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No team chats yet</h3>
+                            <p className="text-sm text-gray-500 mb-8 max-w-[240px] leading-relaxed mx-auto">
+                                Join a team to start a group conversation.
+                            </p>
+                        </div>
+                    )
                 )}
             </div>
 

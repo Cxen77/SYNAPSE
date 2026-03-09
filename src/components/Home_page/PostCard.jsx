@@ -23,9 +23,9 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
     time: post.time || (post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "Just now"),
     text: post.text || post.content,
     image: post.image,
-    likesCount: Array.isArray(post.likes) ? post.likes.length : (post.likes || 0),
+    likesCount: post.likesCount ?? (Array.isArray(post.likes) ? post.likes.length : (post.likes || 0)),
     commentsCount: Array.isArray(post.comments) ? post.comments.length : (post.comments || 0),
-    isLiked: Array.isArray(post.likes) ? post.likes.includes(currentUser?._id) : false,
+    isLiked: post.likedByUser ?? (Array.isArray(post.likes) ? post.likes.includes(currentUser?._id) : false),
     userId: post.user?._id || post.user // Store user ID for ownership check
   };
 
@@ -65,7 +65,13 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
       setLiked(!liked);
       setLikeCount(prev => liked ? prev - 1 : prev + 1);
 
-      await api.put(`/posts/${displayPost.id}/like`);
+      const { data } = await api.put(`/posts/${displayPost.id}/like`);
+
+      // Override optimistic guess with absolute database truth
+      if (data && typeof data.likedByUser === 'boolean') {
+        setLiked(data.likedByUser);
+        setLikeCount(data.likesCount);
+      }
     } catch (err) {
       console.error("Failed to like post", err);
       // Revert on error

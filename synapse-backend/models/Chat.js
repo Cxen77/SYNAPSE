@@ -18,6 +18,11 @@ const chatSchema = new mongoose.Schema({
     },
     // Group Chat Fields
     isGroupChat: { type: Boolean, default: false },
+    teamId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Team',
+        default: null
+    },
     chatName: { type: String, trim: true },
     groupAdmin: {
         type: mongoose.Schema.Types.ObjectId,

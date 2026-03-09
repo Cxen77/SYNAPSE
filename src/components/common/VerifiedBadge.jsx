@@ -12,12 +12,11 @@ const VerifiedBadge = ({ verified, className = "" }) => {
         <span
             title="Verified"
             aria-label="Verified"
-            className={`inline-flex flex-shrink-0 items-center justify-center relative ${className}`}
+            className={`inline-flex flex-shrink-0 items-center justify-center relative translate-y-[0.05em] md:translate-y-[0.125em] ${className}`}
             style={{
                 width: '0.62em',
                 height: '0.62em',
-                minWidth: '0.62em',
-                transform: 'translateY(0.125em)'
+                minWidth: '0.62em'
             }}
         >
             <svg

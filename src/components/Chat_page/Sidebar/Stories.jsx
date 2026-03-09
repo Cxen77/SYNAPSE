@@ -5,7 +5,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { FaPlus, FaPaperPlane, FaTrash } from "react-icons/fa";
 
 function Stories() {
-  const { stories, loading, createStory } = useStories();
+  const { stories, loading, createStory, deleteStory } = useStories();
   const { currentUser } = useAuth();
   const [viewer, setViewer] = useState(null); // { name, avatar, note, images, isCreate }
 
@@ -49,7 +49,8 @@ function Stories() {
               avatar: currentUser?.profilePic,
               note: myStory ? myStory.text : "",
               isCreate: !myStory,
-              storyId: myStory?._id
+              storyId: myStory?._id,
+              isOwner: true
             })
           }
         />
@@ -80,6 +81,7 @@ function Stories() {
             viewer={viewer}
             onClose={() => setViewer(null)}
             onCreate={createStory}
+            onDelete={deleteStory}
           />,
           document.body
         )}
@@ -125,9 +127,25 @@ function StoryCircle({ name, avatar, note, isYou, hasStory, onClick }) {
 
 /* ---------------- FULLSCREEN VIEWER ---------------- */
 
-function FullStoryViewer({ viewer, onClose, onCreate }) {
+function FullStoryViewer({ viewer, onClose, onCreate, onDelete }) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!viewer.storyId) return;
+    if (!window.confirm("Are you sure you want to delete this note?")) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(viewer.storyId);
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to delete the note. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!text.trim()) return;
@@ -164,6 +182,17 @@ function FullStoryViewer({ viewer, onClose, onCreate }) {
         className="bg-white rounded-3xl p-6 w-full max-w-sm animate-scaleIn shadow-2xl relative flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
+        {viewer.isOwner && !viewer.isCreate && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="absolute top-4 left-4 text-gray-400 hover:text-red-500 z-10 p-2 hover:bg-red-50 rounded-full transition disabled:opacity-50"
+            title="Delete Note"
+          >
+            <FaTrash size={16} />
+          </button>
+        )}
+
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 p-2 hover:bg-gray-100 rounded-full transition"
@@ -212,7 +241,7 @@ function FullStoryViewer({ viewer, onClose, onCreate }) {
             <p className="text-gray-800 text-2xl leading-relaxed font-bold break-words">
               "{viewer.note}"
             </p>
-            <p className="text-xs text-gray-400 mt-6 font-medium">Posted recenty</p>
+            <p className="text-xs text-gray-400 mt-6 font-medium">Posted recently</p>
           </div>
         )}
       </div>

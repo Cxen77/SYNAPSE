@@ -285,9 +285,9 @@ const TeamDetails = () => {
     const [joinStatus, setJoinStatus] = useState('idle');
     const [showApplyModal, setShowApplyModal] = useState(false);
 
-    // Leave Team state
     const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
+    const [isJoiningChat, setIsJoiningChat] = useState(false);
 
     const fetchTeam = useCallback(async () => {
         try {
@@ -374,6 +374,20 @@ const TeamDetails = () => {
             toast.error(err?.response?.data?.message || 'Failed to leave team');
             setIsLeaving(false);
             setShowLeaveModal(false);
+        }
+    };
+
+    const handleOpenTeamChat = async () => {
+        if (isJoiningChat) return;
+        setIsJoiningChat(true);
+        try {
+            const { data } = await api.post(`/chat/team/${team._id}`);
+            navigate(`/chat/${data._id}`);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to open team chat');
+            console.error('Error opening team chat', err);
+        } finally {
+            setIsJoiningChat(false);
         }
     };
 
@@ -614,8 +628,12 @@ const TeamDetails = () => {
                                     </div>
                                 )}
 
-                                <button className="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm">
-                                    Open Chat Room
+                                <button
+                                    onClick={handleOpenTeamChat}
+                                    disabled={isJoiningChat}
+                                    className="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm disabled:opacity-50"
+                                >
+                                    {isJoiningChat ? 'Opening...' : 'Open Chat Room'}
                                 </button>
 
                                 {/* Leave Team Button for Members only */}

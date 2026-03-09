@@ -25,17 +25,18 @@ export const usePosts = (feedType) => {
     // Flatten pages into a single list of posts
     const posts = data?.pages.flatMap(page => page.posts.map(post => ({
         id: post._id,
-        author: post.user.name,
-        username: post.user.username,
-        role: post.user.course ? `${post.user.course} Student` : "Member",
+        author: post.user?.name || "Unknown User",
+        username: post.user?.username || "unknown",
+        role: post.user?.course ? `${post.user.course} Student` : "Member",
         time: new Date(post.createdAt).toLocaleDateString(),
         text: post.content,
         image: post.image,
-        likes: post.likes.length,
+        likesCount: post.likesCount,
+        likedByUser: post.likedByUser,
         comments: post.comments,
-        avatar: post.user.profilePic,
-        userId: post.user._id,
-        collegeVerified: post.user.collegeVerified
+        avatar: post.user?.profilePic,
+        userId: post.user?._id,
+        collegeVerified: post.user?.collegeVerified
     }))) || [];
 
     return {
