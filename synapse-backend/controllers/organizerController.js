@@ -1,12 +1,16 @@
 import asyncHandler from 'express-async-handler';
+import crypto from 'crypto';
 import PDFDocument from 'pdfkit';
 import { buildParticipantView, generateCertId } from '../services/organizerService.js';
 import Event from '../models/Event.js';
+import EventParticipant from '../models/EventParticipant.js';
+import User from '../models/User.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createCanvas, loadImage } from 'canvas';
 import archiver from 'archiver';
+import { verifyQRPayload } from './eventController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,7 +48,7 @@ const getEventParticipants = asyncHandler(async (req, res) => {
 });
 
 // @desc    Export filtered participants to CSV
-// @route   GET /api/organizer/events/:id/export?teamType=all&filterBy=year&year=3rd&college=MIT&section=A
+// @route   GET /api/organizer/events/:id/export
 // @access  Private (Organizer)
 const exportEventParticipants = asyncHandler(async (req, res) => {
     const filters = {
@@ -52,7 +56,8 @@ const exportEventParticipants = asyncHandler(async (req, res) => {
         teamType: req.query.teamType || 'all',
         college: req.query.college || null,
         year: req.query.year || null,
-        section: req.query.section || null
+        section: req.query.section || null,
+        attendanceFilter: req.query.attendanceFilter || 'all'  // all | attended | notAttended
     };
 
     const { event, participants } = await buildParticipantView(
@@ -61,8 +66,8 @@ const exportEventParticipants = asyncHandler(async (req, res) => {
         filters
     );
 
-    // Build structured CSV
-    const headers = ['Name', 'Email', 'Username', 'College', 'Year', 'Section', 'Class', 'Team Name', 'Registration Type'];
+    // Build structured CSV — includes attendance columns
+    const headers = ['Name', 'Email', 'Username', 'College', 'Year', 'Section', 'Class', 'Team Name', 'Registration Type', 'Registered', 'Attended', 'AttendedAt'];
     const rows = participants.map(p => [
         p.user.name || 'N/A',
         p.user.email || 'N/A',
@@ -72,7 +77,10 @@ const exportEventParticipants = asyncHandler(async (req, res) => {
         p.user.section || 'Not Provided',
         p.user.className || 'Not Provided',
         p.teamInfo?.teamName || 'None (Solo)',
-        p.registrationType
+        p.registrationType,
+        'Yes',
+        p.attended ? 'Yes' : 'No',
+        p.attendedAt ? new Date(p.attendedAt).toISOString() : '—'
     ]);
 
     const csvData = [headers, ...rows]
@@ -82,6 +90,75 @@ const exportEventParticipants = asyncHandler(async (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=event-${event._id}-participants.csv`);
     res.status(200).send(csvData);
+});
+
+// @desc    Verify QR code and mark user attendance
+// @route   POST /api/organizer/events/:id/scan-attendance
+// @access  Private (Organizer)
+const scanAttendance = asyncHandler(async (req, res) => {
+    const { eventId, userId, ts, sig } = req.body;
+
+    // 1. Verify HMAC signature + 5-min expiry
+    const valid = verifyQRPayload({ eventId, userId, ts, sig });
+    if (!valid) {
+        res.status(400);
+        throw new Error('Invalid or expired QR code. Please ask the participant to refresh their QR.');
+    }
+
+    // 2. Confirm the scanned eventId matches the route param
+    if (eventId !== req.params.id) {
+        res.status(400);
+        throw new Error('QR code does not match this event.');
+    }
+
+    // 3. Confirm organizer owns the event
+    const event = await Event.findById(eventId).select('organizer title').lean();
+    if (!event) {
+        res.status(404);
+        throw new Error('Event not found.');
+    }
+    if (event.organizer.toString() !== req.user._id.toString()) {
+        res.status(403);
+        throw new Error('You are not the organizer of this event.');
+    }
+
+    // 4. Check if user is registered
+    const participant = await EventParticipant.findOne({ eventId, userId });
+    if (!participant) {
+        res.status(404);
+        throw new Error('This user is not registered for the event.');
+    }
+
+    // 5. Prevent duplicate scan
+    if (participant.attended) {
+        res.status(409);
+        throw new Error('Attendance already recorded for this participant.');
+    }
+
+    // 6. Mark as attended
+    participant.attended = true;
+    participant.attendedAt = new Date();
+    await participant.save();
+
+    // 7. Fetch user info for the organizer-side confirmation card
+    const user = await User.findById(userId)
+        .select('name username email college year section profilePic')
+        .lean();
+
+    res.json({
+        success: true,
+        message: `Attendance marked for ${user?.name || 'participant'}.`,
+        participant: {
+            name: user?.name,
+            username: user?.username,
+            email: user?.email,
+            college: user?.college,
+            year: user?.year,
+            section: user?.section,
+            profilePic: user?.profilePic,
+            attendedAt: participant.attendedAt
+        }
+    });
 });
 
 // Single rendering engine for PNG certificates
@@ -616,5 +693,6 @@ export {
     getEventParticipants,
     exportEventParticipants,
     generateEventCertificates,
-    previewEventCertificates
+    previewEventCertificates,
+    scanAttendance
 };

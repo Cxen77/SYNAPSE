@@ -6,7 +6,8 @@ import {
     leaveEvent,
     updateEvent,
     getEventById,
-    deleteEvent
+    deleteEvent,
+    getEventQRPayload
 } from '../controllers/eventController.js';
 import { getEventTeams } from '../controllers/teamController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -28,5 +29,8 @@ router.route('/:id')
 router.put('/:id/join', protect, joinEvent);
 router.put('/:id/leave', protect, leaveEvent);
 router.get('/:id/teams', protect, getEventTeams);
+
+// QR attendance payload — returns signed JSON, frontend generates the visual QR
+router.get('/:id/qr-payload', protect, getEventQRPayload);
 
 export default router;

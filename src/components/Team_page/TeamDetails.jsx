@@ -411,14 +411,7 @@ const TeamDetails = () => {
                             {/* Decorative Background Elements */}
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-normal pointer-events-none"></div>
 
-                            {/* Abstract Geometric Icon */}
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 transform translate-x-12 opacity-5 pointer-events-none">
-                                <svg width="240" height="240" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                                    <polygon points="12 2 2 7 12 12 22 7 12 2" fill="currentColor" fillOpacity="0.2" />
-                                    <polyline points="2 17 12 22 22 17" />
-                                    <polyline points="2 12 12 17 22 12" />
-                                </svg>
-                            </div>
+
 
                             <div className="relative z-10 flex flex-col h-full justify-end">
                                 {/* Top Badges Row */}

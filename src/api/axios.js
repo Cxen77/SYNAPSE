@@ -10,7 +10,7 @@ export const setAccessToken = (token) => {
 export const getAccessToken = () => accessToken;
 
 const api = axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`,
+    baseURL: import.meta.env.PROD ? `${import.meta.env.VITE_API_URL || 'https://fuseon.in'}/api/v1` : '/api/v1',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -39,7 +39,7 @@ export const refreshAccessToken = () => {
     }
     isRefreshing = true;
     refreshPromise = axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
+        import.meta.env.PROD ? `${import.meta.env.VITE_API_URL || 'https://fuseon.in'}/api/v1/auth/refresh` : '/api/v1/auth/refresh',
         {},
         { withCredentials: true }
     ).then(({ data }) => {

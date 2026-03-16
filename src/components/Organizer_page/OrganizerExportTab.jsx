@@ -10,12 +10,19 @@ const TEAM_TYPES = [
     { label: 'Pre-Team', value: 'pre' }
 ];
 
+const ATTENDANCE_FILTERS = [
+    { label: 'All Registered', value: 'all' },
+    { label: 'Attended Only', value: 'attended' },
+    { label: 'Not Attended', value: 'notAttended' }
+];
+
 export default function OrganizerExportTab() {
     const [events, setEvents] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState('');
     const [downloading, setDownloading] = useState(false);
     const [filters, setFilters] = useState({
         teamType: 'all',
+        attendanceFilter: 'all',
         college: '',
         year: '',
         section: ''
@@ -33,9 +40,9 @@ export default function OrganizerExportTab() {
         if (!selectedEventId) return;
         setDownloading(true);
 
-        // Build query params — only include non-empty filters
         const params = new URLSearchParams();
         if (filters.teamType) params.set('teamType', filters.teamType);
+        if (filters.attendanceFilter) params.set('attendanceFilter', filters.attendanceFilter);
         if (filters.college) params.set('college', filters.college);
         if (filters.year) params.set('year', filters.year);
         if (filters.section) params.set('section', filters.section);
@@ -66,7 +73,7 @@ export default function OrganizerExportTab() {
     return (
         <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8 max-w-3xl">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Export Data</h2>
-            <p className="text-gray-400 dark:text-gray-500 mb-8">Download a structured CSV with academic data and registration types.</p>
+            <p className="text-gray-400 dark:text-gray-500 mb-8">Download a structured CSV with academic data, registration types, and attendance status.</p>
 
             {/* Event selector */}
             <div className="mb-6">
@@ -98,6 +105,19 @@ export default function OrganizerExportTab() {
                         >
                             {TEAM_TYPES.map(t => (
                                 <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs text-gray-400 mb-1">Attendance Status</label>
+                        <select
+                            name="attendanceFilter"
+                            value={filters.attendanceFilter}
+                            onChange={handleFilterChange}
+                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
+                        >
+                            {ATTENDANCE_FILTERS.map(f => (
+                                <option key={f.value} value={f.value}>{f.label}</option>
                             ))}
                         </select>
                     </div>

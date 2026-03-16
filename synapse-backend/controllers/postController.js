@@ -2,8 +2,8 @@ import asyncHandler from 'express-async-handler';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
-import cloudinary from '../config/cloudinary.js';
 import stream from 'stream';
+import Comment from '../models/Comment.js';
 
 // @desc    Create a new post
 // @route   POST /api/posts
@@ -59,7 +59,9 @@ const getPosts = asyncHandler(async (req, res) => {
 
     if (filter === 'following') {
         const user = await User.findById(req.user._id);
-        query.user = { $in: user.following };
+        if (user && user.following) {
+            query.user = { $in: user.following };
+        }
     } else if (req.query.userId) {
         query.user = req.query.userId;
     }
@@ -67,28 +69,28 @@ const getPosts = asyncHandler(async (req, res) => {
     const count = await Post.countDocuments(query);
     const posts = await Post.find(query)
         .populate('user', 'name username profilePic collegeVerified')
-        .populate({
-            path: 'comments.user',
-            select: 'name username profilePic collegeVerified'
-        })
-        .populate({
-            path: 'comments.replies.user',
-            select: 'name username profilePic collegeVerified'
-        })
+        // DONT POPULATE COMMENTS — Saves DB memory and massive payload size
         .limit(pageSize)
         .skip(pageSize * (page - 1))
-        .sort({ createdAt: -1 })
+        .sort({ createdAt: -1 }) // Hits the new compound index ({ isDeleted: 1, createdAt: -1 })
+        .select('-__v') // Exclude the version key
         .lean();
 
     const formattedPosts = posts.map(post => {
         const likesList = post.likes || [];
         const likedByUser = likesList.some(id => id.toString() === req.user._id.toString());
+
         const formatted = {
-            ...post,
+            _id: post._id,
+            user: post.user,
+            content: post.content,
+            image: post.image,
+            createdAt: post.createdAt,
+            // Computed fields instead of arrays
             likesCount: likesList.length,
+            commentsCount: post.commentsCount || (post.comments ? post.comments.length : 0), // Fallback map for older un-migrated posts
             likedByUser
         };
-        delete formatted.likes;
         return formatted;
     });
 
@@ -175,114 +177,144 @@ const likePost = asyncHandler(async (req, res) => {
 // @desc    Add comment to post
 // @route   POST /api/posts/:id/comments
 // @access  Private
+// @desc    Add comment to post
+// @route   POST /api/posts/:id/comments
+// @access  Private
 const addComment = asyncHandler(async (req, res) => {
-    const { text } = req.body;
-    const post = await Post.findById(req.params.id);
+    const { text, parentCommentId } = req.body; // parentCommentId for replies
+    const postId = req.params.id;
+    const userId = req.user._id;
 
-    if (post) {
-        const comment = {
-            text,
-            user: req.user._id
-        };
-
-        post.comments.push(comment);
-        await post.save();
-
-        // Create Notification
-        if (post.user.toString() !== req.user._id.toString()) {
-            await Notification.create({
-                recipient: post.user,
-                sender: req.user._id,
-                type: 'comment',
-                post: post._id
-            });
-        }
-
-        // Populate the user in the new comment for immediate display
-        const updatedPost = await Post.findById(req.params.id)
-            .populate('comments.user', 'name username profilePic collegeVerified')
-            .populate('comments.replies.user', 'name username profilePic collegeVerified');
-
-        res.status(201).json(updatedPost.comments);
-    } else {
+    const post = await Post.findById(postId);
+    if (!post) {
         res.status(404);
         throw new Error('Post not found');
     }
+
+    // 1. Create the new standalone comment
+    const newComment = await Comment.create({
+        post: postId,
+        user: userId,
+        text,
+        parentComment: parentCommentId || null
+    });
+
+    // 2. Increment post commentsCount
+    await Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } });
+
+    // 3. Create Notification
+    if (post.user.toString() !== userId.toString()) {
+        await Notification.create({
+            recipient: post.user,
+            sender: userId,
+            type: parentCommentId ? 'reply' : 'comment',
+            post: postId,
+            commentId: newComment._id
+        });
+    }
+
+    // Populate user before sending back to frontend matching old format expectations
+    const populatedComment = await Comment.findById(newComment._id)
+        .populate('user', 'name username profilePic collegeVerified');
+
+    // Return the single newly created comment (frontend should append to list/cache)
+    res.status(201).json(populatedComment);
 });
 
 // @desc    Delete comment
 // @route   DELETE /api/posts/:id/comments/:commentId
 // @access  Private
 const deleteComment = asyncHandler(async (req, res) => {
-    const post = await Post.findById(req.params.id);
+    const { id: postId, commentId } = req.params;
+    const userId = req.user._id;
 
-    if (post) {
-        const comment = post.comments.find(comment => comment._id.toString() === req.params.commentId);
+    const post = await Post.findById(postId);
+    if (!post) {
+        res.status(404);
+        throw new Error('Post not found');
+    }
 
-        if (!comment) {
-            res.status(404);
-            throw new Error('Comment not found');
-        }
+    // Attempt to find it backwards-compatibly first (embedded vs standalone)
+    const standaloneComment = await Comment.findById(commentId);
 
-        // Check user
-        if (comment.user.toString() !== req.user._id.toString() && post.user.toString() !== req.user._id.toString()) {
+    if (standaloneComment) {
+        // Handle new generic standalone comment deletion
+        if (standaloneComment.user.toString() !== userId.toString() && post.user.toString() !== userId.toString()) {
             res.status(401);
-            throw new Error('User not authorized');
+            throw new Error('User not authorized to delete this comment');
         }
+        await Comment.deleteOne({ _id: commentId });
+        await Post.updateOne({ _id: postId }, { $inc: { commentsCount: -1 } });
+        return res.json({ message: 'Comment removed' });
 
-        post.comments = post.comments.filter(comment => comment._id.toString() !== req.params.commentId);
-        await post.save();
-        res.json({ message: 'Comment removed' });
     } else {
-        res.status(404);
-        throw new Error('Post not found');
-    }
-});
-
-// @desc    Reply to a comment
-// @route   POST /api/posts/:id/comments/:commentId/replies
-// @access  Private
-const replyToComment = asyncHandler(async (req, res) => {
-    const { text } = req.body;
-    const post = await Post.findById(req.params.id);
-
-    if (post) {
-        const comment = post.comments.id(req.params.commentId);
-
-        if (!comment) {
+        // Fallback: It might be a legacy embedded comment
+        const embeddedComment = post.comments.find(c => c._id.toString() === commentId);
+        if (!embeddedComment) {
             res.status(404);
             throw new Error('Comment not found');
         }
 
-        const reply = {
-            text,
-            user: req.user._id
-        };
-
-        comment.replies.push(reply);
-        await post.save();
-
-        // Create Notification for comment owner
-        if (comment.user.toString() !== req.user._id.toString()) {
-            await Notification.create({
-                recipient: comment.user,
-                sender: req.user._id,
-                type: 'reply',
-                post: post._id,
-                commentId: comment._id
-            });
+        if (embeddedComment.user.toString() !== userId.toString() && post.user.toString() !== userId.toString()) {
+            res.status(401);
+            throw new Error('User not authorized to delete this embedded comment');
         }
 
-        // Return updated comments with population
-        const updatedPost = await Post.findById(req.params.id)
-            .populate('comments.user', 'name username profilePic collegeVerified')
-            .populate('comments.replies.user', 'name username profilePic collegeVerified');
-
-        res.status(201).json(updatedPost.comments);
-    } else {
-        res.status(404);
-        throw new Error('Post not found');
+        post.comments = post.comments.filter(c => c._id.toString() !== commentId);
+        await post.save();
+        return res.json({ message: 'Legacy comment removed' });
     }
 });
 
-export { createPost, getPosts, deletePost, likePost, addComment, deleteComment, replyToComment };
+// @desc    Get comments for a post (Paginated)
+// @route   GET /api/posts/:id/comments
+// @access  Private
+const getPostComments = asyncHandler(async (req, res) => {
+    const postId = req.params.id;
+    const pageSize = Math.min(Number(req.query.limit) || 20, 50);
+    const page = Number(req.query.page) || 0; // Skip offset index
+
+    const post = await Post.findById(postId).select('comments').lean();
+    if (!post) {
+        res.status(404);
+        throw new Error('Post not found');
+    }
+
+    // Merge strategy for backward compatibility:
+    // Some posts still have embedded comments. We'll return them together.
+
+    // 1. Fetch new standalone comments (paginated)
+    const standaloneCommentsPromise = Comment.find({ post: postId, parentComment: null })
+        .populate('user', 'name username profilePic collegeVerified')
+        .sort({ createdAt: -1 })
+        .skip(page * pageSize)
+        .limit(pageSize)
+        .lean();
+
+    const [standaloneComments] = await Promise.all([standaloneCommentsPromise]);
+
+    let mergedComments = [...standaloneComments];
+
+    // 2. Format legacy embedded comments if they exist and we are on page 0
+    if (page === 0 && post.comments && post.comments.length > 0) {
+        // Only append legacy on the first page load so they aren't duplicated in infinite scroll
+        // This is a tradeoff but completely protects old data from vaporizing.
+
+        // Note: To deeply populate old embedded arrays requires a full Mongo hook or manual projection,
+        // but since it's legacy data, we merge the IDs and the frontend normally requires populated users.
+        // We'll fully populate the legacy array here just in case.
+        const fullLegacyPost = await Post.findById(postId)
+            .populate('comments.user', 'name username profilePic collegeVerified')
+            .populate('comments.replies.user', 'name username profilePic collegeVerified')
+            .lean();
+
+        mergedComments = [...mergedComments, ...fullLegacyPost.comments];
+
+        // Sort merged just to be sure
+        mergedComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    res.json(mergedComments);
+});
+
+export { createPost, getPosts, deletePost, likePost, addComment, deleteComment, getPostComments };

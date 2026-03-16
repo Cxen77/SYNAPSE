@@ -22,7 +22,12 @@ const Avatar = ({ src, alt, size = "md", className = "" }) => {
 
     const getStatsSrc = (src) => {
         if (!src) return null;
-        if (src.startsWith('http')) return src;
+        if (src.startsWith('http')) {
+            if (src.includes('cloudinary.com')) {
+                return src.replace('/upload/', '/upload/q_auto,f_auto,w_500/'); // Restrict avatar maximum width natively
+            }
+            return src;
+        }
         if (src.startsWith('/uploads')) {
             const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
             return `${backendUrl}${src}`;

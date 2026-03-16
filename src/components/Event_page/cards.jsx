@@ -83,8 +83,9 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
           {eventImageUrl ? (
             <img
               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-              src={eventImageUrl}
+              src={eventImageUrl.includes('cloudinary.com') ? eventImageUrl.replace('/upload/', '/upload/q_auto,f_auto/') : eventImageUrl}
               alt={eventName}
+              loading="lazy"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">

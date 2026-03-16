@@ -8,9 +8,11 @@ import useIsMobile from "../../hooks/useIsMobile";
 import MobileCommentsSheet from "./MobileCommentsSheet";
 import CommentItem from "./CommentItem";
 import VerifiedBadge from "../common/VerifiedBadge";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PostCard({ post, currentUser = {}, onDelete }) {
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   // Normalize data to handle both frontend mock and backend data formats
   const displayPost = {
@@ -36,11 +38,33 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
   const [likeCount, setLikeCount] = useState(displayPost.likesCount);
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [comments, setComments] = useState(post.comments || []);
+  const [comments, setComments] = useState([]); // Default empty array instead of post.comments
+  const [commentsCount, setCommentsCount] = useState(displayPost.commentsCount);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null); // { id: string, username: string }
   const inputRef = useRef(null);
+
+  // Lazy load comments when section is opened
+  const handleToggleComments = async () => {
+    const willShow = !showComments;
+    setShowComments(willShow);
+
+    if (willShow && !commentsLoaded) {
+      setLoadingComments(true);
+      try {
+        const { data } = await api.get(`/posts/${displayPost.id}/comments`);
+        setComments(data);
+        setCommentsLoaded(true);
+      } catch (err) {
+        console.error("Failed to load comments", err);
+      } finally {
+        setLoadingComments(false);
+      }
+    }
+  };
 
   const handleReply = (commentId, username) => {
     setReplyingTo({ id: commentId, username });
@@ -71,6 +95,25 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
       if (data && typeof data.likedByUser === 'boolean') {
         setLiked(data.likedByUser);
         setLikeCount(data.likesCount);
+
+        // Update React Query cache so navigating away and back retains state
+        const updateCache = (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map(p => ({
+              ...p,
+              posts: p.posts.map(cachedPost =>
+                cachedPost._id === displayPost.id
+                  ? { ...cachedPost, likedByUser: data.likedByUser, likesCount: data.likesCount }
+                  : cachedPost
+              )
+            }))
+          };
+        };
+
+        queryClient.setQueryData(['posts', 'For You'], updateCache);
+        queryClient.setQueryData(['posts', 'Following'], updateCache);
       }
     } catch (err) {
       console.error("Failed to like post", err);
@@ -100,26 +143,52 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
 
     // Optimistically add root comments
     if (!replyingTo) {
-      setComments(prev => [...prev, optimisticComment]);
+      setComments(prev => [optimisticComment, ...prev]);
+      setCommentsCount(prev => prev + 1);
     }
 
     if (!customText) setNewComment(""); // Clear desktop input
 
     try {
-      let updatedComments;
+      let newlyCreatedComment;
       if (replyingTo) {
         const { data } = await api.post(`/posts/${displayPost.id}/comments/${replyingTo.id}/replies`, { text: textToSubmit });
-        updatedComments = data;
+        // Replies logic varies a bit depending on backend schema, assume we just append/reload for now
+        newlyCreatedComment = data;
       } else {
-        const { data } = await api.post(`/posts/${displayPost.id}/comments`, { text: textToSubmit });
-        updatedComments = data;
+        const { data } = await api.post(`/posts/${displayPost.id}/comments`, { text: textToSubmit, parentCommentId: null });
+        newlyCreatedComment = data;
       }
 
-      setComments(updatedComments);
+      // Replace optimistic temp comment with real DB response
+      setComments(prev => prev.map(c => c._id === tempId ? newlyCreatedComment : c));
       setReplyingTo(null);
+
+      // Update React Query cache for comment counts
+      const updateCache = (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map(p => ({
+            ...p,
+            posts: p.posts.map(cachedPost =>
+              cachedPost._id === displayPost.id
+                ? { ...cachedPost, commentsCount: cachedPost.commentsCount + 1 }
+                : cachedPost
+            )
+          }))
+        };
+      };
+      queryClient.setQueryData(['posts', 'For You'], updateCache);
+      queryClient.setQueryData(['posts', 'Following'], updateCache);
+
     } catch (err) {
       console.error("Failed to add comment/reply", err);
-      if (!replyingTo) setComments(prev => prev.filter(c => c._id !== tempId));
+      // Revert if failed
+      if (!replyingTo) {
+        setComments(prev => prev.filter(c => c._id !== tempId));
+        setCommentsCount(prev => prev - 1);
+      }
     } finally {
       setSubmittingComment(false);
     }
@@ -226,9 +295,10 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
       {displayPost.image && (
         <div className="w-full bg-gray-50 border-y border-gray-100">
           <img
-            src={displayPost.image}
+            src={displayPost.image.replace('/upload/', '/upload/q_auto,f_auto/')}
             alt="post"
             className="w-full h-auto max-h-[500px] object-contain mx-auto"
+            loading="lazy"
           />
         </div>
       )}
@@ -242,8 +312,8 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
           <span className="font-medium">{likeCount} likes</span>
         </div>
         <div className="flex gap-4">
-          <button onClick={() => setShowComments(!showComments)} className="hover:text-blue-600 transition font-medium">
-            {comments.length} comments
+          <button onClick={handleToggleComments} className="hover:text-blue-600 transition font-medium">
+            {commentsCount} comments
           </button>
           <button onClick={handleShare} className="hover:text-blue-600 transition font-medium">
             Share
@@ -262,7 +332,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
           Like
         </button>
         <button
-          onClick={() => setShowComments(!showComments)}
+          onClick={handleToggleComments}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-200"
         >
           <HiChatAlt className="w-5 h-5" />
@@ -294,16 +364,25 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
         /* Desktop Inline Comments */
         showComments && (
           <div className="px-4 pb-4 pt-2 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
-            <div className="space-y-6 mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-              {comments.map((comment, index) => (
-                <CommentItem
-                  key={index}
-                  comment={comment}
-                  onReply={handleReply}
-                  currentUser={currentUser}
-                />
-              ))}
-            </div>
+            {loadingComments ? (
+              <div className="flex justify-center py-4">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="space-y-6 mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                {comments.map((comment, index) => (
+                  <CommentItem
+                    key={comment._id || index}
+                    comment={comment}
+                    onReply={handleReply}
+                    currentUser={currentUser}
+                  />
+                ))}
+                {comments.length === 0 && (
+                  <p className="text-center text-sm text-gray-500 py-2">No comments yet. Be the first!</p>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3 items-start pt-2 border-t border-gray-100">
               <Avatar

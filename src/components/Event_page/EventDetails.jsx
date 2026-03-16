@@ -155,7 +155,7 @@ const EventDetails = () => {
                     <div className="h-64 sm:h-80 md:h-96 w-full relative bg-gray-100">
                         {event.imageUrl ? (
                             <img
-                                src={event.imageUrl}
+                                src={event.imageUrl.includes('cloudinary.com') ? event.imageUrl.replace('/upload/', '/upload/q_auto,f_auto/') : event.imageUrl}
                                 alt={event.title}
                                 className="w-full h-full object-cover"
                             />

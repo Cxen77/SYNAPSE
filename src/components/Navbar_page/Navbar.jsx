@@ -29,11 +29,13 @@ function Navbar() {
   const notifRef = useRef(null);
 
   useEffect(() => {
+    if (!currentUser) return; // Wait for AuthContext to finish booting
+
     fetchUnreadCount();
     // Optional: Poll every minute
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
 
   // Listen for real-time notifications to update badge
   useEffect(() => {
@@ -58,11 +60,13 @@ function Navbar() {
 
   const fetchUnreadCount = async () => {
     try {
-      const { data } = await api.get('/notifications');
+      const { data } = await api.get('/notifications', { _skipAuthRedirect: true });
       const unread = data.filter(n => !n.read).length;
       setUnreadCount(unread);
     } catch (error) {
-      console.error("Failed to fetch notifications", error);
+      if (error?.response?.status !== 401) {
+        console.error("Failed to fetch notifications", error);
+      }
     }
   };
 

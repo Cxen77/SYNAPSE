@@ -18,14 +18,19 @@ const postSchema = mongoose.Schema({
         createdAt: { type: Date, default: Date.now }
     }],
     isDeleted: { type: Boolean, default: false },
-    deletedAt: { type: Date }
+    deletedAt: { type: Date },
+    // Soft migration: track comments via counter instead of loading the massive embedded array
+    commentsCount: { type: Number, default: 0 }
 }, {
     timestamps: true
 });
 
 // Indexes for performance
 postSchema.index({ user: 1 });
-postSchema.index({ createdAt: -1 });
+postSchema.index({ likes: 1 });
+
+// CRITICAL INDEX: Prevent full collection scans on feed queries
+postSchema.index({ isDeleted: 1, createdAt: -1 });
 postSchema.index({ likes: 1 });
 
 const Post = mongoose.model('Post', postSchema);

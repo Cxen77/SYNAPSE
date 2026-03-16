@@ -48,7 +48,7 @@ const setRefreshCookie = (res, token) => {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'strict' : 'lax',
-        path: '/api/auth',
+        path: '/',
         maxAge: REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000 // 7 days in ms
     });
 };
@@ -63,7 +63,7 @@ const clearSessionCookie = (res) => {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'strict' : 'lax',
-        path: '/api/auth',
+        path: '/',
         expires: new Date(0)
     });
 };

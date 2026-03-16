@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Users, CalendarDays, PlusCircle, ClipboardList, Search } from "lucide-react";
+import { Users, CalendarDays, PlusCircle, ClipboardList, Search, QrCode, X } from "lucide-react";
 import { FaGraduationCap } from "react-icons/fa";
 import Avatar from "../common/Avatar";
 import VerifiedBadge from "../common/VerifiedBadge";
+import EventQRModal from "../Event_page/EventQRModal";
+import api from "../../api/axios";
 
 // ── helpers ─────────────────────────────────────
 function SkeletonCard() {
@@ -35,9 +37,66 @@ function profileCompletion(user) {
   return Math.round((filled / fields.length) * 100);
 }
 
+// ── QR Event Picker (shown before QR modal) ─────────────────────
+function QREventPicker({ onSelect, onClose }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/events', { params: { limit: 50, joined: true } })
+      .then(r => setEvents(r.data.events || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-sm p-6 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+          <X size={18} />
+        </button>
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+            <QrCode size={18} className="text-white" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-400">Select an event</p>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm">Show Event QR Code</h3>
+          </div>
+        </div>
+        {loading ? (
+          <div className="space-y-2">
+            {[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+          </div>
+        ) : events.length === 0 ? (
+          <p className="text-gray-400 text-sm text-center py-6">You haven’t joined any events yet.</p>
+        ) : (
+          <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {events.map(ev => (
+              <li key={ev._id}>
+                <button
+                  onClick={() => onSelect(ev)}
+                  className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition group"
+                >
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-indigo-600 truncate">{ev.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ───────────────────────────────
 export default function ProfileCard({ user, loading }) {
   const navigate = useNavigate();
+  const [qrState, setQrState] = useState(null); // null | 'picker' | { eventId, eventTitle }
 
   if (loading) return <SkeletonCard />;
 
@@ -65,6 +124,11 @@ export default function ProfileCard({ user, loading }) {
     { icon: <CalendarDays size={18} />, label: "Browse Events", to: "/events" },
     { icon: <PlusCircle size={18} />, label: "Create Event", to: "/events" },
     { icon: <ClipboardList size={18} />, label: "My Registrations", to: "/events" },
+    {
+      icon: <QrCode size={18} />,
+      label: "Show Event QR",
+      onClick: () => setQrState('picker')
+    }
   ];
 
   return (
@@ -162,19 +226,47 @@ export default function ProfileCard({ user, loading }) {
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quick Actions</p>
         </div>
         <ul className="px-3 pb-3 mt-1 space-y-0.5">
-          {quickActions.map(({ icon, label, to }) => (
+          {quickActions.map(({ icon, label, to, onClick }) => (
             <li key={label}>
-              <Link
-                to={to}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
-              >
-                <span className="text-gray-400 group-hover:text-blue-500 transition">{icon}</span>
-                <span className="text-sm font-medium">{label}</span>
-              </Link>
+              {onClick ? (
+                <button
+                  onClick={onClick}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all group"
+                >
+                  <span className="text-gray-400 group-hover:text-indigo-500 transition">{icon}</span>
+                  <span className="text-sm font-medium">{label}</span>
+                </button>
+              ) : (
+                <Link
+                  to={to}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
+                >
+                  <span className="text-gray-400 group-hover:text-blue-500 transition">{icon}</span>
+                  <span className="text-sm font-medium">{label}</span>
+                </Link>
+              )}
             </li>
           ))}
         </ul>
       </div>
+
+      {/* ── QR Event Picker Sheet ── */}
+      {qrState === 'picker' && (
+        <QREventPicker
+          userId={user?._id}
+          onSelect={(ev) => setQrState({ eventId: ev._id, eventTitle: ev.title })}
+          onClose={() => setQrState(null)}
+        />
+      )}
+
+      {/* ── QR Modal ── */}
+      {qrState && qrState !== 'picker' && (
+        <EventQRModal
+          eventId={qrState.eventId}
+          eventTitle={qrState.eventTitle}
+          onClose={() => setQrState(null)}
+        />
+      )}
     </div>
   );
 }

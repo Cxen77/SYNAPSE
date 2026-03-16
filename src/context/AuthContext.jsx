@@ -18,12 +18,18 @@ export const AuthProvider = ({ children }) => {
             try {
                 // Use shared refreshAccessToken so it participates in the same lock
                 // as the axios interceptor — prevents two simultaneous /auth/refresh calls
+                console.log("[AuthContext] Attempting silent refresh payload on boot...");
                 await refreshAccessToken();
+                console.log("[AuthContext] Silent refresh success. Requesting /users/me...");
 
                 // Now use the api instance (with token) to fetch user profile
-                const { data: userData } = await api.get('/users/me');
+                // Add _skipAuthRedirect to prevent the interceptor from immediately
+                // kicking the user out if this specific check 401s
+                const { data: userData } = await api.get('/users/me', { _skipAuthRedirect: true });
+                console.log("[AuthContext] /users/me fetched successfully:", userData.email);
                 setCurrentUser(userData);
             } catch (error) {
+                console.error("[AuthContext] Boot session failed:", error.message || error);
                 // No valid session — user needs to login (this is expected)
                 setAccessToken(null);
                 setCurrentUser(null);

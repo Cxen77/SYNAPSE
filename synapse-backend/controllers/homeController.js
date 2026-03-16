@@ -9,13 +9,17 @@ const formatPosts = (posts, currentUserId) => {
     return posts.map(post => {
         const likesList = post.likes || [];
         const likedByUser = likesList.some(id => id.toString() === currentUserId.toString());
-        const formatted = {
-            ...post,
+        return {
+            _id: post._id,
+            user: post.user,
+            content: post.content,
+            image: post.image,
+            createdAt: post.createdAt,
+            // Computed fields instead of arrays
             likesCount: likesList.length,
+            commentsCount: post.commentsCount || (post.comments ? post.comments.length : 0),
             likedByUser
         };
-        delete formatted.likes;
-        return formatted;
     });
 };
 
@@ -67,16 +71,10 @@ const getHomeData = asyncHandler(async (req, res) => {
 
     const feedPromise = Post.find(postQuery)
         .populate('user', 'name username profilePic collegeVerified course')
-        .populate({
-            path: 'comments.user',
-            select: 'name username profilePic collegeVerified'
-        })
-        .populate({
-            path: 'comments.replies.user',
-            select: 'name username profilePic collegeVerified'
-        })
+        // DONT POPULATE COMMENTS — Saves DB memory and massive payload size
         .limit(pageSize)
-        .sort({ createdAt: -1 })
+        .sort({ createdAt: -1 }) // Hits the new compound index
+        .select('-__v') // Exclude the version key
         .lean();
 
     if (isMobile) {

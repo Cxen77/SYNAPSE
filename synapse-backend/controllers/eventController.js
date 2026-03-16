@@ -1,5 +1,28 @@
 import asyncHandler from 'express-async-handler';
+import crypto from 'crypto';
+import mongoose from 'mongoose';
 import Event from '../models/Event.js';
+import EventParticipant from '../models/EventParticipant.js';
+
+// ─── QR Signing Helpers ────────────────────────────────────────────────────
+const QR_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
+
+function signQRPayload(eventId, userId, ts) {
+    const data = `${eventId}:${userId}:${ts}`;
+    return crypto
+        .createHmac('sha256', process.env.JWT_SECRET)
+        .update(data)
+        .digest('hex');
+}
+
+export function verifyQRPayload(payload) {
+    const { eventId, userId, ts, sig } = payload;
+    if (!eventId || !userId || !ts || !sig) return false;
+    // Check 5-minute validity window
+    if (Date.now() - Number(ts) > QR_VALIDITY_MS) return false;
+    const expected = signQRPayload(eventId, userId, ts);
+    return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
+}
 
 // @desc    Create a new event
 // @route   POST /api/events
@@ -43,6 +66,12 @@ const getEvents = asyncHandler(async (req, res) => {
     const page = Number(req.query.pageNumber) || 1;
 
     const filter = { isApproved: true, isDeleted: { $ne: true } };
+
+    // ?joined=true — only events the current user has joined (for QR picker)
+    if (req.query.joined === 'true') {
+        filter.attendees = req.user._id;
+    }
+
     const count = await Event.countDocuments(filter);
     const events = await Event.find(filter)
         .populate('organizer', 'name username profilePic')
@@ -54,50 +83,137 @@ const getEvents = asyncHandler(async (req, res) => {
     res.json({ events, page, pages: Math.ceil(count / pageSize) });
 });
 
-// @desc    Join an event
+// @desc    Join an event (atomic: attendees array + EventParticipant)
 // @route   PUT /api/events/:id/join
 // @access  Private
 const joinEvent = asyncHandler(async (req, res) => {
-    const event = await Event.findById(req.params.id);
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (event) {
-        // Strict Cross-College restriction: Prevent users from joining single-college events not their own
+    try {
+        const event = await Event.findById(req.params.id).session(session);
+
+        if (!event) {
+            await session.abortTransaction();
+            res.status(404);
+            throw new Error('Event not found');
+        }
+
+        // Strict Cross-College restriction
         if (!event.isMultiCollege && event.collegeId) {
             if (!req.user.collegeId || event.collegeId.toString() !== req.user.collegeId.toString()) {
+                await session.abortTransaction();
                 res.status(403);
                 throw new Error('This event is restricted to students from the host college only.');
             }
         }
 
         if (event.attendees.includes(req.user._id)) {
+            await session.abortTransaction();
             res.status(400);
             throw new Error('User already attending');
         }
 
+        // 1. Push to Event.attendees
         event.attendees.push(req.user._id);
-        await event.save();
+        await event.save({ session });
+
+        // 2. Create EventParticipant record (upsert — idempotent)
+        await EventParticipant.findOneAndUpdate(
+            { eventId: event._id, userId: req.user._id },
+            { $setOnInsert: { eventId: event._id, userId: req.user._id, registeredAt: new Date() } },
+            { upsert: true, new: true, session }
+        );
+
+        await session.commitTransaction();
         res.json(event);
-    } else {
-        res.status(404);
-        throw new Error('Event not found');
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        session.endSession();
     }
 });
 
-// @desc    Leave an event
+// @desc    Leave an event (atomic: attendees array + EventParticipant)
 // @route   PUT /api/events/:id/leave
 // @access  Private
 const leaveEvent = asyncHandler(async (req, res) => {
-    const event = await Event.findById(req.params.id);
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (event) {
+    try {
+        const event = await Event.findById(req.params.id).session(session);
+
+        if (!event) {
+            await session.abortTransaction();
+            res.status(404);
+            throw new Error('Event not found');
+        }
+
+        // 1. Remove from Event.attendees
         event.attendees = event.attendees.filter(id => id.toString() !== req.user._id.toString());
-        await event.save();
+        await event.save({ session });
+
+        // 2. Remove EventParticipant record
+        await EventParticipant.deleteOne(
+            { eventId: event._id, userId: req.user._id },
+            { session }
+        );
+
+        await session.commitTransaction();
         res.json({ message: 'Left event' });
-    } else {
-        res.status(404);
-        throw new Error('Event not found');
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        session.endSession();
     }
 });
+
+// @desc    Get QR payload for authenticated user (5-min signed token)
+// @route   GET /api/events/:id/qr-payload
+// @access  Private
+const getEventQRPayload = asyncHandler(async (req, res) => {
+    // First check the new EventParticipant collection
+    let participant = await EventParticipant.findOne({
+        eventId: req.params.id,
+        userId: req.user._id
+    }).lean();
+
+    // Backfill: user may have joined before EventParticipant collection existed.
+    // Fall back to checking Event.attendees — if found, create the record now.
+    if (!participant) {
+        const event = await Event.findOne({
+            _id: req.params.id,
+            attendees: req.user._id
+        }).select('_id').lean();
+
+        if (!event) {
+            res.status(403);
+            throw new Error('You are not registered for this event.');
+        }
+
+        // Auto-create the EventParticipant record for this existing member
+        participant = await EventParticipant.findOneAndUpdate(
+            { eventId: req.params.id, userId: req.user._id },
+            { $setOnInsert: { eventId: req.params.id, userId: req.user._id, registeredAt: new Date() } },
+            { upsert: true, new: true }
+        );
+    }
+
+    const ts = Date.now();
+    const sig = signQRPayload(req.params.id, req.user._id.toString(), ts);
+
+    res.json({
+        eventId: req.params.id,
+        userId: req.user._id.toString(),
+        ts,
+        sig,
+        expiresIn: 300 // seconds — for frontend countdown display
+    });
+});
+
 
 // @desc    Update an event
 // @route   PUT /api/events/:id
@@ -177,6 +293,7 @@ export {
     getEvents,
     joinEvent,
     leaveEvent,
+    getEventQRPayload,
     updateEvent,
     getEventById,
     deleteEvent

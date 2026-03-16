@@ -62,3 +62,12 @@ export const roleLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+
+// Scan Attendance Limiter - Allow rapid scanning at events (60/min per IP)
+export const scanLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 60,
+    message: { message: 'Scan rate limit exceeded, please slow down' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});

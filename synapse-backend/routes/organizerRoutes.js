@@ -21,8 +21,11 @@ import {
     getEventParticipants,
     exportEventParticipants,
     generateEventCertificates,
-    previewEventCertificates
+    previewEventCertificates,
+    scanAttendance
 } from '../controllers/organizerController.js';
+
+import { scanLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
@@ -40,5 +43,9 @@ router.get('/events/:id/participants', getEventParticipants);
 router.get('/events/:id/export', exportEventParticipants);
 router.post('/events/:id/certificates', uploadFields, generateEventCertificates);
 router.post('/events/:id/certificates/preview', uploadFields, previewEventCertificates);
+
+// ── Attendance Scanning ──────────────────────────────────────────────────────
+// scanLimiter: 60 req/min — comfortable for rapid venue scanning, blocks abuse
+router.post('/events/:id/scan-attendance', scanLimiter, scanAttendance);
 
 export default router;
