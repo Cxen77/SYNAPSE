@@ -3,6 +3,7 @@ import { FaUserPlus } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
+import FollowButton from '../common/FollowButton';
 
 const SuggestedConnections = () => {
     const [suggestions, setSuggestions] = useState([]);
@@ -75,9 +76,7 @@ const SuggestedConnections = () => {
                                     <p className="text-xs text-gray-400 dark:text-gray-500">Suggested for you</p>
                                 </div>
                             </div>
-                            <button className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition">
-                                <FaUserPlus className="w-4 h-4" />
-                            </button>
+                            <FollowButton targetUser={person} variant="icon" />
                         </div>
                     ))}
                     {suggestions.length === 0 && (

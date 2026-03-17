@@ -6,6 +6,7 @@ import api from "../../api/axios";
 import Avatar from "../common/Avatar";
 import OpenTeamCard from "../Team_page/OpenTeamCard";
 import VerifiedBadge from "../common/VerifiedBadge";
+import FollowButton from "../common/FollowButton";
 
 // ──────────────────────────────────────────────
 // Trending Events Card (unchanged)
@@ -185,9 +186,7 @@ export default function Recommendations({ initialData }) {
                           <div className="text-[10px] text-gray-400 mt-0.5">Suggested for you</div>
                         </div>
                       </div>
-                      <button className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition flex-shrink-0">
-                        <HiUserAdd size={16} />
-                      </button>
+                      <FollowButton targetUser={p} variant="icon" />
                     </div>
                   ))}
                 </div>

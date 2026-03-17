@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
 const roleColors = {
-    admin: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20',
+    admin: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20',
     moderator: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
     user: 'bg-gray-100 text-gray-500',
 };
@@ -78,7 +78,7 @@ export default function UsersTab() {
         <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <FiUsers className="w-5 h-5 text-emerald-500" />
+                    <FiUsers className="w-5 h-5 text-blue-500" />
                     <h2 className="text-lg font-bold text-gray-900">User Management</h2>
                 </div>
                 <div className="relative w-full sm:w-64">
@@ -88,7 +88,7 @@ export default function UsersTab() {
                         placeholder="Search users..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); setPage(1); }}
-                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     />
                 </div>
             </div>
@@ -129,7 +129,7 @@ export default function UsersTab() {
                                                 <p className="font-medium text-gray-900 text-sm">{user.name}</p>
                                                 <p className="text-xs text-gray-400">@{user.username}</p>
                                                 {user.college && (
-                                                    <p className="text-[10px] text-emerald-600/70 mt-0.5 truncate max-w-[150px]" title={user.college}>
+                                                    <p className="text-[10px] text-blue-600/70 mt-0.5 truncate max-w-[150px]" title={user.college}>
                                                         {user.college}
                                                     </p>
                                                 )}
@@ -143,7 +143,7 @@ export default function UsersTab() {
                                                 value={user.role}
                                                 onChange={e => handleRoleChange(user._id, e.target.value)}
                                                 disabled={actionLoading === user._id || (user._id === currentUser._id && user.role === 'admin')}
-                                                className={`w-full min-w-[140px] bg-white dark:bg-transparent border border-gray-200 dark:border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500/40 cursor-pointer ${user.role === 'admin' ? 'text-emerald-600 font-bold' :
+                                                className={`w-full min-w-[140px] bg-white dark:bg-transparent border border-gray-200 dark:border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-blue-500/40 cursor-pointer ${user.role === 'admin' ? 'text-blue-600 font-bold' :
                                                     user.role === 'moderator' ? 'text-amber-600 dark:text-amber-400' :
                                                         user.role === 'organizer' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'
                                                     }`}
@@ -158,10 +158,10 @@ export default function UsersTab() {
                                                 >
                                                     Organizer {!user.collegeId ? '(No College Linked)' : ''}
                                                 </option>
-                                                <option value="admin" className="bg-gray-100 text-emerald-400">Admin</option>
+                                                <option value="admin" className="bg-gray-100 text-blue-400">Admin</option>
                                             </select>
                                         ) : (
-                                            <span className={`text-xs capitalize font-medium ${user.role === 'admin' ? 'text-emerald-600' :
+                                            <span className={`text-xs capitalize font-medium ${user.role === 'admin' ? 'text-blue-600' :
                                                 user.role === 'moderator' ? 'text-amber-600 dark:text-amber-400' :
                                                     user.role === 'organizer' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
                                                 }`}>
@@ -170,7 +170,7 @@ export default function UsersTab() {
                                         )}
                                     </td>
                                     <td className="text-center">
-                                        <span className={`admin-badge ${user.isSuspended ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                        <span className={`admin-badge ${user.isSuspended ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                             {user.isSuspended ? 'Suspended' : 'Active'}
                                         </span>
                                     </td>
@@ -179,7 +179,7 @@ export default function UsersTab() {
                                             <button
                                                 onClick={() => handleSuspend(user._id, !user.isSuspended)}
                                                 disabled={actionLoading === user._id || user.role === 'admin'}
-                                                className={`admin-btn ${user.isSuspended ? 'admin-btn-emerald' : 'admin-btn-amber'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                                                className={`admin-btn ${user.isSuspended ? 'admin-btn-blue' : 'admin-btn-amber'} disabled:opacity-30 disabled:cursor-not-allowed`}
                                                 title={user.isSuspended ? 'Unsuspend' : 'Suspend (Cannot suspend admins)'}
                                             >
                                                 {user.isSuspended ? <FiCheck className="w-3.5 h-3.5" /> : <FiSlash className="w-3.5 h-3.5" />}

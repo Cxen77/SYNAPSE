@@ -98,6 +98,9 @@ import { hasShownNotification, markNotificationShown } from './utils/notificatio
 function App() {
   const location = useLocation();
   const isAuthPage = ['/login', '/signup', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname);
+  const isDashboardPage = location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/organizer') ||
+    location.pathname.startsWith('/moderator');
   const isAdminPage = location.pathname.startsWith('/admin');
   const isChatPage = location.pathname.startsWith('/chat');
   const isChatConversation = location.pathname.match(/^\/chat\/[^/]+$/);
@@ -180,14 +183,14 @@ function App() {
   return (
     <div className="min-h-[100dvh] bg-gray-50 text-gray-900">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} containerStyle={{ zIndex: 99999 }} />
-      {!isAuthPage && !isAdminPage && (
+      {!isAuthPage && !isDashboardPage && (
         <div className={isChatPage ? "hidden md:block" : ""}>
           <Navbar />
         </div>
       )}
 
       <main className={
-        isAuthPage || isAdminPage ? "" :
+        isAuthPage || isDashboardPage ? "" :
           isChatPage ? "h-screen overflow-hidden" :
             "pt-16 pb-16 md:pb-0"
       }>
@@ -276,7 +279,7 @@ function App() {
         </Suspense>
       </main>
 
-      {!isAuthPage && !isAdminPage && !isChatConversation && <BottomNav />}
+      {!isAuthPage && !isDashboardPage && !isChatConversation && <BottomNav />}
 
       {/* Instagram-style in-app notification */}
       {activeNotification && (

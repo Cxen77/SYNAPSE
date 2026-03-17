@@ -48,7 +48,7 @@ export default function EventsTab() {
 
     const getStatus = (event) => {
         if (event.isDeleted) return { label: 'Deleted', cls: 'bg-gray-100 text-gray-500' };
-        if (event.isApproved === true) return { label: 'Approved', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20' };
+        if (event.isApproved === true) return { label: 'Approved', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20' };
         if (event.isApproved === false) return { label: 'Rejected', cls: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' };
         return { label: 'Pending', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' };
     };
@@ -64,7 +64,7 @@ export default function EventsTab() {
         <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <FiCalendar className="w-5 h-5 text-emerald-500" />
+                    <FiCalendar className="w-5 h-5 text-blue-500" />
                     <h2 className="text-lg font-bold text-gray-900">Event Moderation</h2>
                 </div>
                 <div className="flex items-center gap-3">
@@ -76,7 +76,7 @@ export default function EventsTab() {
                             placeholder="Search events..."
                             value={search}
                             onChange={e => { setSearch(e.target.value); setPage(1); }}
-                            className="pl-9 pr-4 py-1.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all w-44"
+                            className="pl-9 pr-4 py-1.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all w-44"
                         />
                     </div>
                     {/* Filter Pills */}
@@ -86,7 +86,7 @@ export default function EventsTab() {
                                 key={f.value}
                                 onClick={() => { setFilter(f.value); setPage(1); }}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filter === f.value
-                                    ? 'bg-emerald-500/15 text-emerald-600'
+                                    ? 'bg-blue-500/15 text-blue-600'
                                     : 'text-gray-500 hover:text-gray-900'
                                     }`}
                             >
@@ -153,7 +153,7 @@ export default function EventsTab() {
                                                     <button
                                                         onClick={() => handleAction(event._id, 'approve')}
                                                         disabled={actionLoading === event._id}
-                                                        className="admin-btn admin-btn-emerald"
+                                                        className="admin-btn admin-btn-blue"
                                                         title="Approve"
                                                     >
                                                         <FiCheck className="w-3.5 h-3.5" />

@@ -109,11 +109,11 @@ function StoryCircle({ name, avatar, note, isYou, hasStory, onClick }) {
 
       {/* Avatar circle */}
       <div
-        className={`w-[60px] h-[60px] rounded-full flex items-center justify-center overflow-hidden border-2 transition-all ${isYou && !hasStory ? "border-dashed border-blue-300 hover:border-blue-500 bg-blue-50" : "border-blue-500 hover:scale-105"}`}
+        className={`w-[60px] h-[60px] rounded-full flex items-center justify-center overflow-hidden border-2 transition-all ${isYou && !hasStory ? "border-dashed border-blue-300 hover:border-blue-500" : "border-blue-500 hover:scale-105"}`}
       >
         <img
           src={avatar || "https://via.placeholder.com/150"}
-          className={`w-full h-full rounded-full object-cover ${isYou && !hasStory ? "opacity-70" : ""}`}
+          className="w-full h-full rounded-full object-cover"
           alt={name}
         />
       </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaUser, FaArrowLeft, FaBolt } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaArrowLeft } from 'react-icons/fa';
+import { FiShare2 } from 'react-icons/fi';
+import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
 import AutoTeamModal from './AutoTeamModal';
@@ -108,19 +110,51 @@ const EventDetails = () => {
     }, [socket]);
 
     const handleJoin = async () => {
-        if (isJoined) return;
+        if (isJoined || !currentUser) return;
 
         setJoinLoading(true);
         try {
             await api.put(`/events/${id}/join`);
             setIsJoined(true);
             // Optionally refresh data to show updated attendee count
-            setEvent(prev => ({ ...prev, attendees: [...prev.attendees, currentUserId] }));
+            setEvent(prev => ({ ...prev, attendees: [...prev.attendees, currentUser._id] }));
+            toast.success("Joined event successfully!");
         } catch (error) {
             console.error("Failed to join event", error);
-            alert("Failed to join event");
+            toast.error("Failed to join event");
         } finally {
             setJoinLoading(false);
+        }
+    };
+
+    const handleShare = async () => {
+        const shareData = {
+            title: event.title,
+            text: event.description || `Check out this event: ${event.title}`,
+            url: window.location.href,
+        };
+
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                    copyToClipboard();
+                }
+            }
+        } else {
+            copyToClipboard();
+        }
+    };
+
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            toast.success('Link copied to clipboard!');
+        } catch (err) {
+            console.error('Clipboard failed:', err);
+            toast.error('Failed to copy link');
         }
     };
 
@@ -211,6 +245,16 @@ const EventDetails = () => {
                                     {!isJoined && isQueued === null && (
                                         <div className="h-9 w-28 bg-gray-100 dark:bg-[#262626] rounded-xl animate-pulse"></div>
                                     )}
+
+                                    {/* Share Button */}
+                                    <button
+                                        onClick={handleShare}
+                                        className="p-2 sm:px-4 sm:py-2 rounded-xl font-bold text-sm bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#363636] transition flex items-center gap-2"
+                                        title="Share Event"
+                                    >
+                                        <FiShare2 className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Share</span>
+                                    </button>
 
                                     {/* Delete Button (Organizer Only) */}
                                     {currentUser && event.organizer && (currentUser._id === (event.organizer._id || event.organizer)) && (

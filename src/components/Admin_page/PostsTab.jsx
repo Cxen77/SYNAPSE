@@ -40,7 +40,7 @@ export default function PostsTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiFileText className="w-5 h-5 text-emerald-500" />
+                <FiFileText className="w-5 h-5 text-blue-500" />
                 <h2 className="text-lg font-bold text-gray-900">Post Moderation</h2>
             </div>
 
@@ -87,7 +87,7 @@ export default function PostsTab() {
                                         <span className="text-xs text-gray-500">{post.likes?.length || 0}</span>
                                     </td>
                                     <td className="text-center">
-                                        <span className={`admin-badge ${post.isDeleted ? 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20'}`}>
+                                        <span className={`admin-badge ${post.isDeleted ? 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20'}`}>
                                             {post.isDeleted ? 'Deleted' : 'Active'}
                                         </span>
                                     </td>

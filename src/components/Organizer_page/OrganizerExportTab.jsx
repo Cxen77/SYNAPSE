@@ -1,7 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
-import { FiDownload } from 'react-icons/fi';
+import { FiDownload, FiCalendar, FiChevronDown, FiMail, FiFilter, FiUsers, FiZap } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const CustomDropdown = ({ options, value, onChange, icon: Icon, placeholder = "-- Select --", labelKey = "label", valueKey = "value" }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedOption = options.find(o => o[valueKey] === value);
+
+    return (
+        <div className="relative w-full">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none transition group hover:border-blue-500/30"
+            >
+                <div className="flex items-center gap-2 text-left truncate">
+                    {Icon && <Icon className="text-blue-500 shrink-0" size={14} />}
+                    <span className={`truncate ${selectedOption ? "font-semibold" : "text-gray-400"}`}>
+                        {selectedOption ? (typeof selectedOption === 'string' ? selectedOption : selectedOption[labelKey]) : placeholder}
+                    </span>
+                </div>
+                <FiChevronDown className={`transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} size={14} />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="absolute z-20 w-full mt-1 py-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-lg shadow-xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar"
+                        >
+                            {options.map((opt, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(typeof opt === 'string' ? opt : opt[valueKey]);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 flex items-center justify-between ${value === (typeof opt === 'string' ? opt : opt[valueKey]) ? 'text-blue-500 bg-blue-500/5' : 'text-gray-700 dark:text-gray-300'
+                                        }`}
+                                >
+                                    <span className="truncate">{typeof opt === 'string' ? opt : opt[labelKey]}</span>
+                                    {value === (typeof opt === 'string' ? opt : opt[valueKey]) && <CheckCircle2 size={12} className="text-blue-500 shrink-0" />}
+                                </button>
+                            ))}
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const TEAM_TYPES = [
     { label: 'All Types', value: 'all' },
@@ -76,18 +131,17 @@ export default function OrganizerExportTab() {
             <p className="text-gray-400 dark:text-gray-500 mb-8">Download a structured CSV with academic data, registration types, and attendance status.</p>
 
             {/* Event selector */}
-            <div className="mb-6">
+            <div className="mb-6 relative z-30">
                 <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Select Event</label>
-                <select
+                <CustomDropdown
+                    options={events}
                     value={selectedEventId}
-                    onChange={e => setSelectedEventId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
-                >
-                    <option value="">-- Choose an Event --</option>
-                    {events.map(ev => (
-                        <option key={ev._id} value={ev._id}>{ev.title}</option>
-                    ))}
-                </select>
+                    onChange={id => setSelectedEventId(id)}
+                    icon={FiCalendar}
+                    placeholder="-- Choose an Event --"
+                    labelKey="title"
+                    valueKey="_id"
+                />
             </div>
 
             {/* Filter Controls */}
@@ -97,29 +151,21 @@ export default function OrganizerExportTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs text-gray-400 mb-1">Registration Type</label>
-                        <select
-                            name="teamType"
+                        <CustomDropdown
+                            options={TEAM_TYPES}
                             value={filters.teamType}
-                            onChange={handleFilterChange}
-                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
-                        >
-                            {TEAM_TYPES.map(t => (
-                                <option key={t.value} value={t.value}>{t.label}</option>
-                            ))}
-                        </select>
+                            onChange={val => setFilters(prev => ({ ...prev, teamType: val }))}
+                            icon={FiUsers}
+                        />
                     </div>
                     <div>
                         <label className="block text-xs text-gray-400 mb-1">Attendance Status</label>
-                        <select
-                            name="attendanceFilter"
+                        <CustomDropdown
+                            options={ATTENDANCE_FILTERS}
                             value={filters.attendanceFilter}
-                            onChange={handleFilterChange}
-                            className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none"
-                        >
-                            {ATTENDANCE_FILTERS.map(f => (
-                                <option key={f.value} value={f.value}>{f.label}</option>
-                            ))}
-                        </select>
+                            onChange={val => setFilters(prev => ({ ...prev, attendanceFilter: val }))}
+                            icon={CheckCircle2}
+                        />
                     </div>
                     <div>
                         <label className="block text-xs text-gray-400 mb-1">College (Partial match)</label>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiMapPin, FiUsers } from 'react-icons/fi';
+import { FiCalendar, FiMapPin, FiUsers, FiShare2 } from 'react-icons/fi';
+import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
 
 export default function OrganizerEventsTab() {
@@ -20,6 +21,37 @@ export default function OrganizerEventsTab() {
         fetchEvents();
     }, []);
 
+    const handleShare = (e, event) => {
+        e.stopPropagation();
+        const shareUrl = `${window.location.origin}/events/${event._id}`;
+        const shareData = {
+            title: event.title,
+            text: event.description || `Check out this event: ${event.title}`,
+            url: shareUrl,
+        };
+
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            navigator.share(shareData).catch(err => {
+                if (err.name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                    copyToClipboard(shareUrl);
+                }
+            });
+        } else {
+            copyToClipboard(shareUrl);
+        }
+    };
+
+    const copyToClipboard = async (url) => {
+        try {
+            await navigator.clipboard.writeText(url);
+            toast.success('Link copied to clipboard!');
+        } catch (err) {
+            console.error('Clipboard failed:', err);
+            toast.error('Failed to copy link');
+        }
+    };
+
     if (loading) {
         return <div className="text-gray-400 dark:text-gray-500 p-8 text-center animate-pulse">Loading events...</div>;
     }
@@ -37,18 +69,26 @@ export default function OrganizerEventsTab() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">My Events</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {events.map((event) => (
-                    <div key={event._id} className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-indigo-500/50 transition duration-300 shadow-sm hover:shadow-md">
-                        <div className="h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
+                    <div key={event._id} className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-blue-500/50 transition duration-300 shadow-sm hover:shadow-md">
+                        <div className="h-40 relative group/img overflow-hidden bg-gray-100 dark:bg-gray-800">
                             {event.imageUrl ? (
                                 <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/40 to-slate-900">
-                                    <FiCalendar className="w-10 h-10 text-indigo-500/50" />
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-slate-900">
+                                    <FiCalendar className="w-10 h-10 text-blue-500/50" />
                                 </div>
                             )}
+                            {/* Share button overlay */}
+                            <button
+                                onClick={(e) => handleShare(e, event)}
+                                className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-blue-600 shadow-sm opacity-0 group-hover/img:opacity-100 transition-all duration-200"
+                                title="Share Event"
+                            >
+                                <FiShare2 className="w-4 h-4" />
+                            </button>
                         </div>
                         <div className="p-5">
-                            <span className="inline-block px-2 py-1 bg-indigo-500/20 text-indigo-400 text-xs font-semibold rounded mb-3">
+                            <span className="inline-block px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded mb-3">
                                 {event.category}
                             </span>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">{event.title}</h3>

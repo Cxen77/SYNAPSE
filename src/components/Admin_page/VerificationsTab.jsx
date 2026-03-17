@@ -10,7 +10,7 @@ const STATUS_FILTERS = [
 ];
 
 const statusBadge = (v) => {
-    if (v === true) return <span className="admin-badge bg-emerald-500/20 text-emerald-400">Approved</span>;
+    if (v === true) return <span className="admin-badge bg-blue-500/20 text-blue-400">Approved</span>;
     if (v === 'pending') return <span className="admin-badge bg-amber-500/20 text-amber-400">Pending</span>;
     if (v === 'rejected') return <span className="admin-badge bg-red-500/20 text-red-400">Rejected</span>;
     return <span className="admin-badge bg-gray-100 text-gray-400">None</span>;
@@ -77,7 +77,7 @@ export default function VerificationsTab() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <FiShield className="w-5 h-5 text-emerald-500" />
+                    <FiShield className="w-5 h-5 text-blue-500" />
                     <h2 className="text-lg font-bold text-gray-900">Student Verifications</h2>
                 </div>
                 {/* Filter tabs */}
@@ -191,7 +191,7 @@ export default function VerificationsTab() {
                                             <button
                                                 onClick={() => handleApprove(user._id, user.name)}
                                                 disabled={actionLoading === user._id || user.collegeVerified === true}
-                                                className="admin-btn admin-btn-emerald disabled:opacity-30 disabled:cursor-not-allowed"
+                                                className="admin-btn admin-btn-blue disabled:opacity-30 disabled:cursor-not-allowed"
                                                 title="Approve Verification"
                                             >
                                                 <FiCheck className="w-3.5 h-3.5" />

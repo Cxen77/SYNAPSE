@@ -66,7 +66,7 @@ export default function AdminDashboard() {
                 {/* Header */}
                 <div className="p-5 border-b border-gray-200 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg ${isAdmin ? 'bg-gradient-to-br from-emerald-400 to-green-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg ${isAdmin ? 'bg-gradient-to-br from-blue-600 to-blue-700' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
                             <FiShield className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -93,13 +93,13 @@ export default function AdminDashboard() {
                                 onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
                                     ? isAdmin
-                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                        ? 'bg-blue-50 text-blue-700 border border-blue-100'
                                         : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
                                     }`}
                             >
                                 <Icon className={`w-4 h-4 shrink-0 ${isActive
-                                    ? isAdmin ? 'text-emerald-600' : 'text-indigo-600'
+                                    ? isAdmin ? 'text-blue-600' : 'text-indigo-600'
                                     : 'text-gray-400 group-hover:text-gray-700'
                                     }`}
                                 />
@@ -141,8 +141,8 @@ export default function AdminDashboard() {
                         </button>
                         <span className="font-bold text-gray-900">{panelTitle} Panel</span>
                     </div>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isAdmin ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
-                        <FiShield className={`w-4 h-4 ${isAdmin ? 'text-emerald-600' : 'text-indigo-600'}`} />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isAdmin ? 'bg-blue-100' : 'bg-indigo-100'}`}>
+                        <FiShield className={`w-4 h-4 ${isAdmin ? 'text-blue-600' : 'text-indigo-600'}`} />
                     </div>
                 </div>
 

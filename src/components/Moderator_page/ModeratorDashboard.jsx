@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiGrid, FiList, FiMessageSquare, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { FiGrid, FiList, FiMessageSquare, FiLogOut, FiMenu, FiX, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import OverviewTab from '../Admin_page/OverviewTab';
 import EventsTab from '../Admin_page/EventsTab';
@@ -8,6 +9,7 @@ import PostsTab from '../Admin_page/PostsTab';
 import UsersTab from '../Admin_page/UsersTab';
 
 export default function ModeratorDashboard() {
+    const navigate = useNavigate();
     const { logout, currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('posts');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,7 +37,7 @@ export default function ModeratorDashboard() {
 
             {/* Sidebar */}
             <motion.aside
-                className={`fixed lg:sticky top-[64px] h-[calc(100vh-64px)] w-64 bg-white border-r border-gray-200 flex flex-col z-40 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+                className={`fixed lg:sticky top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-40 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
                 {/* Header */}
                 <div className="p-5 border-b border-gray-200 flex items-center justify-between shrink-0">
@@ -74,33 +76,20 @@ export default function ModeratorDashboard() {
                         );
                     })}
                 </nav>
-
-                {/* Footer */}
                 <div className="p-4 border-t border-gray-200 shrink-0">
-                    <div className="flex items-center gap-3 mb-3 px-1">
-                        <img
-                            src={currentUser?.profilePic || `https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`}
-                            alt=""
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                        />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 truncate">{currentUser?.name}</p>
-                            <p className="text-xs text-gray-400 truncate">{currentUser?.email}</p>
-                        </div>
-                    </div>
                     <button
-                        onClick={logout}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={() => navigate('/')}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                     >
-                        <FiLogOut size={14} /> Sign Out
+                        <FiArrowLeft size={14} /> Back to Home
                     </button>
                 </div>
             </motion.aside>
 
             {/* Main */}
-            <main className="flex-1 min-w-0 bg-gray-50 flex flex-col" style={{ minHeight: '100vh', paddingTop: '64px', overflowX: 'hidden' }}>
+            <main className="flex-1 min-w-0 bg-gray-50 flex flex-col" style={{ minHeight: '100vh', overflowX: 'hidden' }}>
                 {/* Mobile Top Bar */}
-                <div className="lg:hidden sticky top-[64px] z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-1 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100">
                             <FiMenu size={20} />

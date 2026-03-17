@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { X, Camera, CheckCircle2, AlertCircle, UserCheck } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import api from '../../api/axios';
@@ -111,14 +112,14 @@ export default function ScanAttendanceModal({ eventId, onClose }) {
         return () => { stopScanner(); };
     }, [stopScanner]);
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/70 dark:bg-black/80 backdrop-blur-sm px-4">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-sm overflow-hidden relative">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-2">
-                        <Camera size={18} className="text-indigo-500" />
+                        <Camera size={18} className="text-blue-500" />
                         <h3 className="font-bold text-gray-900 dark:text-white text-sm">Scan Attendance</h3>
                     </div>
                     <button
@@ -207,7 +208,7 @@ export default function ScanAttendanceModal({ eventId, onClose }) {
                     {!scanning ? (
                         <button
                             onClick={startScanner}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition"
                         >
                             <Camera size={16} />
                             Start Camera
@@ -228,6 +229,7 @@ export default function ScanAttendanceModal({ eventId, onClose }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

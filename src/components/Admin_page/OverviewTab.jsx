@@ -39,18 +39,18 @@ export default function OverviewTab() {
 
     const cards = [
         { icon: FiUsers, label: 'Total Users', value: stats?.totalUsers, gradient: 'from-blue-500 to-blue-600' },
-        { icon: FiActivity, label: 'Active Today', value: stats?.activeToday, gradient: 'from-emerald-400 to-green-600' },
+        { icon: FiActivity, label: 'Active Today', value: stats?.activeToday, gradient: 'from-blue-600 to-blue-700' },
         { icon: FiAlertTriangle, label: 'Suspended', value: stats?.suspendedUsers, gradient: 'from-red-400 to-rose-600' },
         { icon: FiCalendar, label: 'Total Events', value: stats?.totalEvents, gradient: 'from-violet-400 to-purple-600' },
         { icon: FiFileText, label: 'Total Posts', value: stats?.totalPosts, gradient: 'from-orange-400 to-amber-600' },
-        { icon: FiFileText, label: 'Forum Posts', value: stats?.totalForumPosts, gradient: 'from-teal-400 to-cyan-600' },
+        { icon: FiFileText, label: 'Forum Posts', value: stats?.totalForumPosts, gradient: 'from-cyan-500 to-blue-600' },
         { icon: FiMessageSquare, label: 'Messages Today', value: stats?.messagesToday, gradient: 'from-indigo-400 to-blue-600' },
     ];
 
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiTrendingUp className="w-5 h-5 text-emerald-500" />
+                <FiTrendingUp className="w-5 h-5 text-blue-500" />
                 <h2 className="text-lg font-bold text-gray-900">Dashboard Overview</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

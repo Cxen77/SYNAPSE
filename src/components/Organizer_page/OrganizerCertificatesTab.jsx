@@ -1,7 +1,82 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
-import { FiAward, FiImage, FiX, FiRefreshCcw } from 'react-icons/fi';
+import { FiAward, FiImage, FiX, FiRefreshCcw, FiCalendar, FiChevronDown, FiMapPin, FiCompass } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const CustomSelect = ({ options, value, onChange, icon: Icon, placeholder = "-- Select --", labelKey = "label", valueKey = "value", isCustomLink = false }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedOption = options.find(o => o[valueKey] === value);
+
+    return (
+        <div className="relative w-full">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-xs outline-none transition group hover:border-blue-500/30 shadow-sm"
+            >
+                <div className="flex items-center gap-2 text-left truncate">
+                    {Icon && <Icon className="text-blue-500 shrink-0" size={12} />}
+                    <span className={`truncate ${selectedOption || (isCustomLink && value === 'custom') ? "font-semibold" : "text-gray-400"}`}>
+                        {isCustomLink && value === 'custom' ? "-- Custom Event (Manual Input) --" : (selectedOption ? selectedOption[labelKey] : placeholder)}
+                    </span>
+                </div>
+                <FiChevronDown className={`transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} size={12} />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+                        <motion.div
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            className="absolute z-20 w-full mt-1 py-1 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar"
+                        >
+                            {isCustomLink && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            onChange('custom');
+                                            setIsOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-gray-50 dark:hover:bg-white/5 flex items-center justify-between font-bold ${value === 'custom' ? 'text-blue-500 bg-blue-500/5' : 'text-blue-500/80'
+                                            }`}
+                                    >
+                                        <span>-- Custom Event (Manual Input) --</span>
+                                        {value === 'custom' && <CheckCircle2 size={12} className="text-blue-500 shrink-0" />}
+                                    </button>
+                                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-1" />
+                                </>
+                            )}
+
+                            {options.length === 0 ? (
+                                <p className="px-3 py-2 text-xs text-gray-500 italic">No options found</p>
+                            ) : (
+                                options.map((opt, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => {
+                                            onChange(opt[valueKey]);
+                                            setIsOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-gray-50 dark:hover:bg-white/5 flex items-center justify-between ${value === opt[valueKey] ? 'text-blue-500 bg-blue-500/5' : 'text-gray-700 dark:text-gray-300'
+                                            }`}
+                                    >
+                                        <span className="truncate">{opt[labelKey]}</span>
+                                        {value === opt[valueKey] && <CheckCircle2 size={12} className="text-blue-500 shrink-0" />}
+                                    </button>
+                                ))
+                            )}
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 export default function OrganizerCertificatesTab() {
     const [events, setEvents] = useState([]);
@@ -253,21 +328,20 @@ export default function OrganizerCertificatesTab() {
                 <div className="flex flex-col gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Select Event</label>
-                        <select
+                        <CustomSelect
+                            options={events}
                             value={selectedEventId}
-                            onChange={e => setSelectedEventId(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                        >
-                            <option value="">-- Choose an Event --</option>
-                            <option value="custom" className="font-bold text-indigo-500">-- Custom Event (Manual Input) --</option>
-                            {events.map(ev => (
-                                <option key={ev._id} value={ev._id}>{ev.title}</option>
-                            ))}
-                        </select>
+                            onChange={id => setSelectedEventId(id)}
+                            icon={FiCalendar}
+                            labelKey="title"
+                            valueKey="_id"
+                            isCustomLink={true}
+                            placeholder="-- Choose an Event --"
+                        />
                     </div>
 
                     {selectedEventId === 'custom' && (
-                        <div className="flex flex-col gap-3 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-indigo-500/20">
+                        <div className="flex flex-col gap-3 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-blue-500/20">
                             <input type="text" placeholder="Custom Event Name" value={customEventName} onChange={e => setCustomEventName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm" />
                             <input type="text" placeholder="Custom Event Date (e.g. Feb 28, 2026)" value={customEventDate} onChange={e => setCustomEventDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm" />
                             <input type="text" placeholder="Custom Organizer Name" value={customOrgName} onChange={e => setCustomOrgName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm" />
@@ -282,7 +356,7 @@ export default function OrganizerCertificatesTab() {
                                 key={t}
                                 onClick={() => setCertType(t)}
                                 className={`flex-1 py-3 rounded-xl capitalize font-semibold text-sm border transition ${certType === t
-                                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                                    ? 'bg-blue-600 border-blue-500 text-white'
                                     : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-200'
                                     }`}
                             >
@@ -333,7 +407,7 @@ export default function OrganizerCertificatesTab() {
                             key={t.id}
                             onClick={() => setTemplateType(t.id)}
                             className={`text-left p-4 rounded-xl border-2 transition ${templateType === t.id
-                                ? 'border-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/20'
+                                ? 'border-blue-500 bg-blue-500/10 dark:bg-blue-500/20'
                                 : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-gray-50 dark:bg-gray-800'
                                 }`}
                         >
@@ -354,7 +428,7 @@ export default function OrganizerCertificatesTab() {
                             type="text"
                             value={certTitle}
                             onChange={(e) => setCertTitle(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition resize-y text-sm font-mono"
+                            className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition resize-y text-sm font-mono"
                         />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -364,7 +438,7 @@ export default function OrganizerCertificatesTab() {
                                 type="text"
                                 value={presentationText}
                                 onChange={(e) => setPresentationText(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition resize-y text-sm font-mono"
+                                className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition resize-y text-sm font-mono"
                             />
                         </div>
                         <div>
@@ -373,7 +447,7 @@ export default function OrganizerCertificatesTab() {
                                 type="text"
                                 value={descriptionText}
                                 onChange={(e) => setDescriptionText(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition resize-y text-sm font-mono"
+                                className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition resize-y text-sm font-mono"
                             />
                         </div>
                         <div className="md:col-span-2">
@@ -411,15 +485,18 @@ export default function OrganizerCertificatesTab() {
                                         </div>
 
                                         <div className="flex items-center justify-between w-full sm:w-auto gap-3">
-                                            <select
-                                                value={logo.position}
-                                                onChange={(e) => updateOrgPosition(idx, e.target.value)}
-                                                className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 rounded px-2 py-1.5 focus:border-indigo-500 outline-none"
-                                            >
-                                                <option value="left">Left</option>
-                                                <option value="center">Center</option>
-                                                <option value="right">Right</option>
-                                            </select>
+                                            <div className="w-32">
+                                                <CustomSelect
+                                                    options={[
+                                                        { label: 'Left', value: 'left' },
+                                                        { label: 'Center', value: 'center' },
+                                                        { label: 'Right', value: 'right' }
+                                                    ]}
+                                                    value={logo.position}
+                                                    onChange={(val) => updateOrgPosition(idx, val)}
+                                                    icon={FiCompass}
+                                                />
+                                            </div>
 
                                             <button onClick={() => removeOrgLogo(idx)} className="p-1.5 text-gray-400 hover:text-red-400 bg-gray-50 dark:bg-gray-900 rounded"><FiX /></button>
                                         </div>
@@ -508,7 +585,7 @@ export default function OrganizerCertificatesTab() {
                 <button
                     onClick={handleGenerate}
                     disabled={!selectedEventId || generating}
-                    className="flex items-center justify-center w-full gap-2 px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 text-white rounded-xl font-bold transition shadow-lg shadow-indigo-900/40 text-lg hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center justify-center w-full gap-2 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 text-white rounded-xl font-bold transition shadow-lg shadow-blue-900/40 text-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
                     <FiAward className="text-xl" />
                     {generating ? 'Building PDF...' : 'Download Certificates'}

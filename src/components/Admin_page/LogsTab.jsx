@@ -5,9 +5,9 @@ import api from '../../api/axios';
 const actionColors = {
     ROLE_CHANGE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
     SUSPEND_USER: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
-    UNSUSPEND_USER: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20',
+    UNSUSPEND_USER: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20',
     SOFT_DELETE_USER: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
-    APPROVE_EVENT: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20',
+    APPROVE_EVENT: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20',
     REJECT_EVENT: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
     SOFT_DELETE_EVENT: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
     SOFT_DELETE_POST: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
@@ -54,7 +54,7 @@ export default function LogsTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiClock className="w-5 h-5 text-emerald-500" />
+                <FiClock className="w-5 h-5 text-blue-500" />
                 <h2 className="text-lg font-bold text-gray-900">Audit Logs</h2>
             </div>
 

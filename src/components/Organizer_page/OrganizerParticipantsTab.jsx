@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axios';
-import { FiUsers, FiUser, FiZap, FiGrid } from 'react-icons/fi';
+import { FiUsers, FiUser, FiZap, FiGrid, FiChevronDown, FiCalendar } from 'react-icons/fi';
 import { Camera, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import VerifiedBadge from '../common/VerifiedBadge';
 import ScanAttendanceModal from './ScanAttendanceModal';
 
@@ -15,7 +16,62 @@ const FILTERS = [
 const TYPE_COLORS = {
     solo: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
     auto: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-    pre: 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20'
+    pre: 'text-blue-400 bg-blue-400/10 border-blue-400/20'
+};
+
+const EventDropdown = ({ events, selectedId, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedEvent = events.find(e => e._id === selectedId);
+
+    return (
+        <div className="relative w-full">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition group shadow-sm hover:border-blue-500/30"
+            >
+                <div className="flex items-center gap-2">
+                    <FiCalendar className="text-blue-500" />
+                    <span className={selectedEvent ? "font-semibold" : "text-gray-400"}>
+                        {selectedEvent ? selectedEvent.title : "-- Choose an Event --"}
+                    </span>
+                </div>
+                <FiChevronDown className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="absolute z-20 w-full mt-2 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden"
+                        >
+                            {events.length === 0 ? (
+                                <p className="px-4 py-3 text-sm text-gray-500 italic">No events found</p>
+                            ) : (
+                                events.map(ev => (
+                                    <button
+                                        key={ev._id}
+                                        onClick={() => {
+                                            onChange(ev._id);
+                                            setIsOpen(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 flex items-center justify-between ${selectedId === ev._id ? 'text-blue-500 bg-blue-500/5' : 'text-gray-700 dark:text-gray-300'
+                                            }`}
+                                    >
+                                        <span className="truncate">{ev.title}</span>
+                                        {selectedId === ev._id && <CheckCircle2 size={14} className="text-blue-500 shrink-0" />}
+                                    </button>
+                                ))
+                            )}
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 };
 
 export default function OrganizerParticipantsTab() {
@@ -72,7 +128,7 @@ export default function OrganizerParticipantsTab() {
                     {selectedEventId && (
                         <button
                             onClick={() => setScannerOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition shadow-sm shadow-indigo-500/20"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition shadow-sm shadow-blue-500/20"
                         >
                             <Camera size={15} />
                             Scan Attendance
@@ -81,25 +137,20 @@ export default function OrganizerParticipantsTab() {
                 </div>
 
                 {/* Event Selector */}
-                <div className="mb-6 max-w-sm">
+                <div className="mb-6 max-w-sm relative z-20">
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Select Event</label>
-                    <select
-                        value={selectedEventId}
-                        onChange={e => { setSelectedEventId(e.target.value); setData(null); }}
-                        className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                    >
-                        <option value="">-- Choose an Event --</option>
-                        {events.map(ev => (
-                            <option key={ev._id} value={ev._id}>{ev.title}</option>
-                        ))}
-                    </select>
+                    <EventDropdown
+                        events={events}
+                        selectedId={selectedEventId}
+                        onChange={id => { setSelectedEventId(id); setData(null); }}
+                    />
                 </div>
 
                 {/* Summary Stats — now includes Attended */}
                 {data && (
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6 animate-in fade-in duration-200">
                         {[
-                            { label: 'Total', value: totals.total, icon: FiGrid, color: 'indigo' },
+                            { label: 'Total', value: totals.total, icon: FiGrid, color: 'blue' },
                             { label: 'Solo', value: totals.solo, icon: FiUser, color: 'amber' },
                             { label: 'Auto-Team', value: totals.auto, icon: FiZap, color: 'emerald' },
                             { label: 'Pre-Team', value: totals.pre, icon: FiUsers, color: 'violet' },
@@ -121,7 +172,7 @@ export default function OrganizerParticipantsTab() {
                                 key={f.value}
                                 onClick={() => handleFilterChange(f.value)}
                                 className={`px-4 py-2 rounded-lg text-sm font-semibold border transition ${activeFilter === f.value
-                                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                                    ? 'bg-blue-600 border-blue-500 text-white'
                                     : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-200'
                                     }`}
                             >

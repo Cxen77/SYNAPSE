@@ -59,7 +59,7 @@ export default function CollegesTab() {
         <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <FiBook className="w-5 h-5 text-emerald-500" />
+                    <FiBook className="w-5 h-5 text-blue-500" />
                     <h2 className="text-lg font-bold text-gray-900">Pending Verification</h2>
                 </div>
                 <div className="text-sm text-gray-400">
@@ -89,7 +89,7 @@ export default function CollegesTab() {
                                 <tr>
                                     <td colSpan={4} className="text-center text-gray-400 py-12 flex flex-col items-center justify-center">
                                         <div className="p-4 bg-gray-100 rounded-full mb-3">
-                                            <FiCheck className="w-6 h-6 text-emerald-500/50" />
+                                            <FiCheck className="w-6 h-6 text-blue-500/50" />
                                         </div>
                                         <p>No pending requests</p>
                                     </td>
@@ -132,7 +132,7 @@ export default function CollegesTab() {
                                             <button
                                                 onClick={() => handleApprove(college._id)}
                                                 disabled={actionLoading === college._id}
-                                                className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all disabled:opacity-50"
+                                                className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all disabled:opacity-50"
                                                 title="Approve"
                                             >
                                                 <FiCheck className="w-4 h-4" />

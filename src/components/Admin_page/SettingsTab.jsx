@@ -7,8 +7,8 @@ const featureMeta = {
     chat: { label: 'Chat System', desc: 'Real-time chat and messaging', color: 'blue', icon: '💬', hasRoles: true },
     textPost: { label: 'Text Posts', desc: 'Allow users to create text posts', color: 'violet', icon: '📝', hasRoles: true },
     imagePost: { label: 'Image Upload', desc: 'Allow users to upload images', color: 'pink', icon: '🖼️', hasRoles: true },
-    forum: { label: 'Forum System', desc: 'Forum post creation and replies', color: 'teal', icon: '🗂️', hasRoles: true },
-    events: { label: 'Event Creation', desc: 'Allow users to create events', color: 'emerald', icon: '📅', hasRoles: true },
+    forum: { label: 'Forum System', desc: 'Forum post creation and replies', color: 'cyan', icon: '🗂️', hasRoles: true },
+    events: { label: 'Event Creation', desc: 'Allow users to create events', color: 'blue', icon: '📅', hasRoles: true },
     autoJoin: { label: 'Auto-Join Teams', desc: 'Auto team-matching for events', color: 'amber', icon: '🤝', hasRoles: true },
 };
 
@@ -97,7 +97,7 @@ export default function SettingsTab() {
     return (
         <div>
             <div className="flex items-center gap-3 mb-6">
-                <FiSettings className="w-5 h-5 text-emerald-600" />
+                <FiSettings className="w-5 h-5 text-blue-600" />
                 <h2 className="text-lg font-bold text-gray-900">Feature Control Engine</h2>
             </div>
 
@@ -125,7 +125,7 @@ export default function SettingsTab() {
                                         <span className="text-base">{meta.icon}</span>
                                         <h3 className="text-sm font-semibold text-gray-900">{meta.label}</h3>
                                         <span className={`admin-badge ${isOn
-                                            ? (isMaint ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700')
+                                            ? (isMaint ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-700')
                                             : 'bg-gray-100 text-gray-500'
                                             }`}>
                                             {isOn ? (isMaint ? 'ACTIVE' : 'ON') : 'OFF'}
@@ -159,7 +159,7 @@ export default function SettingsTab() {
                                             className={`transition-all duration-200 ${saving === name ? 'opacity-50' : 'hover:scale-110'}`}
                                         >
                                             {isOn ? (
-                                                <FiToggleRight className={`w-8 h-8 ${isMaint ? 'text-red-400' : 'text-emerald-400'}`} />
+                                                <FiToggleRight className={`w-8 h-8 ${isMaint ? 'text-red-400' : 'text-blue-400'}`} />
                                             ) : (
                                                 <FiToggleLeft className="w-8 h-8 text-gray-300" />
                                             )}
@@ -201,7 +201,7 @@ export default function SettingsTab() {
                                                     key={role}
                                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 border
                                                         ${checked
-                                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                            ? 'bg-blue-50 border-blue-200 text-blue-700'
                                                             : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-900'
                                                         }`}
                                                 >
@@ -213,7 +213,7 @@ export default function SettingsTab() {
                                                         className="hidden"
                                                     />
                                                     <span className={`w-3 h-3 rounded border flex items-center justify-center text-[8px]
-                                                        ${checked ? 'bg-emerald-500 border-emerald-500 text-gray-900' : 'border-gray-200'}`}>
+                                                        ${checked ? 'bg-blue-500 border-blue-500 text-gray-900' : 'border-gray-200'}`}>
                                                         {checked && '✓'}
                                                     </span>
                                                     {role.charAt(0).toUpperCase() + role.slice(1)}

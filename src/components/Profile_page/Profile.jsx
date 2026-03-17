@@ -5,6 +5,7 @@ import ProfileHero from './ProfileHero';
 import ProfileSkeleton from './ProfileSkeleton';
 import AboutSection from './AboutSection';
 import ProjectsSection from './ProjectsSection';
+import { useFollow } from '../../hooks/useFollow';
 
 import PostsSection from './PostsSection';
 import AchievementsSection from './AchievementsSection';
@@ -120,21 +121,11 @@ const Profile = () => {
         }
     }, []);
 
+    const { follow, isPending: isFollowPending } = useFollow(user?._id);
+
     const handleFollow = async () => {
         if (!user || isOwnProfile) return;
-
-        try {
-            await api.put(`/users/${user._id}/follow`);
-            setIsFollowing(!isFollowing);
-            setUser(prev => ({
-                ...prev,
-                followers: isFollowing
-                    ? prev.followers.filter(id => id !== currentUser._id)
-                    : [...prev.followers, currentUser._id]
-            }));
-        } catch (err) {
-            console.error("Failed to follow/unfollow", err);
-        }
+        follow();
     };
 
     const handleAcceptInvite = async (teamId) => {

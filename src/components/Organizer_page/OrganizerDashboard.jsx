@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiGrid, FiCalendar, FiLogOut, FiMenu, FiX, FiInfo, FiUsers, FiDownload, FiAward } from 'react-icons/fi';
+import { FiGrid, FiCalendar, FiLogOut, FiMenu, FiX, FiInfo, FiUsers, FiDownload, FiAward, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import OrganizerEventsTab from './OrganizerEventsTab';
 import OrganizerCreateEventTab from './OrganizerCreateEventTab';
@@ -9,6 +10,7 @@ import OrganizerExportTab from './OrganizerExportTab';
 import OrganizerCertificatesTab from './OrganizerCertificatesTab';
 
 export default function OrganizerDashboard() {
+    const navigate = useNavigate();
     const { logout, currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('my_events');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -38,12 +40,12 @@ export default function OrganizerDashboard() {
 
             {/* Sidebar */}
             <motion.aside
-                className={`fixed lg:sticky top-[64px] h-[calc(100vh-64px)] w-64 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+                className={`fixed lg:sticky top-0 h-screen w-64 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-800 flex flex-col z-40 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
                 {/* Header */}
                 <div className="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
                             <span className="font-bold text-white">O</span>
                         </div>
                         <div>
@@ -59,10 +61,10 @@ export default function OrganizerDashboard() {
                 {/* Nav */}
                 <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto custom-scrollbar">
                     {/* College info banner */}
-                    <div className="bg-indigo-50 dark:bg-gray-900 border border-indigo-100 dark:border-gray-800 rounded-xl p-3 mb-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl p-3 mb-4">
                         <div className="flex items-center gap-2">
-                            <FiInfo className="text-indigo-500 shrink-0 w-4 h-4" />
-                            <p className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">
+                            <FiInfo className="text-blue-500 shrink-0 w-4 h-4" />
+                            <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
                                 Managing events for <span className="font-bold text-gray-900 dark:text-white">{currentUser?.college || 'Your College'}</span>
                             </p>
                         </div>
@@ -77,51 +79,38 @@ export default function OrganizerDashboard() {
                                 key={tab.id}
                                 onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group border ${isActive
-                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-black dark:text-white dark:border-gray-800'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
                                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 border-transparent dark:hover:bg-black dark:hover:text-white'
                                     }`}
                             >
-                                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-600 dark:text-white' : 'text-gray-400 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-white'}`} />
+                                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-white'}`} />
                                 {tab.label}
                             </button>
                         );
                     })}
                 </nav>
-
-                {/* Footer */}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-800 shrink-0">
-                    <div className="flex items-center gap-3 mb-3 px-1">
-                        <img
-                            src={currentUser?.profilePic || `https://ui-avatars.com/api/?name=${currentUser?.name}&background=random`}
-                            alt=""
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-800"
-                        />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{currentUser?.name}</p>
-                            <p className="text-xs text-gray-400 truncate">{currentUser?.email}</p>
-                        </div>
-                    </div>
                     <button
-                        onClick={logout}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-black dark:hover:text-red-500 transition-colors"
+                        onClick={() => navigate('/')}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-black dark:hover:text-white transition-colors"
                     >
-                        <FiLogOut size={14} /> Sign Out
+                        <FiArrowLeft size={14} /> Back to Home
                     </button>
                 </div>
             </motion.aside>
 
             {/* Main */}
-            <main className="flex-1 min-w-0 bg-gray-50 dark:bg-black flex flex-col" style={{ minHeight: '100vh', paddingTop: '64px', overflowX: 'hidden' }}>
+            <main className="flex-1 min-w-0 bg-gray-50 dark:bg-black flex flex-col" style={{ minHeight: '100vh', overflowX: 'hidden' }}>
                 {/* Mobile Top Bar */}
-                <div className="lg:hidden sticky top-[64px] z-30 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
+                <div className="lg:hidden sticky top-0 z-30 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-1 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-black dark:hover:text-white">
                             <FiMenu size={20} />
                         </button>
                         <span className="font-bold text-gray-900 dark:text-white">Organizer Panel</span>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <span className="font-bold text-indigo-600 text-sm">O</span>
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">O</span>
                     </div>
                 </div>
 

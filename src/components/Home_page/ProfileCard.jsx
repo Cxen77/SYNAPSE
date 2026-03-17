@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { Users, CalendarDays, PlusCircle, ClipboardList, Search, QrCode, X } from "lucide-react";
 import { FaGraduationCap } from "react-icons/fa";
@@ -49,8 +50,8 @@ function QREventPicker({ onSelect, onClose }) {
       .finally(() => setLoading(false));
   }, []);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/70 dark:bg-black/80 backdrop-blur-sm px-4">
       <div className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-sm p-6 relative">
         <button
           onClick={onClose}
@@ -59,7 +60,7 @@ function QREventPicker({ onSelect, onClose }) {
           <X size={18} />
         </button>
         <div className="flex items-center gap-2.5 mb-5">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
             <QrCode size={18} className="text-white" />
           </div>
           <div>
@@ -79,9 +80,9 @@ function QREventPicker({ onSelect, onClose }) {
               <li key={ev._id}>
                 <button
                   onClick={() => onSelect(ev)}
-                  className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition group"
+                  className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
                 >
-                  <p className="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-indigo-600 truncate">{ev.title}</p>
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-blue-600 truncate">{ev.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </button>
               </li>
@@ -89,7 +90,8 @@ function QREventPicker({ onSelect, onClose }) {
           </ul>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -121,7 +123,6 @@ export default function ProfileCard({ user, loading }) {
 
   const quickActions = [
     { icon: <Search size={18} />, label: "Find Teammates", to: "/teams" },
-    { icon: <CalendarDays size={18} />, label: "Browse Events", to: "/events" },
     { icon: <PlusCircle size={18} />, label: "Create Event", to: "/events" },
     { icon: <ClipboardList size={18} />, label: "My Registrations", to: "/events" },
     {
@@ -231,9 +232,9 @@ export default function ProfileCard({ user, loading }) {
               {onClick ? (
                 <button
                   onClick={onClick}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
                 >
-                  <span className="text-gray-400 group-hover:text-indigo-500 transition">{icon}</span>
+                  <span className="text-gray-400 group-hover:text-blue-500 transition">{icon}</span>
                   <span className="text-sm font-medium">{label}</span>
                 </button>
               ) : (

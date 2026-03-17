@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import ProfileEditModal from './ProfileEditModal';
+import FollowButton from '../common/FollowButton';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -211,10 +212,7 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                                     )
                                 ) : (
                                     <div className="flex gap-1.5 md:gap-3 w-full md:w-auto">
-                                        <button onClick={onFollow} className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 rounded-xl font-bold text-[13px] md:text-sm transition-all shadow-sm ${isFollowing ? "bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-gray-200"}`}>
-                                            {isFollowing ? <Check className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4" />}
-                                            <span className="truncate">{isFollowing ? "Following" : "Follow"}</span>
-                                        </button>
+                                        <FollowButton targetUser={user} variant="button" />
                                         <button onClick={handleMessage} className="flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 rounded-xl font-bold text-[13px] md:text-sm bg-white border border-gray-200 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
                                             <Mail className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                             <span className="truncate">Message</span>

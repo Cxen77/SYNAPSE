@@ -4,6 +4,8 @@ import PropTypes from 'prop-types';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
 import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import { FiShare2 } from 'react-icons/fi';
+import { toast } from 'react-hot-toast';
 import AutoTeamModal from './AutoTeamModal'; // Import Modal
 import { useAuth } from '../../context/AuthContext'; // Need current user profile for modal
 
@@ -52,11 +54,43 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     try {
       await api.put(`/events/${_id}/join`);
       setIsJoined(true);
+      toast.success("Joined event successfully!");
     } catch (error) {
       console.error("Failed to join event", error);
-      alert("Failed to join event");
+      toast.error("Failed to join event");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleShare = (e) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/events/${_id}`;
+    const shareData = {
+      title: eventName,
+      text: eventDescription || `Check out this event: ${eventName}`,
+      url: shareUrl,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      navigator.share(shareData).catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('Share failed:', err);
+          copyToClipboard(shareUrl);
+        }
+      });
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Clipboard failed:', err);
+      toast.error('Failed to copy link');
     }
   };
 
@@ -103,15 +137,25 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
             </div>
           )}
 
-          {/* Edit Button */}
-          {isOrganizer && (
+          {/* Action Buttons */}
+          <div className="absolute top-4 right-4 flex gap-2">
             <button
-              onClick={(e) => { e.stopPropagation(); onEdit(eventData); }}
-              className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
+              onClick={handleShare}
+              className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
+              title="Share Event"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              <FiShare2 className="w-4 h-4" />
             </button>
-          )}
+            {isOrganizer && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(eventData); }}
+                className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
+                title="Edit Event"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Content Section */}

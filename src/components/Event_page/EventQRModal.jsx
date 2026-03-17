@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { X, QrCode, RefreshCw, Clock } from 'lucide-react';
 import QRCode from 'qrcode';
 import api from '../../api/axios';
@@ -74,10 +75,9 @@ export default function EventQRModal({ eventId, eventTitle, onClose }) {
     const secs = String(countdown % 60).padStart(2, '0');
     const isExpiringSoon = countdown <= 30;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/70 dark:bg-black/80 backdrop-blur-sm px-4">
             <div className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-sm p-6 relative animate-in fade-in zoom-in-95 duration-200">
-
                 {/* Close */}
                 <button
                     onClick={onClose}
@@ -88,7 +88,7 @@ export default function EventQRModal({ eventId, eventTitle, onClose }) {
 
                 {/* Header */}
                 <div className="flex items-center gap-2.5 mb-5">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
                         <QrCode size={18} className="text-white" />
                     </div>
                     <div className="min-w-0">
@@ -115,10 +115,10 @@ export default function EventQRModal({ eventId, eventTitle, onClose }) {
                                 className={`w-[260px] h-[260px] rounded-xl border-2 transition ${isExpiringSoon ? 'border-amber-400 opacity-80' : 'border-gray-200 dark:border-gray-700'}`}
                             />
                             {/* Corner accent */}
-                            <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-indigo-500 rounded-tl-lg" />
-                            <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-indigo-500 rounded-tr-lg" />
-                            <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-indigo-500 rounded-bl-lg" />
-                            <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-indigo-500 rounded-br-lg" />
+                            <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-lg" />
+                            <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-lg" />
+                            <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-lg" />
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-lg" />
                         </div>
                     )}
 
@@ -138,7 +138,7 @@ export default function EventQRModal({ eventId, eventTitle, onClose }) {
                     {!loading && (
                         <button
                             onClick={fetchAndRenderQR}
-                            className="mt-3 flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition"
+                            className="mt-3 flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 font-medium transition"
                         >
                             <RefreshCw size={12} />
                             Refresh now
@@ -153,6 +153,7 @@ export default function EventQRModal({ eventId, eventTitle, onClose }) {
                     Valid for <strong>5 minutes</strong> · auto-refreshes before expiry.
                 </p>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
