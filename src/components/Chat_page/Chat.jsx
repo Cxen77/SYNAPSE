@@ -20,7 +20,8 @@ import MessageInput from "./Window/MessageInput";
 import Skeleton from "../common/Skeleton";
 
 import { useSocket } from "../../context/SocketContext";
-import useVisualViewport from "../../hooks/useVisualViewport"; // [Import Viewport Hook]
+import useVisualViewport from "../../hooks/useVisualViewport";
+import { MessageSquare, Users, MessageCircle, Search } from "lucide-react";
 
 function Chat() {
     const { id } = useParams();
@@ -324,32 +325,31 @@ function Chat() {
                         <Skeleton variant="rectangular" className="h-16 w-full rounded-xl" />
                         <Skeleton variant="rectangular" className="h-16 w-full rounded-xl" />
                     </div>
-                ) : activeTab === 'messages' ? (
-                    mappedChats.filter(c => !c.isGroupChat).length > 0 ? (
-                        <ChatList
-                            chats={filteredChats.filter(chat => !chat.isGroupChat)}
-                            activeChat={windowChat || activeChat}
-                            setActiveChat={handleChatSelect}
-                        />
-                    ) : (
-                        // THEMED EMPTY STATE
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
+                    ) : activeTab === 'messages' ? (
+                        mappedChats.filter(c => !c.isGroupChat).length > 0 ? (
+                            <ChatList
+                                chats={filteredChats.filter(chat => !chat.isGroupChat)}
+                                activeChat={windowChat || activeChat}
+                                setActiveChat={handleChatSelect}
+                            />
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
                             <style>{`
                                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                             `}</style>
-                            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-sm group cursor-pointer hover:bg-blue-100 transition-colors">
-                                <FaRegPaperPlane size={32} className="text-blue-500 group-hover:scale-110 transition-transform -ml-1 mt-1" />
+                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-blue-100 group cursor-pointer hover:bg-blue-100 transition-all hover:scale-105">
+                                <MessageSquare size={32} className="text-blue-600 group-hover:rotate-12 transition-transform" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No messages yet</h3>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No conversations yet</h3>
                             <p className="text-sm text-gray-500 mb-8 max-w-[240px] leading-relaxed mx-auto">
-                                Connect with your friends and teammates to start a conversation.
+                                Search for friends or teammates to start a conversation.
                             </p>
                             <button
-                                className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 rounded-2xl font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm flex items-center gap-2"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/10 hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm flex items-center gap-2"
                                 onClick={() => setActiveTab('teams')}
                             >
-                                <FaEdit />
-                                Find Teammates
+                                <Search size={16} />
+                                Browse Teammates
                             </button>
                         </div>
                     )
@@ -363,12 +363,12 @@ function Chat() {
                         />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white opacity-0 animate-fadeIn" style={{ animationFillMode: 'forwards' }}>
-                            <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-6 shadow-sm group cursor-pointer hover:bg-purple-100 transition-colors">
-                                <FaEdit size={32} className="text-purple-500 group-hover:scale-110 transition-transform -ml-1 mt-1" />
+                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-blue-100 group cursor-pointer hover:bg-blue-100 transition-all hover:scale-105">
+                                <Users size={32} className="text-blue-600 group-hover:rotate-12 transition-transform" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No team chats yet</h3>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No team chats</h3>
                             <p className="text-sm text-gray-500 mb-8 max-w-[240px] leading-relaxed mx-auto">
-                                Join a team to start a group conversation.
+                                Join a team to start collaborating with your peers.
                             </p>
                         </div>
                     )
@@ -407,12 +407,12 @@ function Chat() {
                         />
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center bg-white">
-                        <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                            <FaRegPaperPlane size={36} className="text-blue-500 -ml-1 mt-1" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-center bg-white p-12">
+                        <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mb-6 border border-blue-100 shadow-sm">
+                            <MessageCircle size={36} className="text-blue-600" />
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Synapse Chat</h3>
-                        <p className="text-gray-500">Select a conversation to start messaging</p>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">Synapse Chat</h3>
+                        <p className="text-gray-500 max-w-sm leading-relaxed">Select a conversation from the sidebar or start a new message with your teammates.</p>
                     </div>
                 )}
             </div>

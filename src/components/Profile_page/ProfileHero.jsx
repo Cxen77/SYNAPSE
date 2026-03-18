@@ -95,9 +95,11 @@ const ProfileHero = ({ user, isOwner, isOwnProfile, isFollowing, onFollow, onInv
                         className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-gray-800 to-gray-900 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <div className="w-full h-full bg-blue-600 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-400 opacity-90"></div>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full -ml-24 -mb-24 blur-2xl"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent shadow-inner"></div>
                     </div>
                 )}
 

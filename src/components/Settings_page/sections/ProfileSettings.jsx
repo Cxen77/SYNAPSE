@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Camera, Github, Linkedin, Twitter, Instagram, Globe } from 'lucide-react';
 import useSettings from '../../../hooks/useSettings';
 import Avatar from '../../common/Avatar';
+import api from '../../../api/axios';
+import { useToast } from '../../common/Toast';
 
 const SocialInput = ({ icon: Icon, name, placeholder, value, onChange }) => (
     <div className="relative group">
@@ -30,17 +32,23 @@ SocialInput.propTypes = {
 
 const ProfileSettings = ({ user, setUser }) => {
     const { updateSettings, loading } = useSettings(user, setUser);
+    const { addToast } = useToast();
+    const profilePicInputRef = useRef(null);
+    const bannerPicInputRef = useRef(null);
+    const [profilePicLoading, setProfilePicLoading] = useState(false);
+    const [bannerPicLoading, setBannerPicLoading] = useState(false);
+
     const [formData, setFormData] = useState({
         bio: user.bio || '',
         course: user.course || '',
-        year: user.year || 'Freshman',
+        year: user.year || '',
         skills: user.skills || [],
         socials: {
             github: user.socials?.github || '',
             linkedin: user.socials?.linkedin || '',
             twitter: user.socials?.twitter || '',
             instagram: user.socials?.instagram || '',
-            website: user.socials?.website || ''
+            portfolio: user.socials?.portfolio || ''
         }
     });
     const [newSkill, setNewSkill] = useState('');
@@ -77,16 +85,84 @@ const ProfileSettings = ({ user, setUser }) => {
         updateSettings('/users/profile', formData, "Profile updated successfully!");
     };
 
+    const handleProfilePicChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setProfilePicLoading(true);
+        try {
+            const fd = new FormData();
+            fd.append('profilePic', file);
+            const { data } = await api.put('/users/profile-pic', fd, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setUser(data);
+            addToast('Profile picture updated!', 'success');
+        } catch (err) {
+            console.error(err);
+            addToast('Failed to update profile picture.', 'error');
+        } finally {
+            setProfilePicLoading(false);
+        }
+    };
+
+    const handleBannerPicChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setBannerPicLoading(true);
+        try {
+            const fd = new FormData();
+            fd.append('bannerPic', file);
+            const { data } = await api.put('/users/banner-pic', fd, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setUser(data);
+            addToast('Banner picture updated!', 'success');
+        } catch (err) {
+            console.error(err);
+            addToast('Failed to update banner picture.', 'error');
+        } finally {
+            setBannerPicLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-8 max-w-3xl pb-24 md:pb-0">
+            {/* Hidden file inputs */}
+            <input
+                ref={profilePicInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleProfilePicChange}
+            />
+            <input
+                ref={bannerPicInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerPicChange}
+            />
+
             {/* Banner & Avatar */}
             <div className="relative mb-16 group">
-                <div className="h-40 w-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-2xl overflow-hidden shadow-sm">
+                <div
+                    className="h-40 w-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-2xl overflow-hidden shadow-sm cursor-pointer"
+                    onClick={() => !bannerPicLoading && bannerPicInputRef.current?.click()}
+                >
                     {user.bannerPic && (
                         <img src={user.bannerPic} alt="Banner" className="w-full h-full object-cover" />
                     )}
-                    <button className="absolute top-4 right-4 bg-black/30 hover:bg-black/50 text-white p-2.5 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100">
-                        <Camera size={20} />
+                    <button
+                        type="button"
+                        disabled={bannerPicLoading}
+                        className="absolute top-4 right-4 bg-black/30 hover:bg-black/50 text-white p-2.5 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                        onClick={(e) => { e.stopPropagation(); bannerPicInputRef.current?.click(); }}
+                    >
+                        {bannerPicLoading ? (
+                            <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <Camera size={20} />
+                        )}
                     </button>
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
                 </div>
@@ -98,8 +174,17 @@ const ProfileSettings = ({ user, setUser }) => {
                             size="custom"
                             className="w-28 h-28 border-[4px] border-white shadow-lg bg-white relative z-10"
                         />
-                        <button className="absolute bottom-1 right-1 z-20 bg-gray-900 text-white p-2 rounded-full hover:bg-gray-700 transition-transform hover:scale-105 border-2 border-white shadow-md">
-                            <Camera size={16} />
+                        <button
+                            type="button"
+                            disabled={profilePicLoading}
+                            onClick={() => profilePicInputRef.current?.click()}
+                            className="absolute bottom-1 right-1 z-20 bg-gray-900 text-white p-2 rounded-full hover:bg-gray-700 transition-transform hover:scale-105 border-2 border-white shadow-md disabled:opacity-50"
+                        >
+                            {profilePicLoading ? (
+                                <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Camera size={16} />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -113,6 +198,7 @@ const ProfileSettings = ({ user, setUser }) => {
                         name="bio"
                         value={formData.bio}
                         onChange={handleChange}
+                        maxLength={300}
                         placeholder="Tell us about yourself..."
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none shadow-sm"
                     />
@@ -140,10 +226,11 @@ const ProfileSettings = ({ user, setUser }) => {
                                 onChange={handleChange}
                                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none shadow-sm cursor-pointer"
                             >
-                                <option>Freshman</option>
-                                <option>Sophomore</option>
-                                <option>Junior</option>
-                                <option>Senior</option>
+                                <option value="">Select year</option>
+                                <option>1st Year</option>
+                                <option>2nd Year</option>
+                                <option>3rd Year</option>
+                                <option>4th Year</option>
                                 <option>Graduate</option>
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
@@ -168,7 +255,7 @@ const ProfileSettings = ({ user, setUser }) => {
                             onChange={(e) => setNewSkill(e.target.value)}
                             onKeyDown={addSkill}
                             placeholder={formData.skills.length === 0 ? "Type a skill and press Enter" : ""}
-                            className="bg-transparent border-none outline-none flex-1 min-w-[120px] text-sm py-1 px-1 h-full"
+                            className="bg-transparent border-none outline-none flex-1 min-w-[120px] text-sm py-1 px-1"
                         />
                     </div>
                     <p className="text-xs text-gray-500">Press Enter after typing a skill to add it.</p>
@@ -184,7 +271,7 @@ const ProfileSettings = ({ user, setUser }) => {
                         <SocialInput icon={Linkedin} name="linkedin" placeholder="LinkedIn URL" value={formData.socials.linkedin} onChange={handleSocialChange} />
                         <SocialInput icon={Twitter} name="twitter" placeholder="Twitter Handle" value={formData.socials.twitter} onChange={handleSocialChange} />
                         <SocialInput icon={Instagram} name="instagram" placeholder="Instagram Username" value={formData.socials.instagram} onChange={handleSocialChange} />
-                        <SocialInput icon={Globe} name="website" placeholder="Portfolio Website" value={formData.socials.website} onChange={handleSocialChange} />
+                        <SocialInput icon={Globe} name="portfolio" placeholder="Portfolio Website" value={formData.socials.portfolio} onChange={handleSocialChange} />
                     </div>
                 </div>
 

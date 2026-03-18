@@ -90,7 +90,7 @@ export default function Feed({ user }) {
         {/* posts */}
         <div className="space-y-5">
           {posts.map((p) => (
-            <PostCard key={p.id} post={p} currentUser={user} onDelete={handleDeletePost} />
+            <PostCard key={p.id || p._id} post={p} currentUser={user} onDelete={handleDeletePost} />
           ))}
 
           {(isLoading || isFetchingNextPage) && (

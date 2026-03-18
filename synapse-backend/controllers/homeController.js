@@ -9,16 +9,36 @@ const formatPosts = (posts, currentUserId) => {
     return posts.map(post => {
         const likesList = post.likes || [];
         const likedByUser = likesList.some(id => id.toString() === currentUserId.toString());
+
+        // Build minimal team payload (same as postController)
+        let attachedTeam = null;
+        if (post.attachedTeamId) {
+            const t = post.attachedTeamId;
+            if (t && typeof t === 'object' && t.name) {
+                attachedTeam = {
+                    _id: t._id,
+                    name: t.name,
+                    category: t.category,
+                    isLookingForMembers: t.isLookingForMembers,
+                    openRoles: (t.openRoles || []).filter(r => r.isOpen).slice(0, 5).map(r => ({ _id: r._id, title: r.title })),
+                    membersCount: Array.isArray(t.members) ? t.members.length : 0
+                };
+            }
+        }
+
         return {
             _id: post._id,
             user: post.user,
             content: post.content,
             image: post.image,
+            likes: post.likes || [],
             createdAt: post.createdAt,
             // Computed fields instead of arrays
             likesCount: likesList.length,
             commentsCount: post.commentsCount || (post.comments ? post.comments.length : 0),
-            likedByUser
+            likedByUser,
+            attachedTeam,
+            hasAttachedTeam: !!post.attachedTeamId
         };
     });
 };
@@ -71,6 +91,7 @@ const getHomeData = asyncHandler(async (req, res) => {
 
     const feedPromise = Post.find(postQuery)
         .populate('user', 'name username profilePic collegeVerified course')
+        .populate('attachedTeamId', 'name category isLookingForMembers openRoles members')
         // DONT POPULATE COMMENTS — Saves DB memory and massive payload size
         .limit(pageSize)
         .sort({ createdAt: -1 }) // Hits the new compound index

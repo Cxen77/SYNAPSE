@@ -204,10 +204,35 @@ function JoinRequestsPanel({ team }) {
 // ──────────────────────────────────────────────────────
 // Inline Editable Goals Block (for owner in TeamDetails)
 // ──────────────────────────────────────────────────────
-function GoalsBlock({ team, canManage, onRefresh }) {
-    const [editing, setEditing] = useState(false);
+// ──────────────────────────────────────────────────────
+// Inline Editable Goals Header (for owner in TeamDetails)
+// ──────────────────────────────────────────────────────
+function GoalsHeader({ team, canManage, editing, setEditing }) {
+    if (!team.projectGoals && !canManage) return null;
+    return (
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+                <Target size={18} className="text-blue-500" /> About this Project & Goals
+            </span>
+            {canManage && !editing && (
+                <button onClick={() => setEditing(true)} className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 hover:underline">
+                    <FaPen size={10} /> Edit
+                </button>
+            )}
+        </h3>
+    );
+}
+
+// ──────────────────────────────────────────────────────
+// Inline Editable Goals Content (for owner in TeamDetails)
+// ──────────────────────────────────────────────────────
+function GoalsContent({ team, canManage, onRefresh, editing, setEditing }) {
     const [value, setValue] = useState(team.projectGoals || '');
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        setValue(team.projectGoals || '');
+    }, [team.projectGoals]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -224,17 +249,6 @@ function GoalsBlock({ team, canManage, onRefresh }) {
 
     return (
         <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                    <Target size={18} className="text-blue-500" /> About this Project & Goals
-                </span>
-                {canManage && !editing && (
-                    <button onClick={() => setEditing(true)} className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 hover:underline">
-                        <FaPen size={10} /> Edit
-                    </button>
-                )}
-            </h3>
-
             {editing ? (
                 <div className="space-y-3">
                     <textarea
@@ -284,6 +298,7 @@ const TeamDetails = () => {
     const [error, setError] = useState(null);
     const [joinStatus, setJoinStatus] = useState('idle');
     const [showApplyModal, setShowApplyModal] = useState(false);
+    const [isEditingGoals, setIsEditingGoals] = useState(false);
 
     const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
@@ -483,10 +498,28 @@ const TeamDetails = () => {
                         </div>
 
                         {/* Content Grid */}
-                        <div className="p-8 grid md:grid-cols-3 gap-8">
+                        <div className="p-8 grid md:grid-cols-3 gap-x-8 gap-y-0">
+                            {/* Row 1: Left has Header, Right is empty (for md+) */}
+                            <div className="md:col-span-2">
+                                <GoalsHeader
+                                    team={team}
+                                    canManage={canManage}
+                                    editing={isEditingGoals}
+                                    setEditing={setIsEditingGoals}
+                                />
+                            </div>
+                            <div className="hidden md:block"></div>
+
+                            {/* Row 2: Left Content & Right Actions start at same vertical point */}
                             <div className="md:col-span-2 space-y-0">
-                                {/* Project Goals / About section */}
-                                <GoalsBlock team={team} canManage={canManage} onRefresh={fetchTeam} />
+                                {/* Project Goals / About section content */}
+                                <GoalsContent
+                                    team={team}
+                                    canManage={canManage}
+                                    onRefresh={fetchTeam}
+                                    editing={isEditingGoals}
+                                    setEditing={setIsEditingGoals}
+                                />
 
                                 {/* Members */}
                                 <div className="mb-8">
@@ -562,7 +595,7 @@ const TeamDetails = () => {
                                 {canRequestJoin && (
                                     <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative overflow-hidden">
                                         {/* Subtle accent line at top */}
-                                        <div className={`absolute top-0 left-0 w-full h-1 ${joinStatus === 'rejected' ? 'bg-orange-400' : 'bg-gray-900'}`} />
+                                        <div className={`absolute top-0 left-0 w-full h-1 ${joinStatus === 'rejected' ? 'bg-orange-400' : 'bg-blue-600'}`} />
 
                                         <h3 className="font-extrabold text-gray-900 mb-2 text-base">
                                             {joinStatus === 'rejected' ? 'Application Declined' : 'Interested in joining?'}
@@ -582,7 +615,7 @@ const TeamDetails = () => {
                                                 onClick={() => setShowApplyModal(true)}
                                                 className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${joinStatus === 'rejected'
                                                     ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
-                                                    : 'bg-gray-900 text-white hover:bg-black shadow-sm hover:shadow-md'
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
                                                     }`}
                                             >
                                                 <Send size={15} />

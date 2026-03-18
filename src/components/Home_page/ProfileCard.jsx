@@ -145,8 +145,11 @@ export default function ProfileCard({ user, loading }) {
             </>
           ) : (
             <>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob" />
-              <div className="absolute -bottom-8 left-0 w-32 h-32 bg-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000" />
+              {/* Static Theme Background instead of animated blobs */}
+              <div className="absolute inset-0 bg-blue-600" />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-400 opacity-90" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/20 rounded-full -ml-12 -mb-12 blur-xl" />
             </>
           )}
           {/* Avatar anchored to bottom of banner */}

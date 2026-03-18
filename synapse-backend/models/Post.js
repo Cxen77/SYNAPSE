@@ -20,7 +20,9 @@ const postSchema = mongoose.Schema({
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
     // Soft migration: track comments via counter instead of loading the massive embedded array
-    commentsCount: { type: Number, default: 0 }
+    commentsCount: { type: Number, default: 0 },
+    // Optional team attachment — only team owner can attach; team must be public + open
+    attachedTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null }
 }, {
     timestamps: true
 });
@@ -31,7 +33,7 @@ postSchema.index({ likes: 1 });
 
 // CRITICAL INDEX: Prevent full collection scans on feed queries
 postSchema.index({ isDeleted: 1, createdAt: -1 });
-postSchema.index({ likes: 1 });
+postSchema.index({ attachedTeamId: 1 });
 
 const Post = mongoose.model('Post', postSchema);
 

@@ -8,6 +8,7 @@ import useIsMobile from "../../hooks/useIsMobile";
 import MobileCommentsSheet from "./MobileCommentsSheet";
 import CommentItem from "./CommentItem";
 import VerifiedBadge from "../common/VerifiedBadge";
+import AttachedTeamCard from "./AttachedTeamCard";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function PostCard({ post, currentUser = {}, onDelete }) {
@@ -28,8 +29,11 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
     likesCount: post.likesCount ?? (Array.isArray(post.likes) ? post.likes.length : (post.likes || 0)),
     commentsCount: Array.isArray(post.comments) ? post.comments.length : (post.comments || 0),
     isLiked: post.likedByUser ?? (Array.isArray(post.likes) ? post.likes.includes(currentUser?._id) : false),
-    userId: post.user?._id || post.user // Store user ID for ownership check
+    userId: post.user?._id || post.user, // Store user ID for ownership check
+    attachedTeam: post.attachedTeam
   };
+
+  // console.log(`[PostCard] Rendering post ${displayPost.id}. Attached team:`, displayPost.attachedTeam);
 
   const isOwner = (currentUser?._id && currentUser._id === displayPost.userId) ||
     (currentUser?.username && currentUser.username === displayPost.username);
@@ -301,6 +305,11 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
             loading="lazy"
           />
         </div>
+      )}
+
+      {/* Attached Team Card */}
+      {displayPost.attachedTeam && (
+        <AttachedTeamCard team={displayPost.attachedTeam} />
       )}
 
       {/* Stats Row */}

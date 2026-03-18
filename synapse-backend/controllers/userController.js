@@ -105,7 +105,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/profile
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select('+password');
 
     if (!user) {
         res.status(404);
@@ -113,7 +113,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 
     // SECURITY: Strict field whitelist — block role, isSuspended, email, firebaseUid, etc.
-    const ALLOWED_FIELDS = ['name', 'course', 'college', 'collegeId', 'year', 'section', 'className', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password'];
+    const ALLOWED_FIELDS = ['name', 'username', 'course', 'college', 'collegeId', 'year', 'section', 'className', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password', 'currentPassword'];
     const updates = Object.keys(req.body);
     const blocked = updates.filter(f => !ALLOWED_FIELDS.includes(f));
     if (blocked.length > 0) {
@@ -121,14 +121,25 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 
     if (req.body.name) user.name = req.body.name;
-    if (req.body.course) user.course = req.body.course;
+
+    // Username: validate uniqueness before applying
+    if (req.body.username && req.body.username !== user.username) {
+        const existing = await User.findOne({ username: req.body.username, _id: { $ne: user._id } });
+        if (existing) {
+            res.status(400);
+            throw new Error('Username is already taken. Please choose another.');
+        }
+        user.username = req.body.username;
+    }
+
+    if (req.body.course !== undefined) user.course = req.body.course;
     if (req.body.college) user.college = req.body.college;
     if (req.body.collegeId) user.collegeId = req.body.collegeId;
-    if (req.body.year) user.year = req.body.year;
+    if (req.body.year !== undefined) user.year = req.body.year;
     if (req.body.section) user.section = req.body.section;
     if (req.body.className !== undefined) user.className = req.body.className;
     if (req.body.location) user.location = req.body.location;
-    if (req.body.bio) user.bio = req.body.bio;
+    if (req.body.bio !== undefined) user.bio = req.body.bio; // allow clearing bio
     if (req.body.skills) user.skills = req.body.skills;
     if (req.body.socials) user.socials = req.body.socials;
     if (req.body.projects) user.projects = req.body.projects;
@@ -140,7 +151,17 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         };
     }
 
+    // Password change: require currentPassword for security
     if (req.body.password) {
+        if (!req.body.currentPassword) {
+            res.status(400);
+            throw new Error('Current password is required to set a new password.');
+        }
+        const isMatch = await user.matchPassword(req.body.currentPassword);
+        if (!isMatch) {
+            res.status(401);
+            throw new Error('Current password is incorrect.');
+        }
         user.password = req.body.password;
     }
 

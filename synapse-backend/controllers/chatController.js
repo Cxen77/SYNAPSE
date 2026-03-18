@@ -10,7 +10,10 @@ import { admin } from '../config/firebaseAdmin.js';
 // @access  Private
 export const getChats = async (req, res) => {
     try {
-        const chats = await Chat.find({ participants: req.user._id })
+        const chats = await Chat.find({
+            participants: req.user._id,
+            deletedBy: { $ne: req.user._id }
+        })
             .populate('participants', 'name email profilePic status lastSeen')
             .populate('lastMessage')
             .populate('groupAdmin', 'name profilePic')
@@ -50,6 +53,12 @@ export const accessDirectChat = async (req, res) => {
             // to prevent overlapping bugs if groups somehow lacked isGroupChat.
             const exactMatch = isChat.find(c => c.participants.length === 2);
             if (exactMatch) {
+                // REVIVE CHAT if it was deleted
+                if (exactMatch.deletedBy?.includes(req.user._id)) {
+                    await Chat.findByIdAndUpdate(exactMatch._id, {
+                        $pull: { deletedBy: req.user._id }
+                    });
+                }
                 return res.status(200).send(exactMatch);
             }
         }
@@ -322,6 +331,13 @@ export const getChatById = async (req, res) => {
             .populate('lastMessage');
 
         if (!chat) return res.status(404).json({ message: "Chat not found" });
+
+        // REVIVE CHAT if it was deleted by this user but they are visiting it directly now
+        if (chat.deletedBy?.includes(req.user._id)) {
+            await Chat.findByIdAndUpdate(chat._id, {
+                $pull: { deletedBy: req.user._id }
+            });
+        }
 
         // SECURITY: Verify requester is a participant
         if (!chat.participants.some(p => p._id.toString() === req.user._id.toString())) {

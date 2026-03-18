@@ -167,13 +167,9 @@ const Settings = () => {
 
     return (
         <ToastProvider>
-            <div className="h-[calc(100vh-4rem)] bg-gray-50 pt-0 md:pt-6 pb-0 md:pb-6 px-0 md:px-4 sm:px-6 lg:px-8 overflow-hidden">
-                <div className="max-w-7xl mx-auto h-full flex flex-col">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-6 flex-shrink-0 hidden md:block px-4 md:px-0">Settings</h1>
-
-                    <div className="flex flex-col md:flex-row gap-6 h-full overflow-hidden">
-                        {/* Sidebar */}
-                        <div className={`${showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:static top-16 bottom-[4.5rem] inset-x-0 md:inset-auto z-40 bg-white md:bg-transparent transition-transform duration-300 ease-in-out md:flex w-full md:w-72 flex-shrink-0 flex-col md:rounded-2xl shadow-none md:shadow-sm border-b md:border border-gray-100 overflow-hidden h-[calc(100%-4rem-4.5rem)] md:h-full`}>
+            <div className="bg-gray-50 absolute inset-x-0 top-0 bottom-0 md:top-16 flex md:p-6 md:gap-6 overflow-hidden">
+                {/* Sidebar */}
+                <div className={`${showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:static top-16 bottom-[4.5rem] inset-x-0 md:inset-auto z-40 bg-white md:bg-transparent transition-transform duration-300 ease-in-out md:flex w-full md:w-96 flex-shrink-0 flex-col md:rounded-2xl shadow-none md:shadow-sm md:border border-gray-200 overflow-hidden h-full z-[100]`}>
                             <div className="p-4 border-b border-gray-100 bg-white sticky top-0 z-10 flex items-center justify-between md:hidden">
                                 <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
                                 <button onClick={() => setShowMobileMenu(false)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
@@ -238,7 +234,7 @@ const Settings = () => {
                         </div>
 
                         {/* Main Content */}
-                        <div className={`flex flex-1 bg-white md:rounded-2xl shadow-none md:shadow-sm border-b md:border border-gray-100 overflow-hidden flex-col h-full fixed inset-0 top-16 bottom-[4.5rem] md:static z-20 transition-opacity duration-300 ${showMobileMenu ? 'opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto' : 'opacity-100'}`}>
+                        <div className={`${activeSection && !showMobileMenu ? 'flex' : 'hidden md:flex'} flex-1 bg-white md:rounded-2xl shadow-sm md:border border-gray-200 overflow-hidden flex-col h-full fixed inset-0 top-16 bottom-[4.5rem] md:static z-20 transition-opacity duration-300`}>
                             {/* Mobile Header */}
                             <div className="px-4 py-4 md:hidden bg-white border-b border-gray-100 flex items-center gap-3 sticky top-0 z-10">
                                 <button
@@ -268,8 +264,6 @@ const Settings = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
             </div>
         </ToastProvider>
     );

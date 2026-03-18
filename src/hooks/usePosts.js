@@ -23,21 +23,27 @@ export const usePosts = (feedType) => {
     });
 
     // Flatten pages into a single list of posts
-    const posts = data?.pages.flatMap(page => page.posts.map(post => ({
-        id: post._id,
-        author: post.user?.name || "Unknown User",
-        username: post.user?.username || "unknown",
-        role: post.user?.course ? `${post.user.course} Student` : "Member",
-        time: new Date(post.createdAt).toLocaleDateString(),
-        text: post.content,
-        image: post.image,
-        likesCount: post.likesCount,
-        likedByUser: post.likedByUser,
-        comments: post.comments,
-        avatar: post.user?.profilePic,
-        userId: post.user?._id,
-        collegeVerified: post.user?.collegeVerified
-    }))) || [];
+    const posts = data?.pages.flatMap(page => page.posts.map(post => {
+        // console.log(`[usePosts] Post ${post._id} has attachedTeam:`, post.attachedTeam);
+        return {
+            id: post._id,
+            author: post.user?.name || "Unknown User",
+            authorUsername: post.user?.username || "unknown",
+            authorImg: post.user?.profilePic || null,
+            authorVerified: post.user?.collegeVerified || false,
+            time: post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "Just now",
+            content: post.content,
+            image: post.image,
+            likes: post.likes || [],
+            comments: post.comments || [],
+            likesCount: post.likesCount || 0,
+            commentsCount: post.commentsCount || 0,
+            likedByUser: post.likedByUser || false,
+            user: post.user,
+            attachedTeam: post.attachedTeam,
+            hasAttachedTeam: post.hasAttachedTeam
+        };
+    })) || [];
 
     return {
         posts,

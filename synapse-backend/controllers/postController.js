@@ -2,6 +2,8 @@ import asyncHandler from 'express-async-handler';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Team from '../models/Team.js';
+import mongoose from 'mongoose';
 import stream from 'stream';
 import Comment from '../models/Comment.js';
 
@@ -9,7 +11,7 @@ import Comment from '../models/Comment.js';
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-    const { content } = req.body;
+    const { content, attachedTeamId } = req.body;
     let image = req.body.image;
 
     if (req.file) {
@@ -38,10 +40,45 @@ const createPost = asyncHandler(async (req, res) => {
         }
     }
 
+    // Validate attached team (if provided)
+    let resolvedTeamId = null;
+    if (attachedTeamId) {
+        if (!mongoose.Types.ObjectId.isValid(attachedTeamId)) {
+            res.status(400);
+            throw new Error('Invalid team ID');
+        }
+
+        const team = await Team.findById(attachedTeamId).select('createdBy isLookingForMembers visibility teamStatus isDeleted');
+
+        if (!team) {
+            res.status(400);
+            throw new Error('Team not found');
+        }
+        if (team.createdBy.toString() !== req.user._id.toString()) {
+            res.status(400);
+            throw new Error('You can only attach teams you own');
+        }
+        if (!team.isLookingForMembers) {
+            res.status(400);
+            throw new Error('Team must be open for members to attach to a post');
+        }
+        if (team.visibility !== 'public') {
+            res.status(400);
+            throw new Error('Only public teams can be attached to a post');
+        }
+        if (team.teamStatus !== 'active') {
+            res.status(400);
+            throw new Error('Only active teams can be attached to a post');
+        }
+
+        resolvedTeamId = team._id;
+    }
+
     const post = await Post.create({
         user: req.user._id,
         content,
-        image
+        image,
+        attachedTeamId: resolvedTeamId
     });
 
     res.status(201).json(post);
@@ -69,27 +106,46 @@ const getPosts = asyncHandler(async (req, res) => {
     const count = await Post.countDocuments(query);
     const posts = await Post.find(query)
         .populate('user', 'name username profilePic collegeVerified')
-        // DONT POPULATE COMMENTS — Saves DB memory and massive payload size
+        .populate('attachedTeamId')
         .limit(pageSize)
         .skip(pageSize * (page - 1))
-        .sort({ createdAt: -1 }) // Hits the new compound index ({ isDeleted: 1, createdAt: -1 })
-        .select('-__v') // Exclude the version key
+        .sort({ createdAt: -1 })
+        .select('-__v')
         .lean();
 
     const formattedPosts = posts.map(post => {
         const likesList = post.likes || [];
         const likedByUser = likesList.some(id => id.toString() === req.user._id.toString());
 
+        // Build minimal team payload
+        let attachedTeam = null;
+        if (post.attachedTeamId) {
+            const t = post.attachedTeamId;
+            // If population worked, t should be an object with name
+            if (t && typeof t === 'object' && t.name) {
+                attachedTeam = {
+                    _id: t._id,
+                    name: t.name,
+                    category: t.category,
+                    isLookingForMembers: t.isLookingForMembers,
+                    openRoles: (t.openRoles || []).filter(r => r.isOpen).slice(0, 5).map(r => ({ _id: r._id, title: r.title })),
+                    membersCount: Array.isArray(t.members) ? t.members.length : 0
+                };
+            }
+        }
+
         const formatted = {
             _id: post._id,
             user: post.user,
             content: post.content,
             image: post.image,
+            likes: post.likes || [],
+            likesCount: post.likesCount || (Array.isArray(post.likes) ? post.likes.length : 0),
+            commentsCount: post.commentsCount || (post.comments ? post.comments.length : 0),
+            likedByUser,
             createdAt: post.createdAt,
-            // Computed fields instead of arrays
-            likesCount: likesList.length,
-            commentsCount: post.commentsCount || (post.comments ? post.comments.length : 0), // Fallback map for older un-migrated posts
-            likedByUser
+            attachedTeam,
+            hasAttachedTeam: !!post.attachedTeamId
         };
         return formatted;
     });
