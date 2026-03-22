@@ -13,7 +13,8 @@ import {
     Zap,
     Monitor,
     ChevronRight,
-    Menu
+    Menu,
+    FileText
 } from 'lucide-react';
 import { ToastProvider } from '../common/Toast';
 import AccountSettings from './sections/AccountSettings';
@@ -23,6 +24,7 @@ import NotificationSettings from './sections/NotificationSettings';
 import AutoTeamSettings from './sections/AutoTeamSettings';
 import InterfaceSettings from './sections/InterfaceSettings';
 import { SecuritySettings, DangerZone } from './sections/SecuritySettings';
+import LegalSettings from './sections/LegalSettings';
 
 const Settings = () => {
     const { currentUser } = useAuth();
@@ -140,6 +142,12 @@ const Settings = () => {
             icon: AlertTriangle,
             description: "Irreversible and destructive actions."
         },
+        {
+            id: 'legal',
+            label: 'Legal',
+            icon: FileText,
+            description: "Review our policies and terms of service."
+        },
     ];
 
     const activeItem = menuItems.find(item => item.id === activeSection);
@@ -161,6 +169,7 @@ const Settings = () => {
             case 'interface': return <InterfaceSettings user={user} setUser={setUser} />;
             case 'security': return <SecuritySettings />;
             case 'danger': return <DangerZone />;
+            case 'legal': return <LegalSettings />;
             default: return <AccountSettings user={user} setUser={setUser} />;
         }
     };

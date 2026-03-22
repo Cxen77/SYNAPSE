@@ -134,6 +134,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import organizerRoutes from './routes/organizerRoutes.js';
 import systemRoutes from './routes/systemRoutes.js';
 import homeRoutes from './routes/homeRoutes.js';
+import legalRoutes from './routes/legalRoutes.js';
 
 import { protect } from './middleware/authMiddleware.js';
 import { requireRole } from './middleware/roleMiddleware.js';
@@ -160,6 +161,7 @@ app.use('/api/v1/organizer', protect, apiLimiter, requireRole('organizer'), orga
 
 app.use('/api/v1/system', systemRoutes);
 app.use('/api/v1/home', homeRoutes);
+app.use('/api/v1/legal', legalRoutes);
 
 // ==========================
 // PASSPORT CONFIG

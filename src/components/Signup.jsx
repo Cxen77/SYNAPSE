@@ -65,6 +65,7 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
   const navigate = useNavigate();
   const { signup, googleLogin } = useAuth();
 
@@ -78,6 +79,11 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!acceptedTerms) {
+      setError("You must accept the Terms of Service and Privacy Policy.");
+      return;
+    }
 
     if (!captchaToken) {
       setError("Please complete the CAPTCHA.");
@@ -110,7 +116,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden flex items-center justify-center bg-gray-50/50 px-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen py-8 flex items-center justify-center bg-gray-50/50 px-4 relative overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Animated Subtle decorative blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-blue-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob"></div>
@@ -119,8 +125,8 @@ const Signup = () => {
         <div className="absolute -bottom-[10%] left-[10%] w-[400px] h-[400px] bg-purple-300/30 dark:bg-purple-900/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob animation-delay-[6000ms]"></div>
       </div>
 
-      <div className="w-full max-w-md animate-fade-in-up relative z-10 max-h-[90vh] overflow-y-auto hidden-scrollbar">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 w-full h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col justify-center">
+      <div className="w-full max-w-md animate-fade-in-up relative z-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 w-full flex flex-col justify-center">
           {/* Header */}
           <div className="text-center mb-4">
             <div className="flex justify-center mb-2">
@@ -201,6 +207,22 @@ const Signup = () => {
                 {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
               </button>
               <PasswordStrengthMeter password={formData.password} />
+            </div>
+
+            <div className="flex items-start gap-2 pt-1 pb-1">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded flex-shrink-0 cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed cursor-pointer select-none">
+                I agree to the{" "}
+                <Link to="/settings" className="text-blue-600 hover:underline">Terms of Service</Link>
+                {" "}and{" "}
+                <Link to="/settings" className="text-blue-600 hover:underline">Privacy Policy</Link>
+              </label>
             </div>
 
             <TurnstileWidget

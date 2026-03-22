@@ -66,7 +66,7 @@ const Login = () => {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden flex items-center justify-center bg-gray-50/50 px-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen py-8 flex items-center justify-center bg-gray-50/50 px-4 relative overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Animated Subtle decorative blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[500px] h-[500px] bg-blue-300/40 dark:bg-blue-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob"></div>
@@ -75,8 +75,8 @@ const Login = () => {
         <div className="absolute -bottom-[10%] left-[10%] w-[400px] h-[400px] bg-purple-300/30 dark:bg-purple-900/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] animate-blob animation-delay-[6000ms]"></div>
       </div>
 
-      <div className="w-full max-w-md animate-fade-in-up relative z-10 max-h-[90vh] overflow-y-auto hidden-scrollbar">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 w-full h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col justify-center">
+      <div className="w-full max-w-md animate-fade-in-up relative z-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 w-full flex flex-col justify-center">
           {/* Header */}
           <div className="text-center mb-4">
             <div className="flex justify-center mb-2">
