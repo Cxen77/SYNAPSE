@@ -41,7 +41,9 @@ export const usePosts = (feedType) => {
             likedByUser: post.likedByUser || false,
             user: post.user,
             attachedTeam: post.attachedTeam,
-            hasAttachedTeam: post.hasAttachedTeam
+            hasAttachedTeam: !!post.attachedTeam,
+            attachedEvent: post.attachedEvent,
+            hasAttachedEvent: !!post.attachedEvent
         };
     })) || [];
 

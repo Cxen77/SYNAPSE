@@ -5,6 +5,7 @@ import SystemSettings from '../models/SystemSettings.js';
 
 let io;
 const onlineUsers = new Map(); // userId -> Set<socketId>
+const typingTimeouts = new Map(); // `${userId}:${chatId}` -> timeoutId
 
 export const initSocket = (httpServer) => {
     io = new Server(httpServer, {
@@ -90,32 +91,106 @@ export const initSocket = (httpServer) => {
         }
 
         // Handle joining a chat room — SECURITY: verify membership
-        socket.on('join:chat', async (chatId) => {
+        socket.on('join:conversation', async (conversationId) => {
+            if (!socket.mongoUser || !conversationId) return;
             try {
                 const Chat = (await import('../models/Chat.js')).default;
-                const chat = await Chat.findById(chatId).select('participants').lean();
-                if (!chat || !chat.participants.some(p => p.toString() === userId)) {
+                const isMember = await Chat.exists({
+                    _id: conversationId,
+                    participants: socket.mongoUser._id
+                });
+                if (!isMember) {
                     socket.emit('error', { message: 'Not a member of this chat' });
                     return;
                 }
-                socket.join(`chat:${chatId}`);
+                socket.join(conversationId);
             } catch (err) {
-                console.error('[Socket] join:chat validation error:', err.message);
+                console.error('[Socket] join:conversation error:', err.message);
             }
         });
 
         // Handle leaving a chat room
-        socket.on('leave:chat', (chatId) => {
-            socket.leave(`chat:${chatId}`);
+        socket.on('leave:conversation', (conversationId) => {
+            socket.leave(conversationId);
         });
 
-        // Handle typing
-        socket.on('user:typing', ({ chatId, isTyping }) => {
-            socket.to(`chat:${chatId}`).emit('user:typing', {
-                userId,
-                chatId,
-                isTyping
-            });
+        // Handle typing:start
+        socket.on('typing:start', ({ conversationId }) => {
+            if (!conversationId) return;
+            const timeoutKey = `${userId}:${conversationId}`;
+            
+            // Clear existing timeout if any
+            if (typingTimeouts.has(timeoutKey)) {
+                clearTimeout(typingTimeouts.get(timeoutKey));
+            }
+            
+            // Broadcast to chat room
+            socket.to(conversationId).emit('typing:start', { userId: socket.mongoUser._id.toString() });
+            
+            // Set auto-timeout for 3 seconds
+            const timeoutId = setTimeout(() => {
+                socket.to(conversationId).emit('typing:stop', { userId: socket.mongoUser._id.toString() });
+                typingTimeouts.delete(timeoutKey);
+            }, 3000);
+            
+            typingTimeouts.set(timeoutKey, timeoutId);
+        });
+
+        // Handle typing:stop
+        socket.on('typing:stop', ({ conversationId }) => {
+            if (!conversationId) return;
+            const timeoutKey = `${userId}:${conversationId}`;
+            
+            if (typingTimeouts.has(timeoutKey)) {
+                clearTimeout(typingTimeouts.get(timeoutKey));
+                typingTimeouts.delete(timeoutKey);
+            }
+            
+            socket.to(conversationId).emit('typing:stop', { userId: socket.mongoUser._id.toString() });
+        });
+
+        // Handle message:send natively over sockets
+        socket.on('message:send', async ({ conversationId, text, attachments }) => {
+            if (!text || !socket.mongoUser || !conversationId) return;
+            try {
+                const Chat = (await import('../models/Chat.js')).default;
+                const Message = (await import('../models/Message.js')).default;
+                const User = (await import('../models/User.js')).default;
+
+                const isMember = await Chat.exists({
+                    _id: conversationId,
+                    participants: socket.mongoUser._id
+                });
+
+                if (!isMember) return;
+
+                let message = await Message.create({
+                    senderId: socket.mongoUser._id, // Match Synapse schema mapping
+                    chatId: conversationId,         // Match Synapse schema mapping
+                    text,
+                    attachments: attachments || [],
+                    readBy: [socket.mongoUser._id]
+                });
+
+                // Populate dependencies for UI rendering on the receiver's end
+                message = await message.populate('senderId', 'name profilePic');
+                message = await message.populate('chatId');
+                message = await User.populate(message, {
+                    path: 'chatId.participants',
+                    select: 'name profilePic email status pushToken',
+                });
+
+                // Store in Chat Model natively
+                await Chat.findByIdAndUpdate(conversationId, {
+                    lastMessage: message._id,
+                    $set: { deletedBy: [] } // Revive if hidden
+                });
+
+                // Broadcast directly
+                io.to(conversationId).emit('message:new', message);
+            } catch (err) {
+                console.error('[Socket] message:send error:', err);
+            }
         });
 
         // Handle disconnect

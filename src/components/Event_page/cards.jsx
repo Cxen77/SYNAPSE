@@ -6,8 +6,9 @@ import Avatar from '../common/Avatar';
 import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 import { FiShare2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import AutoTeamModal from './AutoTeamModal'; // Import Modal
-import { useAuth } from '../../context/AuthContext'; // Need current user profile for modal
+import AutoTeamModal from './AutoTeamModal';
+import USNPromptModal from './USNPromptModal';
+import { useAuth } from '../../context/AuthContext';
 
 const Cards = ({ eventData, onEdit, currentUserId }) => {
   const { user: currentUserProfile } = useAuth(); // Get full profile for matching
@@ -31,7 +32,8 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
   });
   const [loading, setLoading] = useState(false);
   const [isQueued, setIsQueued] = useState(false);
-  const [showAutoTeamModal, setShowAutoTeamModal] = useState(false); // Modal State
+  const [showAutoTeamModal, setShowAutoTeamModal] = useState(false);
+  const [showUSNModal, setShowUSNModal] = useState(false);
 
   const handleAutoTeamClick = (e) => {
     e.stopPropagation();
@@ -47,17 +49,39 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
   const isOrganizer = currentUserId && organizerId === currentUserId;
 
   const handleJoin = async (e) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     if (isJoined) return;
 
     setLoading(true);
     try {
       await api.put(`/events/${_id}/join`);
       setIsJoined(true);
-      toast.success("Joined event successfully!");
+      toast.success('Joined event successfully!');
     } catch (error) {
-      console.error("Failed to join event", error);
-      toast.error("Failed to join event");
+      const status = error?.response?.status;
+      const msg = error?.response?.data?.message || '';
+      // Backend signals USN required via 422
+      if (status === 422 && msg.toLowerCase().includes('usn')) {
+        setShowUSNModal(true);
+      } else {
+        console.error('Failed to join event', error);
+        toast.error(error?.response?.data?.message || 'Failed to join event');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Called by USNPromptModal after successfully saving the USN to the user profile
+  const handleUSNConfirm = async () => {
+    setShowUSNModal(false);
+    setLoading(true);
+    try {
+      await api.put(`/events/${_id}/join`);
+      setIsJoined(true);
+      toast.success('Joined event successfully!');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to join event');
     } finally {
       setLoading(false);
     }
@@ -106,6 +130,12 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
           user={currentUserProfile || {}}
           onClose={() => setShowAutoTeamModal(false)}
           onJoined={handleQueueSuccess}
+        />
+      )}
+      {showUSNModal && (
+        <USNPromptModal
+          onConfirm={handleUSNConfirm}
+          onClose={() => setShowUSNModal(false)}
         />
       )}
       <div

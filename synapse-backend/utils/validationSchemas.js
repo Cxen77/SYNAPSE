@@ -47,5 +47,6 @@ export const eventSchema = Joi.object({
     imageUrl: Joi.string().uri().allow(''),
     maxTeamSize: Joi.number().min(1).max(50).default(1),
     isMultiCollege: Joi.boolean().default(true),
-    allowTeamRegistration: Joi.boolean().default(false)
+    allowTeamRegistration: Joi.boolean().default(false),
+    requireUSN: Joi.boolean().default(false)
 });

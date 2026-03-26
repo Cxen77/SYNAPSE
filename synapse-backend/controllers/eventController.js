@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import EventParticipant from '../models/EventParticipant.js';
+import cloudinary from '../config/cloudinary.js';
+import stream from 'stream';
 
 // ─── QR Signing Helpers ────────────────────────────────────────────────────
 const QR_VALIDITY_MS = 5 * 60 * 1000; // 5 minutes
@@ -29,7 +31,14 @@ export function verifyQRPayload(payload) {
 // @access  Private (gated by requireFeature('events') middleware)
 const createEvent = asyncHandler(async (req, res) => {
 
-    const { title, description, date, location, category, prize, imageUrl, maxTeamSize, isMultiCollege, allowTeamRegistration } = req.body;
+    // Security: only organizers, admins, and moderators can create events
+    const allowedRoles = ['organizer', 'admin', 'moderator'];
+    if (!allowedRoles.includes(req.user.role)) {
+        res.status(403);
+        throw new Error('Only organizers, admins, and moderators can create events');
+    }
+
+    const { title, description, date, location, category, prize, imageUrl, maxTeamSize, isMultiCollege, allowTeamRegistration, requireUSN } = req.body;
 
     const eventParams = {
         title,
@@ -42,6 +51,7 @@ const createEvent = asyncHandler(async (req, res) => {
         maxTeamSize: maxTeamSize || 4,
         isMultiCollege: isMultiCollege !== undefined ? isMultiCollege : true,
         allowTeamRegistration: allowTeamRegistration || false,
+        requireUSN: requireUSN || false,
         organizer: req.user._id,
         attendees: [req.user._id]
     };
@@ -51,6 +61,33 @@ const createEvent = asyncHandler(async (req, res) => {
         eventParams.collegeId = req.user.collegeId;
     } else if (req.body.collegeId) {
         eventParams.collegeId = req.body.collegeId;
+    }
+
+    // Handle Image Upload if file is provided
+    if (req.file) {
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    { folder: 'synapse_events', resource_type: 'image' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                const bufferStream = new stream.PassThrough();
+                bufferStream.end(req.file.buffer);
+                bufferStream.pipe(uploadStream);
+            });
+        };
+
+        try {
+            const result = await uploadToCloudinary();
+            eventParams.imageUrl = result.secure_url;
+        } catch (uploadError) {
+            console.error('Cloudinary upload error (event):', uploadError);
+            res.status(500);
+            throw new Error('Failed to upload image. Please try again.');
+        }
     }
 
     const event = await Event.create(eventParams);
@@ -72,6 +109,13 @@ const getEvents = asyncHandler(async (req, res) => {
         filter.attendees = req.user._id;
     }
 
+    // ?organizerId=... — only events organized by a specific user (for Attach to Post)
+    // Note: No isApproved filter here — organizers can attach their own pending events too
+    if (req.query.organizerId) {
+        filter.organizer = req.query.organizerId;
+        delete filter.isApproved; // Remove approval requirement for their own events
+    }
+
     const count = await Event.countDocuments(filter);
     const events = await Event.find(filter)
         .populate('organizer', 'name username profilePic')
@@ -83,92 +127,76 @@ const getEvents = asyncHandler(async (req, res) => {
     res.json({ events, page, pages: Math.ceil(count / pageSize) });
 });
 
-// @desc    Join an event (atomic: attendees array + EventParticipant)
+// @desc    Join an event
 // @route   PUT /api/events/:id/join
 // @access  Private
 const joinEvent = asyncHandler(async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-        const event = await Event.findById(req.params.id).session(session);
-
-        if (!event) {
-            await session.abortTransaction();
-            res.status(404);
-            throw new Error('Event not found');
-        }
-
-        // Strict Cross-College restriction
-        if (!event.isMultiCollege && event.collegeId) {
-            if (!req.user.collegeId || event.collegeId.toString() !== req.user.collegeId.toString()) {
-                await session.abortTransaction();
-                res.status(403);
-                throw new Error('This event is restricted to students from the host college only.');
-            }
-        }
-
-        if (event.attendees.includes(req.user._id)) {
-            await session.abortTransaction();
-            res.status(400);
-            throw new Error('User already attending');
-        }
-
-        // 1. Push to Event.attendees
-        event.attendees.push(req.user._id);
-        await event.save({ session });
-
-        // 2. Create EventParticipant record (upsert — idempotent)
-        await EventParticipant.findOneAndUpdate(
-            { eventId: event._id, userId: req.user._id },
-            { $setOnInsert: { eventId: event._id, userId: req.user._id, registeredAt: new Date() } },
-            { upsert: true, new: true, session }
-        );
-
-        await session.commitTransaction();
-        res.json(event);
-    } catch (err) {
-        await session.abortTransaction();
-        throw err;
-    } finally {
-        session.endSession();
+    // 1. First, check if event exists and handle cross-college restriction
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+        res.status(404);
+        throw new Error('Event not found');
     }
+
+    if (!event.isMultiCollege && event.collegeId) {
+        if (!req.user.collegeId || event.collegeId.toString() !== req.user.collegeId.toString()) {
+            res.status(403);
+            throw new Error('This event is restricted to students from the host college only.');
+        }
+    }
+
+    // USN gate: if the organizer made USN compulsory, require it on the user profile
+    if (event.requireUSN && !req.user.usn) {
+        res.status(422);
+        const err = new Error('This event requires your USN. Please add it to your profile and try again.');
+        err.code = 'USN_REQUIRED';
+        throw err;
+    }
+
+    // 2. Perform ATOMIC join using $addToSet (prevents duplicates and race conditions)
+    // This is more scalable than transactions for simple array updates
+    const updatedEvent = await Event.findOneAndUpdate(
+        { _id: req.params.id, attendees: { $ne: req.user._id } },
+        { $addToSet: { attendees: req.user._id } },
+        { new: true }
+    );
+
+    if (!updatedEvent) {
+        // If findOneAndUpdate returns null, user was likely already in the array
+        res.status(400);
+        throw new Error('User already attending');
+    }
+
+    // 3. Ensure EventParticipant record exists (idempotent upsert)
+    await EventParticipant.findOneAndUpdate(
+        { eventId: event._id, userId: req.user._id },
+        { $setOnInsert: { eventId: event._id, userId: req.user._id, registeredAt: new Date() } },
+        { upsert: true, new: true }
+    );
+
+    res.json(updatedEvent);
 });
 
-// @desc    Leave an event (atomic: attendees array + EventParticipant)
+// @desc    Leave an event
 // @route   PUT /api/events/:id/leave
 // @access  Private
 const leaveEvent = asyncHandler(async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    // 1. Atomic removal from attendees array
+    const event = await Event.findOneAndUpdate(
+        { _id: req.params.id },
+        { $pull: { attendees: req.user._id } },
+        { new: true }
+    );
 
-    try {
-        const event = await Event.findById(req.params.id).session(session);
-
-        if (!event) {
-            await session.abortTransaction();
-            res.status(404);
-            throw new Error('Event not found');
-        }
-
-        // 1. Remove from Event.attendees
-        event.attendees = event.attendees.filter(id => id.toString() !== req.user._id.toString());
-        await event.save({ session });
-
-        // 2. Remove EventParticipant record
-        await EventParticipant.deleteOne(
-            { eventId: event._id, userId: req.user._id },
-            { session }
-        );
-
-        await session.commitTransaction();
-        res.json({ message: 'Left event' });
-    } catch (err) {
-        await session.abortTransaction();
-        throw err;
-    } finally {
-        session.endSession();
+    if (!event) {
+        res.status(404);
+        throw new Error('Event not found');
     }
+
+    // 2. Remove EventParticipant record
+    await EventParticipant.deleteOne({ eventId: event._id, userId: req.user._id });
+
+    res.json({ message: 'Left event' });
 });
 
 // @desc    Get QR payload for authenticated user (5-min signed token)
@@ -234,11 +262,40 @@ const updateEvent = asyncHandler(async (req, res) => {
         event.date = date || event.date;
         event.location = location || event.location;
         event.category = category || event.category;
-        event.prize = prize || event.prize;
-        event.imageUrl = imageUrl || event.imageUrl;
+        event.prize = prize !== undefined ? prize : event.prize;
         event.maxTeamSize = req.body.maxTeamSize || event.maxTeamSize;
         if (req.body.isMultiCollege !== undefined) event.isMultiCollege = req.body.isMultiCollege;
         if (req.body.allowTeamRegistration !== undefined) event.allowTeamRegistration = req.body.allowTeamRegistration;
+        if (req.body.requireUSN !== undefined) event.requireUSN = req.body.requireUSN;
+
+        // Handle Image Upload if file is provided
+        if (req.file) {
+            const uploadToCloudinary = () => {
+                return new Promise((resolve, reject) => {
+                    const uploadStream = cloudinary.uploader.upload_stream(
+                        { folder: 'synapse_events', resource_type: 'image' },
+                        (error, result) => {
+                            if (error) reject(error);
+                            else resolve(result);
+                        }
+                    );
+                    const bufferStream = new stream.PassThrough();
+                    bufferStream.end(req.file.buffer);
+                    bufferStream.pipe(uploadStream);
+                });
+            };
+
+            try {
+                const result = await uploadToCloudinary();
+                event.imageUrl = result.secure_url;
+            } catch (uploadError) {
+                console.error('Cloudinary upload error (event update):', uploadError);
+                res.status(500);
+                throw new Error('Failed to upload image. Please try again.');
+            }
+        } else {
+            event.imageUrl = imageUrl !== undefined ? imageUrl : event.imageUrl;
+        }
 
         const updatedEvent = await event.save();
         await updatedEvent.populate('organizer', 'name username profilePic');

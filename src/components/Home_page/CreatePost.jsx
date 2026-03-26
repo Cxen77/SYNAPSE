@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { HiPhotograph, HiX } from "react-icons/hi";
-import { Users, ChevronDown, X as LucideX } from "lucide-react";
+import { Users, Calendar, ChevronDown, X as LucideX } from "lucide-react";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
+import AttachedTeamCard from "./AttachedTeamCard";
+import AttachedEventCard from "./AttachedEventCard";
 
 export default function CreatePost({ user, onPostCreated }) {
     const [text, setText] = useState("");
@@ -12,6 +14,11 @@ export default function CreatePost({ user, onPostCreated }) {
     const [openTeams, setOpenTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [showTeamDropdown, setShowTeamDropdown] = useState(false);
+
+    const [openEvents, setOpenEvents] = useState([]);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [showEventDropdown, setShowEventDropdown] = useState(false);
+
     const fileInputRef = useRef(null);
     const textareaRef = useRef(null);
     const dropdownRef = useRef(null);
@@ -35,14 +42,29 @@ export default function CreatePost({ user, onPostCreated }) {
                 console.error("Could not load open teams", err);
             }
         };
+
+        const fetchOpenEvents = async () => {
+             if (!displayUser._id) return;
+             try {
+                 const { data } = await api.get(`/events?organizerId=${displayUser._id}`);
+                 // Show all non-deleted events the user organizes (no approval requirement)
+                 const eligible = (data.events || []).filter(e => !e.isDeleted);
+                 setOpenEvents(eligible);
+             } catch (err) {
+                 console.error("Could not load open events", err);
+             }
+        };
+
         fetchOpenTeams();
-    }, []);
+        fetchOpenEvents();
+    }, [displayUser._id]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
         const handler = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
                 setShowTeamDropdown(false);
+                setShowEventDropdown(false);
             }
         };
         document.addEventListener("mousedown", handler);
@@ -86,6 +108,9 @@ export default function CreatePost({ user, onPostCreated }) {
             if (selectedTeam) {
                 formData.append('attachedTeamId', selectedTeam._id);
             }
+            if (selectedEvent) {
+                formData.append('attachedEventId', selectedEvent._id);
+            }
 
             const { data } = await api.post('/posts', formData, {
                 headers: {
@@ -105,6 +130,15 @@ export default function CreatePost({ user, onPostCreated }) {
                     membersCount: selectedTeam.members?.length || 0,
                 } : null,
                 hasAttachedTeam: !!selectedTeam,
+                attachedEvent: selectedEvent ? {
+                    _id: selectedEvent._id,
+                    title: selectedEvent.title,
+                    category: selectedEvent.category,
+                    date: selectedEvent.date,
+                    location: selectedEvent.location,
+                    imageUrl: selectedEvent.imageUrl
+                } : null,
+                hasAttachedEvent: !!selectedEvent,
             };
 
             if (onPostCreated) {
@@ -114,6 +148,7 @@ export default function CreatePost({ user, onPostCreated }) {
             setText("");
             removeImage();
             setSelectedTeam(null);
+            setSelectedEvent(null);
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto';
             }
@@ -125,10 +160,9 @@ export default function CreatePost({ user, onPostCreated }) {
         }
     }
 
-    const openRoles = selectedTeam?.openRoles?.filter(r => r.isOpen) || [];
-
-    return (
+    const openRoles = selectedTeam?.openRoles?.filter(r => r.isOpen) || [];    return (
         <div className="p-4 md:p-5">
+            {/* Top row: Avatar + Textarea */}
             <div className="flex gap-3 md:gap-4">
                 <div className="hidden sm:block pt-1">
                     <Avatar
@@ -152,21 +186,26 @@ export default function CreatePost({ user, onPostCreated }) {
                         <textarea
                             ref={textareaRef}
                             rows={1}
-                            placeholder={`What's happening?`}
+                            placeholder="What's happening?"
                             value={text}
                             onChange={handleTextChange}
                             className="w-full resize-none bg-transparent border-none p-0 py-2 text-base md:text-lg placeholder-gray-400 focus:ring-0 outline-none text-gray-900 min-h-[50px] md:min-h-[60px]"
                         />
                     </div>
+                </div>
+            </div>
 
-                    {/* Image Preview */}
+            {/* Content Previews (Full Width) */}
+            <div className="-mx-4 md:-mx-5 space-y-3">
+                {/* Image Preview */}
+                <div className="px-4 md:px-5">
                     {imagePreview && (
-                        <div className="mt-3 relative inline-block group">
+                        <div className="relative group inline-block mt-2">
                             <div className="relative rounded-xl overflow-hidden border border-gray-100 shadow-sm">
                                 <img
                                     src={imagePreview}
                                     alt="Preview"
-                                    className="max-h-64 w-auto object-cover"
+                                    className="max-h-80 w-auto object-cover"
                                 />
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
                             </div>
@@ -178,31 +217,146 @@ export default function CreatePost({ user, onPostCreated }) {
                             </button>
                         </div>
                     )}
+                </div>
 
-                    {/* Selected Team Preview Badge */}
-                    {selectedTeam && (
-                        <div className="mt-3 flex items-center gap-2 p-2.5 rounded-xl bg-blue-50 border border-blue-100">
-                            <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-blue-700 truncate">{selectedTeam.name}</p>
-                                {openRoles.length > 0 && (
-                                    <p className="text-[10px] text-blue-500 truncate">
-                                        {openRoles.slice(0, 2).map(r => r.title).join(', ')}
-                                        {openRoles.length > 2 ? ` +${openRoles.length - 2} more` : ''}
-                                    </p>
-                                )}
-                            </div>
+                {/* Selected Team Preview */}
+                {selectedTeam && (
+                    <div className="relative group">
+                        <div className="opacity-95 group-hover:opacity-100 transition-opacity">
+                            <AttachedTeamCard team={selectedTeam} />
+                        </div>
+                        <button
+                            onClick={() => setSelectedTeam(null)}
+                            className="absolute top-1.5 right-8 z-10 w-7 h-7 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all active:scale-90"
+                            title="Remove team"
+                        >
+                            <LucideX size={14} />
+                        </button>
+                    </div>
+                )}
+
+                {/* Selected Event Preview */}
+                {selectedEvent && (
+                    <div className="relative group">
+                        <div className="opacity-95 group-hover:opacity-100 transition-opacity">
+                            <AttachedEventCard event={selectedEvent} />
+                        </div>
+                        <button
+                            onClick={() => setSelectedEvent(null)}
+                            className="absolute top-1.5 right-8 z-10 w-7 h-7 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all active:scale-90"
+                            title="Remove event"
+                        >
+                            <LucideX size={14} />
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Bottom Actions Bar */}
+            <div className="mt-3 pt-3 flex items-center justify-between border-t border-gray-50">
+                <div className="flex items-center gap-0.5 md:gap-2 -ml-2" ref={dropdownRef}>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors relative group"
+                        title="Add Photo"
+                    >
+                        <HiPhotograph size={20} className="md:w-6 md:h-6" />
+                    </button>
+
+                    {/* Attach Team Button */}
+                    {openTeams.length > 0 && (
+                        <div className="relative">
                             <button
-                                onClick={() => setSelectedTeam(null)}
-                                className="p-1 text-blue-400 hover:text-blue-600 rounded-full hover:bg-blue-100 transition"
-                                title="Remove team"
+                                onClick={() => {
+                                    setShowTeamDropdown(prev => !prev);
+                                    setShowEventDropdown(false);
+                                }}
+                                title="Attach Open Team"
+                                className={`p-2 rounded-full transition-colors flex items-center gap-1 text-sm font-medium ${selectedTeam
+                                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                                    }`}
                             >
-                                <LucideX size={14} />
+                                <Users size={18} className="md:w-5 md:h-5" />
+                                <ChevronDown size={12} className={`hidden sm:block transition-transform ${showTeamDropdown ? 'rotate-180' : ''}`} />
                             </button>
+
+                            {showTeamDropdown && (
+                                <div className="absolute left-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                    <p className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Your Open Teams</p>
+                                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                        {openTeams.map(team => (
+                                            <button
+                                                key={team._id}
+                                                onClick={() => { setSelectedTeam(team); setShowTeamDropdown(false); }}
+                                                className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors group/item"
+                                            >
+                                                <p className="text-sm font-bold text-gray-700 group-hover/item:text-blue-600 truncate">{team.name}</p>
+                                                <p className="text-[10px] text-gray-400 truncate">
+                                                    {team.openRoles?.filter(r => r.isOpen).map(r => r.title).join(', ') || 'View details'}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {selectedTeam && (
+                                        <button
+                                            onClick={() => { setSelectedTeam(null); setShowTeamDropdown(false); }}
+                                            className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50 mt-1"
+                                        >
+                                            Remove attachment
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* Hidden File Input */}
+                    {/* Attach Event Button */}
+                    <div className="relative">
+                        <button
+                            onClick={() => {
+                                setShowEventDropdown(prev => !prev);
+                                setShowTeamDropdown(false);
+                            }}
+                            title="Attach My Event"
+                            className={`p-2 rounded-full transition-colors flex items-center gap-1 text-sm font-medium ${selectedEvent
+                                ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                                }`}
+                        >
+                            <Calendar size={18} className="md:w-5 md:h-5" />
+                            <ChevronDown size={12} className={`hidden sm:block transition-transform ${showEventDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showEventDropdown && (
+                            <div className="absolute left-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                <p className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Your Events</p>
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                    {openEvents.map(event => (
+                                        <button
+                                            key={event._id}
+                                            onClick={() => { setSelectedEvent(event); setShowEventDropdown(false); }}
+                                            className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors group/item"
+                                        >
+                                            <p className="text-sm font-bold text-gray-700 group-hover/item:text-blue-600 truncate">{event.title}</p>
+                                            <p className="text-[10px] text-gray-400 truncate">
+                                                {event.category} • {event.date ? new Date(event.date).toLocaleDateString() : 'TBA'}
+                                            </p>
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedEvent && (
+                                    <button
+                                        onClick={() => { setSelectedEvent(null); setShowEventDropdown(false); }}
+                                        className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50 mt-1"
+                                    >
+                                        Remove attachment
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -210,79 +364,16 @@ export default function CreatePost({ user, onPostCreated }) {
                         accept="image/*"
                         className="hidden"
                     />
-
-                    <div className="mt-3 pt-3 flex items-center justify-between border-t border-gray-50">
-                        {/* Media Actions */}
-                        <div className="flex items-center gap-0.5 md:gap-2 -ml-2">
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors relative group"
-                                title="Add Photo"
-                            >
-                                <HiPhotograph size={20} className="md:w-6 md:h-6" />
-                            </button>
-
-                            {/* Attach Team Button — only shown if eligible teams exist */}
-                            {openTeams.length > 0 && (
-                                <div className="relative" ref={dropdownRef}>
-                                    <button
-                                        onClick={() => setShowTeamDropdown(prev => !prev)}
-                                        title="Attach Open Team"
-                                        className={`p-2 rounded-full transition-colors flex items-center gap-1 text-sm font-medium ${selectedTeam
-                                            ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                                            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                                            }`}
-                                    >
-                                        <Users size={18} className="md:w-5 md:h-5" />
-                                        <ChevronDown size={12} className={`hidden sm:block transition-transform ${showTeamDropdown ? 'rotate-180' : ''}`} />
-                                    </button>
-
-                                    {showTeamDropdown && (
-                                        <div className="absolute left-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                            <p className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Your Open Teams</p>
-                                            {openTeams.map(team => {
-                                                const roles = team.openRoles?.filter(r => r.isOpen) || [];
-                                                return (
-                                                    <button
-                                                        key={team._id}
-                                                        onClick={() => {
-                                                            setSelectedTeam(team);
-                                                            setShowTeamDropdown(false);
-                                                        }}
-                                                        className={`w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors ${selectedTeam?._id === team._id ? 'bg-blue-50' : ''}`}
-                                                    >
-                                                        <p className="text-sm font-semibold text-gray-800 truncate">{team.name}</p>
-                                                        <p className="text-[11px] text-gray-400 truncate">
-                                                            {team.category}
-                                                            {roles.length > 0 && ` · ${roles.length} open role${roles.length > 1 ? 's' : ''}`}
-                                                        </p>
-                                                    </button>
-                                                );
-                                            })}
-                                            {selectedTeam && (
-                                                <button
-                                                    onClick={() => { setSelectedTeam(null); setShowTeamDropdown(false); }}
-                                                    className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50 mt-1"
-                                                >
-                                                    Remove attachment
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Submit Button */}
-                        <button
-                            onClick={submitPost}
-                            disabled={(!text.trim() && !imageFile) || isSubmitting}
-                            className="bg-[#3B82F6] text-white px-5 py-1.5 md:px-6 md:py-2 rounded-full text-sm font-bold hover:opacity-90 transition-all disabled:cursor-not-allowed shadow-sm hover:shadow-md transform active:scale-95"
-                        >
-                            {isSubmitting ? 'Posting...' : 'Post'}
-                        </button>
-                    </div>
                 </div>
+
+                {/* Submit Button */}
+                <button
+                    onClick={submitPost}
+                    disabled={(!text.trim() && !imageFile) || isSubmitting}
+                    className="bg-[#3B82F6] text-white px-5 py-1.5 md:px-6 md:py-2 rounded-full text-sm font-bold hover:opacity-90 transition-all disabled:cursor-not-allowed shadow-sm hover:shadow-md transform active:scale-95"
+                >
+                    {isSubmitting ? 'Posting...' : 'Post'}
+                </button>
             </div>
         </div>
     );

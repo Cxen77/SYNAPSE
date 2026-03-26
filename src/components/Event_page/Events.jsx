@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { FaPlus, FaFilter, FaCalendarCheck, FaSearch } from "react-icons/fa";
 import Cards from "./cards";
@@ -12,7 +13,13 @@ import { useEvents } from "../../hooks/useEvents";
 function Events() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
-  const { events, loading, refetch, error } = useEvents(); // Get error
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterParam = searchParams.get('filter');
+  const isRegistrationsView = filterParam === 'registrations';
+
+  const { events, loading, refetch, error } = useEvents(
+    isRegistrationsView ? { joined: true } : {}
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
@@ -118,21 +125,34 @@ function Events() {
           <div className="relative p-6 sm:p-10 flex flex-col sm:flex-row justify-between items-center z-10 gap-4 sm:gap-6">
             <div className="text-center sm:text-left">
               <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
-                Explore Events
+                {isRegistrationsView ? 'My Registrations' : 'Explore Events'}
               </h1>
               <p className="text-gray-300 max-w-lg text-sm sm:text-lg">
-                Join hackathons, workshops, and meetups. Connect with the best minds in the community.
+                {isRegistrationsView
+                  ? 'All the events you have registered for. See you there!'
+                  : 'Join hackathons, workshops, and meetups. Connect with the best minds in the community.'}
               </p>
+              {isRegistrationsView && (
+                <button
+                  onClick={() => setSearchParams({})}
+                  className="mt-4 text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                  Back to All Events
+                </button>
+              )}
             </div>
 
             <div className="flex flex-row sm:flex-col gap-3 min-w-[140px] w-full sm:w-auto mt-2 sm:mt-0">
-              <button
-                onClick={handleCreateEvent}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-gray-100 transition hover:scale-105 active:scale-95 shadow-lg text-sm sm:text-base"
-              >
-                <FaPlus className="text-blue-600 w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="whitespace-nowrap">Host Event</span>
-              </button>
+              {['organizer', 'admin', 'moderator'].includes(currentUser?.role) && (
+                <button
+                  onClick={handleCreateEvent}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-gray-100 transition hover:scale-105 active:scale-95 shadow-lg text-sm sm:text-base"
+                >
+                  <FaPlus className="text-blue-600 w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="whitespace-nowrap">Host Event</span>
+                </button>
+              )}
               <button
                 onClick={() => setIsFilterOpen(true)}
                 className="lg:hidden flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-gray-700 transition border border-gray-700 text-sm sm:text-base"

@@ -6,9 +6,11 @@ import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
 import AutoTeamModal from './AutoTeamModal';
-import { useAuth } from '../../context/AuthContext'; // Need auth for user data
+import EventPassModal from './EventPassModal';
+import USNPromptModal from './USNPromptModal';
+import { useAuth } from '../../context/AuthContext';
 import MatchFoundModal from './MatchFoundModal';
-import { useSocket } from '../../context/SocketContext'; // Need socket for real-time updates
+import { useSocket } from '../../context/SocketContext';
 
 const EventDetails = () => {
     const { id } = useParams();
@@ -20,8 +22,11 @@ const EventDetails = () => {
     const [error, setError] = useState(null);
     const [isJoined, setIsJoined] = useState(false);
     const [isQueued, setIsQueued] = useState(null); // Initialize as null (loading)
-    const [joinLoading, setJoinLoading] = useState(false); // Added for handleJoin
-    const [showAutoTeamModal, setShowAutoTeamModal] = useState(false); // Added for AutoTeamModal
+    const [joinLoading, setJoinLoading] = useState(false);
+    const [showAutoTeamModal, setShowAutoTeamModal] = useState(false);
+    const [showPassModal, setShowPassModal] = useState(false);
+    const [showUSNModal, setShowUSNModal] = useState(false);
+    const [backendUser, setBackendUser] = useState(null);
 
     useEffect(() => {
         const fetchEventDetails = async () => {
@@ -62,7 +67,13 @@ const EventDetails = () => {
         };
 
         if (id) fetchEventDetails();
-    }, [id, currentUser]); // Added currentUser to dependencies for isJoined check
+    }, [id, currentUser]);
+
+    // Fetch the backend user profile so we can display name/username/pic on the pass
+    useEffect(() => {
+        if (!currentUser) return;
+        api.get('/users/me').then(res => setBackendUser(res.data)).catch(() => {});
+    }, [currentUser]);
 
     // Separate effect for Queue Status to depend on currentUser (Auth)
     useEffect(() => {
@@ -116,12 +127,32 @@ const EventDetails = () => {
         try {
             await api.put(`/events/${id}/join`);
             setIsJoined(true);
-            // Optionally refresh data to show updated attendee count
             setEvent(prev => ({ ...prev, attendees: [...prev.attendees, currentUser._id] }));
-            toast.success("Joined event successfully!");
+            toast.success('Joined event successfully!');
         } catch (error) {
-            console.error("Failed to join event", error);
-            toast.error("Failed to join event");
+            const status = error?.response?.status;
+            const msg = error?.response?.data?.message || '';
+            if (status === 422 && msg.toLowerCase().includes('usn')) {
+                setShowUSNModal(true);
+            } else {
+                console.error('Failed to join event', error);
+                toast.error(error?.response?.data?.message || 'Failed to join event');
+            }
+        } finally {
+            setJoinLoading(false);
+        }
+    };
+
+    const handleUSNConfirm = async () => {
+        setShowUSNModal(false);
+        setJoinLoading(true);
+        try {
+            await api.put(`/events/${id}/join`);
+            setIsJoined(true);
+            setEvent(prev => ({ ...prev, attendees: [...prev.attendees, currentUser._id] }));
+            toast.success('Joined event successfully!');
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to join event');
         } finally {
             setJoinLoading(false);
         }
@@ -256,6 +287,20 @@ const EventDetails = () => {
                                         <span className="hidden sm:inline">Share</span>
                                     </button>
 
+                                    {/* My Pass Button — shown only when joined */}
+                                    {isJoined && (
+                                        <button
+                                            onClick={() => setShowPassModal(true)}
+                                            className="px-4 py-2 rounded-xl font-bold text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800 transition flex items-center gap-2"
+                                            title="View My Pass"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                            </svg>
+                                            <span className="hidden sm:inline">My Pass</span>
+                                        </button>
+                                    )}
+
                                     {/* Delete Button (Organizer Only) */}
                                     {currentUser && event.organizer && (currentUser._id === (event.organizer._id || event.organizer)) && (
                                         <button
@@ -321,12 +366,27 @@ const EventDetails = () => {
                 </div>
             </div>
 
+            {showUSNModal && (
+                <USNPromptModal
+                    onConfirm={handleUSNConfirm}
+                    onClose={() => setShowUSNModal(false)}
+                />
+            )}
+
             {showAutoTeamModal && (
                 <AutoTeamModal
                     eventId={id}
                     user={currentUser}
                     onClose={() => setShowAutoTeamModal(false)}
                     onJoined={() => setIsQueued(true)}
+                />
+            )}
+
+            {showPassModal && event && (
+                <EventPassModal
+                    event={event}
+                    user={backendUser || currentUser}
+                    onClose={() => setShowPassModal(false)}
                 />
             )}
 

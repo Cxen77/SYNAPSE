@@ -16,6 +16,7 @@ const eventSchema = mongoose.Schema({
     collegeId: { type: mongoose.Schema.Types.ObjectId, ref: 'College', index: true },
     isMultiCollege: { type: Boolean, default: true },
     allowTeamRegistration: { type: Boolean, default: false },
+    requireUSN: { type: Boolean, default: false },
     attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     maxTeamSize: { type: Number, default: 4 },
     isApproved: { type: Boolean },

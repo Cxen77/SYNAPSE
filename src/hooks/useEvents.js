@@ -2,13 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
-export const useEvents = () => {
+export const useEvents = (params = {}) => {
     const queryClient = useQueryClient();
 
     const { data: events = [], isLoading, error, refetch } = useQuery({
-        queryKey: ['events'],
+        queryKey: ['events', params],
         queryFn: async () => {
-            const { data } = await api.get('/events');
+            const { data } = await api.get('/events', { params });
             return data.events || [];
         }
     });

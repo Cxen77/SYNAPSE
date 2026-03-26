@@ -24,6 +24,7 @@ const formatUserResponse = (user) => {
         profilePic: user.profilePic || undefined,
         bannerPic: user.bannerPic || undefined,
         course: user.course,
+        usn: user.usn || '',
         college: user.college,
         collegeId: user.collegeId,
         year: user.year,
@@ -113,7 +114,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 
     // SECURITY: Strict field whitelist — block role, isSuspended, email, firebaseUid, etc.
-    const ALLOWED_FIELDS = ['name', 'username', 'course', 'college', 'collegeId', 'year', 'section', 'className', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password', 'currentPassword'];
+    const ALLOWED_FIELDS = ['name', 'username', 'course', 'usn', 'college', 'collegeId', 'year', 'section', 'className', 'location', 'bio', 'skills', 'socials', 'projects', 'settings', 'password', 'currentPassword'];
     const updates = Object.keys(req.body);
     const blocked = updates.filter(f => !ALLOWED_FIELDS.includes(f));
     if (blocked.length > 0) {
@@ -133,6 +134,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 
     if (req.body.course !== undefined) user.course = req.body.course;
+    if (req.body.usn !== undefined) user.usn = req.body.usn.trim().toUpperCase();
     if (req.body.college) user.college = req.body.college;
     if (req.body.collegeId) user.collegeId = req.body.collegeId;
     if (req.body.year !== undefined) user.year = req.body.year;

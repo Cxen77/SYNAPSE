@@ -9,6 +9,7 @@ import MobileCommentsSheet from "./MobileCommentsSheet";
 import CommentItem from "./CommentItem";
 import VerifiedBadge from "../common/VerifiedBadge";
 import AttachedTeamCard from "./AttachedTeamCard";
+import AttachedEventCard from "./AttachedEventCard";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function PostCard({ post, currentUser = {}, onDelete }) {
@@ -30,7 +31,8 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
     commentsCount: Array.isArray(post.comments) ? post.comments.length : (post.comments || 0),
     isLiked: post.likedByUser ?? (Array.isArray(post.likes) ? post.likes.includes(currentUser?._id) : false),
     userId: post.user?._id || post.user, // Store user ID for ownership check
-    attachedTeam: post.attachedTeam
+    attachedTeam: post.attachedTeam,
+    attachedEvent: post.attachedEvent
   };
 
   // console.log(`[PostCard] Rendering post ${displayPost.id}. Attached team:`, displayPost.attachedTeam);
@@ -310,6 +312,11 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
       {/* Attached Team Card */}
       {displayPost.attachedTeam && (
         <AttachedTeamCard team={displayPost.attachedTeam} />
+      )}
+
+      {/* Attached Event Card */}
+      {displayPost.attachedEvent && (
+        <AttachedEventCard event={displayPost.attachedEvent} />
       )}
 
       {/* Stats Row */}

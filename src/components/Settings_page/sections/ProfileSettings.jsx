@@ -41,6 +41,7 @@ const ProfileSettings = ({ user, setUser }) => {
     const [formData, setFormData] = useState({
         bio: user.bio || '',
         course: user.course || '',
+        usn: user.usn || '',
         year: user.year || '',
         skills: user.skills || [],
         socials: {
@@ -205,7 +206,7 @@ const ProfileSettings = ({ user, setUser }) => {
                     <p className="text-xs text-gray-400 text-right">{formData.bio.length}/300 characters</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Course / Major</label>
                         <input
@@ -215,6 +216,21 @@ const ProfileSettings = ({ user, setUser }) => {
                             onChange={handleChange}
                             placeholder="e.g. Computer Science"
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                            USN
+                            <span className="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Univ. Serial No.</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="usn"
+                            value={formData.usn}
+                            onChange={handleChange}
+                            placeholder="e.g. 1BM21CS001"
+                            maxLength={20}
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm uppercase"
                         />
                     </div>
                     <div className="space-y-2">

@@ -165,7 +165,8 @@ function Chat() {
         loadMore,
         hasMore,
         sendMessage,
-        sendTyping,
+        sendTypingStart,
+        sendTypingStop,
         typingUsers
     } = useChatHistory(id);
 
@@ -206,14 +207,7 @@ function Chat() {
         }
     }, [viewport.offset, viewport.height]);
 
-    // Typing debounce
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (activeChat) sendTyping(false);
-        }, 2000);
-        if (newMessage && activeChat) sendTyping(true);
-        return () => clearTimeout(timeout);
-    }, [newMessage, activeChat]);
+
 
     // Filter
     const filteredChats = mappedChats.filter((chat) => {
@@ -233,6 +227,7 @@ function Chat() {
 
         setIsReplying(true);
         try {
+            sendTypingStop(); // Stop typing immediately before sending
             await sendMessage(newMessage);
             setNewMessage("");
             setShowEmojiPicker(false);
@@ -404,6 +399,8 @@ function Chat() {
                             setShowEmojiPicker={setShowEmojiPicker}
                             emojis={emojis}
                             isReplying={isReplying}
+                            sendTypingStart={sendTypingStart}
+                            sendTypingStop={sendTypingStop}
                         />
                     </>
                 ) : (

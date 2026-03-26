@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { FaSmile, FaArrowUp } from "react-icons/fa";
 
 function MessageInput({
@@ -7,8 +8,44 @@ function MessageInput({
   showEmojiPicker,
   setShowEmojiPicker,
   emojis,
-  isReplying
+  isReplying,
+  sendTypingStart,
+  sendTypingStop
 }) {
+  const [isTyping, setIsTyping] = useState(false);
+  const startTimeoutRef = useRef(null);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    if (value.trim() !== "") {
+      if (!isTyping) {
+        setIsTyping(true);
+        if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+        startTimeoutRef.current = setTimeout(() => {
+          sendTypingStart();
+        }, 300);
+      }
+    } else {
+      if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+      sendTypingStop();
+      setIsTyping(false);
+    }
+  };
+
+  const handleBlur = () => {
+    if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+    sendTypingStop();
+    setIsTyping(false);
+  };
+
+  const handleSend = () => {
+    if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+    sendTypingStop();
+    setIsTyping(false);
+    sendMessage();
+  };
   return (
     <div className="p-2 sm:p-3 bg-white border-t border-gray-200 flex-shrink-0 relative w-full box-border">
 
@@ -41,8 +78,9 @@ function MessageInput({
         <input
           type="text"
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Message..."
           className="flex-1 min-w-0 bg-gray-100 border-none rounded-full px-3 py-2 sm:px-4 sm:py-2.5 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           disabled={isReplying}
@@ -52,7 +90,7 @@ function MessageInput({
 
         {/* Send */}
         <button
-          onClick={sendMessage}
+          onClick={handleSend}
           disabled={!newMessage.trim() || isReplying}
           className={`p-2.5 rounded-full transition shadow-sm flex items-center justify-center ${newMessage.trim() && !isReplying
             ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600"

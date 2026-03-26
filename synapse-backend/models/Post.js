@@ -22,7 +22,9 @@ const postSchema = mongoose.Schema({
     // Soft migration: track comments via counter instead of loading the massive embedded array
     commentsCount: { type: Number, default: 0 },
     // Optional team attachment — only team owner can attach; team must be public + open
-    attachedTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null }
+    attachedTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+    // Optional event attachment — only event organizer can attach; event must be approved
+    attachedEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null }
 }, {
     timestamps: true
 });
@@ -34,6 +36,7 @@ postSchema.index({ likes: 1 });
 // CRITICAL INDEX: Prevent full collection scans on feed queries
 postSchema.index({ isDeleted: 1, createdAt: -1 });
 postSchema.index({ attachedTeamId: 1 });
+postSchema.index({ attachedEventId: 1 });
 
 const Post = mongoose.model('Post', postSchema);
 

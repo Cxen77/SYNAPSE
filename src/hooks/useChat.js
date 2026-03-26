@@ -132,7 +132,7 @@ export const useChatHistory = (chatId) => {
         if (!socket || !chatId) return;
 
         // console.log('[useChat] Joining chat room:', chatId);
-        socket.emit('join:chat', chatId);
+        socket.emit('join:conversation', chatId);
 
         const handleNewMessage = (msg) => {
             // console.log('[useChat] Received message:new event:', msg);
@@ -157,59 +157,52 @@ export const useChatHistory = (chatId) => {
             }
         };
 
-        const handleTyping = ({ userId, isTyping }) => {
-            // console.log('[useChat] Typing event:', { userId, isTyping });
+        const handleTypingStart = ({ userId }) => {
+            if (userId !== currentUser?._id) {
+                setTypingUsers(prev => new Set(prev).add(userId));
+            }
+        };
+
+        const handleTypingStop = ({ userId }) => {
             setTypingUsers(prev => {
                 const newSet = new Set(prev);
-                if (isTyping) newSet.add(userId);
-                else newSet.delete(userId);
+                newSet.delete(userId);
                 return newSet;
             });
         };
 
         // console.log('[useChat] Attaching socket listeners');
         socket.on('message:new', handleNewMessage);
-        socket.on('user:typing', handleTyping);
+        socket.on('typing:start', handleTypingStart);
+        socket.on('typing:stop', handleTypingStop);
 
         return () => {
             // console.log('[useChat] Cleaning up socket listeners');
-            socket.emit('leave:chat', chatId);
+            socket.emit('leave:conversation', chatId);
             socket.off('message:new', handleNewMessage);
-            socket.off('user:typing', handleTyping);
+            socket.off('typing:start', handleTypingStart);
+            socket.off('typing:stop', handleTypingStop);
         };
     }, [socket, chatId]);
 
     const sendMessage = async (text, attachments = []) => {
-        // console.log('[useChat] Sending message:', { chatId, text });
-        try {
-            const { data } = await api.post('/chat/send', {
-                chatId,
+        // Now sending natively over sockets instead of HTTP API to ensure realtime synchronization
+        if (socket) {
+            socket.emit('message:send', {
+                conversationId: chatId,
                 text,
                 attachments
             });
-
-            // console.log('[useChat] Message sent successfully:', data.message);
-
-            // Optimistically append the message to local state
-            setMessages(prev => {
-                // Prevent duplicates if socket event already arrived
-                if (prev.some(m => m._id === data.message._id)) {
-                    // console.log('[useChat] Optimistic update: message already exists');
-                    return prev;
-                }
-                // console.log('[useChat] Optimistically adding message to UI');
-                return [...prev, data.message];
-            });
-
-            return data.message;
-        } catch (err) {
-            console.error('[useChat] Send message error:', err);
-            throw err;
+            // We rely on handleNewMessage listener to instantly render our sent message
         }
     };
 
-    const sendTyping = (isTyping) => {
-        if (socket) socket.emit('user:typing', { chatId, isTyping });
+    const sendTypingStart = () => {
+        if (socket) socket.emit('typing:start', { conversationId: chatId });
+    };
+
+    const sendTypingStop = () => {
+        if (socket) socket.emit('typing:stop', { conversationId: chatId });
     };
 
     return {
@@ -218,7 +211,8 @@ export const useChatHistory = (chatId) => {
         hasMore,
         loadMore: () => fetchHistory(messages[0]?.createdAt), // Cursor is oldest msg date
         sendMessage,
-        sendTyping,
+        sendTypingStart,
+        sendTypingStop,
         typingUsers: Array.from(typingUsers)
     };
 };

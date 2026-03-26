@@ -3,6 +3,7 @@ import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import Team from '../models/Team.js';
+import Event from '../models/Event.js';
 import mongoose from 'mongoose';
 import stream from 'stream';
 import Comment from '../models/Comment.js';
@@ -11,7 +12,7 @@ import Comment from '../models/Comment.js';
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-    const { content, attachedTeamId } = req.body;
+    const { content, attachedTeamId, attachedEventId } = req.body;
     let image = req.body.image;
 
     if (req.file) {
@@ -74,11 +75,38 @@ const createPost = asyncHandler(async (req, res) => {
         resolvedTeamId = team._id;
     }
 
+    // Validate attached event (if provided)
+    let resolvedEventId = null;
+    if (attachedEventId) {
+        if (!mongoose.Types.ObjectId.isValid(attachedEventId)) {
+            res.status(400);
+            throw new Error('Invalid event ID');
+        }
+
+        const event = await Event.findById(attachedEventId).select('organizer isDeleted');
+
+        if (!event) {
+            res.status(400);
+            throw new Error('Event not found');
+        }
+        if (event.organizer.toString() !== req.user._id.toString()) {
+            res.status(400);
+            throw new Error('You can only attach events you organize');
+        }
+        if (event.isDeleted) {
+            res.status(400);
+            throw new Error('Event has been deleted');
+        }
+
+        resolvedEventId = event._id;
+    }
+
     const post = await Post.create({
         user: req.user._id,
         content,
         image,
-        attachedTeamId: resolvedTeamId
+        attachedTeamId: resolvedTeamId,
+        attachedEventId: resolvedEventId
     });
 
     res.status(201).json(post);
@@ -107,6 +135,7 @@ const getPosts = asyncHandler(async (req, res) => {
     const posts = await Post.find(query)
         .populate('user', 'name username profilePic collegeVerified')
         .populate('attachedTeamId')
+        .populate('attachedEventId', 'title category date location imageUrl')
         .limit(pageSize)
         .skip(pageSize * (page - 1))
         .sort({ createdAt: -1 })
@@ -134,6 +163,21 @@ const getPosts = asyncHandler(async (req, res) => {
             }
         }
 
+        let attachedEvent = null;
+        if (post.attachedEventId) {
+            const e = post.attachedEventId;
+            if (e && typeof e === 'object' && e.title) {
+                attachedEvent = {
+                    _id: e._id,
+                    title: e.title,
+                    category: e.category,
+                    date: e.date,
+                    location: e.location,
+                    imageUrl: e.imageUrl
+                };
+            }
+        }
+
         const formatted = {
             _id: post._id,
             user: post.user,
@@ -145,7 +189,9 @@ const getPosts = asyncHandler(async (req, res) => {
             likedByUser,
             createdAt: post.createdAt,
             attachedTeam,
-            hasAttachedTeam: !!post.attachedTeamId
+            hasAttachedTeam: !!post.attachedTeamId,
+            attachedEvent,
+            hasAttachedEvent: !!post.attachedEventId
         };
         return formatted;
     });

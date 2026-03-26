@@ -14,16 +14,17 @@ import { protect } from '../middleware/authMiddleware.js';
 import requireFeature from '../middleware/requireFeature.js';
 import validate from '../middleware/validate.js';
 import { eventSchema } from '../utils/validationSchemas.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
 router.route('/')
-    .post(protect, requireFeature('events'), validate(eventSchema), createEvent)
+    .post(protect, requireFeature('events'), upload.single('imageFile'), validate(eventSchema), createEvent)
     .get(protect, getEvents);
 
 router.route('/:id')
     .get(protect, getEventById)
-    .put(protect, validate(eventSchema), updateEvent)
+    .put(protect, upload.single('imageFile'), validate(eventSchema), updateEvent)
     .delete(protect, deleteEvent);
 
 router.put('/:id/join', protect, joinEvent);

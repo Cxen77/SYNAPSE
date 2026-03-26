@@ -188,8 +188,7 @@ const Settings = () => {
                                 </button>
                             </div>
                             <div className="md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-gray-100 h-full flex flex-col">
-                                <nav className="flex-1 overflow-y-auto p-3 pb-28 md:pb-3 space-y-1 custom-scrollbar">
-
+                                <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
                                     {['admin', 'moderator', 'organizer'].includes(currentUser?.role) && (
                                         <div className="md:hidden pb-2 mb-2 border-b border-gray-100 dark:border-gray-800">
                                             <button
@@ -227,8 +226,10 @@ const Settings = () => {
                                             {activeSection === item.id && <ChevronRight size={16} className="text-blue-400" />}
                                         </button>
                                     ))}
+                                </nav>
 
-                                    <div className="pt-2 mt-2 border-t border-gray-100"></div>
+                                {/* Fixed Logout Section */}
+                                <div className="p-3 border-t border-gray-100 mt-auto bg-white md:rounded-b-2xl">
                                     <button
                                         onClick={handleLogout}
                                         className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
@@ -238,7 +239,7 @@ const Settings = () => {
                                         </div>
                                         <span className="flex-1 text-left">Log Out</span>
                                     </button>
-                                </nav>
+                                </div>
                             </div>
                         </div>
 

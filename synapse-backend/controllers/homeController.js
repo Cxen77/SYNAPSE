@@ -26,6 +26,21 @@ const formatPosts = (posts, currentUserId) => {
             }
         }
 
+        let attachedEvent = null;
+        if (post.attachedEventId) {
+            const e = post.attachedEventId;
+            if (e && typeof e === 'object' && e.title) {
+                attachedEvent = {
+                    _id: e._id,
+                    title: e.title,
+                    category: e.category,
+                    date: e.date,
+                    location: e.location,
+                    imageUrl: e.imageUrl
+                };
+            }
+        }
+
         return {
             _id: post._id,
             user: post.user,
@@ -38,7 +53,9 @@ const formatPosts = (posts, currentUserId) => {
             commentsCount: post.commentsCount || (post.comments ? post.comments.length : 0),
             likedByUser,
             attachedTeam,
-            hasAttachedTeam: !!post.attachedTeamId
+            hasAttachedTeam: !!post.attachedTeamId,
+            attachedEvent,
+            hasAttachedEvent: !!post.attachedEventId
         };
     });
 };
@@ -92,6 +109,7 @@ const getHomeData = asyncHandler(async (req, res) => {
     const feedPromise = Post.find(postQuery)
         .populate('user', 'name username profilePic collegeVerified course')
         .populate('attachedTeamId', 'name category isLookingForMembers openRoles members')
+        .populate('attachedEventId', 'title category date location imageUrl')
         // DONT POPULATE COMMENTS — Saves DB memory and massive payload size
         .limit(pageSize)
         .sort({ createdAt: -1 }) // Hits the new compound index

@@ -124,7 +124,7 @@ export default function ProfileCard({ user, loading }) {
   const quickActions = [
     { icon: <Search size={18} />, label: "Find Teammates", to: "/teams" },
     { icon: <PlusCircle size={18} />, label: "Create Event", to: "/events" },
-    { icon: <ClipboardList size={18} />, label: "My Registrations", to: "/events" },
+    { icon: <ClipboardList size={18} />, label: "My Registrations", to: "/events?filter=registrations" },
     {
       icon: <QrCode size={18} />,
       label: "Show Event QR",

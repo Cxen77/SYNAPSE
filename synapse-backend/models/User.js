@@ -48,6 +48,7 @@ const userSchema = mongoose.Schema({
     profilePic: { type: String, default: '' },
     bannerPic: { type: String, default: '' },
     course: { type: String, default: '' },
+    usn: { type: String, default: '', trim: true, uppercase: true },
     college: { type: String, default: '' },
     collegeId: { type: mongoose.Schema.Types.ObjectId, ref: 'College', index: true },
     year: { type: String, default: '' },
