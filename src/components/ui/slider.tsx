@@ -12,7 +12,7 @@ export interface SliderProps {
   disabled?: boolean;
 }
 
-export const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
+const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
   (
     {
       min = 0,
@@ -54,3 +54,6 @@ export const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
   }
 );
 Slider.displayName = "Slider";
+
+export { Slider };
+
