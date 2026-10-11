@@ -102,7 +102,16 @@ api.interceptors.response.use(
 
                 // Only redirect if this wasn't a silent background check
                 // AND the current page strictly requires authentication (like chat, settings, admin)
+                // Public pages (/, /teams, /events, /forums, /profile/:username) NEVER redirect guests
                 const isStrictlyAuthPage = (pathname) => {
+                    const publicPaths = ['/', '/teams', '/events', '/forums', '/signup', '/login',
+                                         '/verify-email', '/forgot-password', '/reset-password'];
+                    const isPublic = publicPaths.includes(pathname) ||
+                                     pathname.startsWith('/teams/') ||
+                                     pathname.startsWith('/events/') ||
+                                     pathname.startsWith('/forums/') ||
+                                     pathname.startsWith('/profile/');
+                    if (isPublic) return false;
                     return pathname.startsWith('/chat') ||
                            pathname.startsWith('/settings') ||
                            pathname.startsWith('/admin') ||

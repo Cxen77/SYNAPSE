@@ -20,7 +20,13 @@ export const AuthProvider = ({ children }) => {
                 // Use shared refreshAccessToken so it participates in the same lock
                 // as the axios interceptor — prevents two simultaneous /auth/refresh calls
                 console.log("[AuthContext] Attempting silent refresh payload on boot...");
-                await refreshAccessToken();
+                // Race against a 5s timeout so guests aren't stuck on a loader
+                await Promise.race([
+                    refreshAccessToken(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Boot timeout')), 5000)
+                    )
+                ]);
                 console.log("[AuthContext] Silent refresh success. Requesting /users/me...");
 
                 // Now use the api instance (with token) to fetch user profile
@@ -31,7 +37,7 @@ export const AuthProvider = ({ children }) => {
                 setCurrentUser(userData);
             } catch (error) {
                 console.error("[AuthContext] Boot session failed:", error.message || error);
-                // No valid session — user needs to login (this is expected)
+                // No valid session — user browses as guest (this is expected)
                 setAccessToken(null);
                 setCurrentUser(null);
             }
