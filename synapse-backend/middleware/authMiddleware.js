@@ -52,4 +52,33 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 });
 
-export { protect };
+// Optional authentication middleware for public endpoints (like Twitter-style home feed)
+// If a valid token is provided, req.user is populated.
+// If no token or invalid token, req.user is set to null and execution continues without 401 error.
+const optionalProtect = asyncHandler(async (req, res, next) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decoded.userId).select('-password');
+
+            if (req.user?.isSuspended) {
+                req.user = null;
+            }
+        } catch (error) {
+            req.user = null;
+        }
+    } else {
+        req.user = null;
+    }
+
+    next();
+});
+
+export { protect, optionalProtect };
+

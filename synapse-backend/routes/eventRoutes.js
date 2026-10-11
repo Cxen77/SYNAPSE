@@ -7,7 +7,9 @@ import {
     updateEvent,
     getEventById,
     deleteEvent,
-    getEventQRPayload
+    getEventQRPayload,
+    parseExternalLink,
+    importExternalEvent
 } from '../controllers/eventController.js';
 import { getEventTeams } from '../controllers/teamController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -21,6 +23,10 @@ const router = express.Router();
 router.route('/')
     .post(protect, requireFeature('events'), upload.single('imageFile'), validate(eventSchema), createEvent)
     .get(protect, getEvents);
+
+// ── External event scraping & import (MUST be before /:id routes) ──
+router.post('/parse-external-link', protect, parseExternalLink);
+router.post('/import-external', protect, importExternalEvent);
 
 router.route('/:id')
     .get(protect, getEventById)

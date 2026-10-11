@@ -19,9 +19,16 @@ const eventSchema = mongoose.Schema({
     requireUSN: { type: Boolean, default: false },
     attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     maxTeamSize: { type: Number, default: 4 },
+    minTeamSize: { type: Number, default: 1 },
     isApproved: { type: Boolean },
     isDeleted: { type: Boolean, default: false },
-    deletedAt: { type: Date }
+    deletedAt: { type: Date },
+
+    // ── External event fields ──
+    isExternal: { type: Boolean, default: false },
+    externalUrl: { type: String, default: null },
+    platform: { type: String, default: null }, // 'Unstop', 'Devfolio', 'Devpost', etc.
+    importedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, {
     timestamps: true
 });
@@ -31,6 +38,8 @@ eventSchema.index({ date: 1 });
 eventSchema.index({ organizer: 1 });
 eventSchema.index({ attendees: 1 });
 eventSchema.index({ isApproved: 1, isDeleted: 1, createdAt: -1 });
+eventSchema.index({ externalUrl: 1 }, { unique: true, sparse: true }); // Dedup external events
+eventSchema.index({ isExternal: 1 });
 
 const Event = mongoose.model('Event', eventSchema);
 

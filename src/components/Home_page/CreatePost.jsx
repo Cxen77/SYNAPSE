@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { HiPhotograph, HiX } from "react-icons/hi";
 import { Users, Calendar, ChevronDown, X as LucideX } from "lucide-react";
 import api from "../../api/axios";
@@ -27,6 +28,8 @@ export default function CreatePost({ user, onPostCreated }) {
 
     // Fetch the user's own open public active teams once on mount
     useEffect(() => {
+        if (!displayUser._id) return;
+
         const fetchOpenTeams = async () => {
             try {
                 const { data } = await api.get('/teams');
@@ -160,7 +163,41 @@ export default function CreatePost({ user, onPostCreated }) {
         }
     }
 
-    const openRoles = selectedTeam?.openRoles?.filter(r => r.isOpen) || [];    return (
+    const openRoles = selectedTeam?.openRoles?.filter(r => r.isOpen) || [];
+
+    if (!displayUser._id) {
+        return (
+            <div className="p-5 md:p-6 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-blue-500/20 flex-shrink-0">
+                        ⚡
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-900 text-sm md:text-base">What's happening?</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                            Join Synapse to share updates, showcase projects, and connect with teammates.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <Link
+                        to="/login"
+                        className="flex-1 sm:flex-initial text-center px-4 py-2 text-xs font-bold text-gray-700 hover:text-blue-600 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition shadow-sm"
+                    >
+                        Log In
+                    </Link>
+                    <Link
+                        to="/signup"
+                        className="flex-1 sm:flex-initial text-center px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-md shadow-blue-600/20"
+                    >
+                        Sign Up
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    return (
         <div className="p-4 md:p-5">
             {/* Top row: Avatar + Textarea */}
             <div className="flex gap-3 md:gap-4">

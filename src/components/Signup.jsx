@@ -67,10 +67,13 @@ const Signup = () => {
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const navigate = useNavigate();
-  const { signup, googleLogin } = useAuth();
+  const { signup, googleLogin, currentUser } = useAuth();
 
-  // No cleanup needed — tokens are in memory now
-  useEffect(() => { }, []);
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/", { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

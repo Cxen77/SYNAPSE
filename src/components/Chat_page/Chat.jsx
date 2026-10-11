@@ -17,6 +17,7 @@ import { FaPlus } from "react-icons/fa"; // [Import Plus Icon]
 import ChatHeader from "./Window/ChatHeader";
 import MessageList from "./Window/MessageList";
 import MessageInput from "./Window/MessageInput";
+import TempTeamBanner from "./Window/TempTeamBanner";
 import Skeleton from "../common/Skeleton";
 
 import { useSocket } from "../../context/SocketContext";
@@ -71,12 +72,18 @@ function Chat() {
                 name: c.chatName,
                 avatar: "https://ui-avatars.com/api/?name=" + c.chatName + "&background=random",
                 status: c.participants.length + " members",
-                note: "Group Chat",
+                note: c.isTempTeamChat ? "Prospective Squad" : "Group Chat",
                 messages: [],
                 lastMessage: c.lastMessage,
                 createdAt: c.createdAt,
                 isGroupChat: true,
-                groupAdmin: c.groupAdmin
+                groupAdmin: c.groupAdmin,
+                isTempTeamChat: c.isTempTeamChat,
+                tempTeamId: c.tempTeamId,
+                teamId: c.teamId,
+                eventId: c.eventId,
+                externalEventUrl: c.externalEventUrl,
+                participants: c.participants
             };
         }
 
@@ -128,12 +135,17 @@ function Chat() {
                 name: c.chatName,
                 avatar: "https://ui-avatars.com/api/?name=" + c.chatName + "&background=random",
                 status: c.participants.length + " members",
-                note: "Group Chat",
+                note: c.isTempTeamChat ? "Prospective Squad" : "Group Chat",
                 messages: [],
                 lastMessage: c.lastMessage,
                 createdAt: c.createdAt,
                 isGroupChat: true,
                 groupAdmin: c.groupAdmin,
+                isTempTeamChat: c.isTempTeamChat,
+                tempTeamId: c.tempTeamId,
+                teamId: c.teamId,
+                eventId: c.eventId,
+                externalEventUrl: c.externalEventUrl,
                 participants: c.participants
             };
         }
@@ -379,6 +391,8 @@ function Chat() {
                 {windowChat ? (
                     <>
                         <ChatHeader chat={windowChat} onBack={() => navigate('/chat')} />
+
+                        <TempTeamBanner chat={windowChat} currentUser={currentUser} />
 
                         <MessageList
                             chat={windowChat}

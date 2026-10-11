@@ -123,6 +123,9 @@ const getPosts = asyncHandler(async (req, res) => {
     let query = { isDeleted: { $ne: true } };
 
     if (filter === 'following') {
+        if (!req.user) {
+            return res.json({ posts: [], page: 1, pages: 0 });
+        }
         const user = await User.findById(req.user._id);
         if (user && user.following) {
             query.user = { $in: user.following };
@@ -144,7 +147,7 @@ const getPosts = asyncHandler(async (req, res) => {
 
     const formattedPosts = posts.map(post => {
         const likesList = post.likes || [];
-        const likedByUser = likesList.some(id => id.toString() === req.user._id.toString());
+        const likedByUser = req.user ? likesList.some(id => id.toString() === req.user._id.toString()) : false;
 
         // Build minimal team payload
         let attachedTeam = null;

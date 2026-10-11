@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFollow } from '../../hooks/useFollow';
 import { HiUserAdd, HiUserRemove } from "react-icons/hi";
 import { Loader2, Check } from "lucide-react";
@@ -6,27 +7,34 @@ import { useAuth } from '../../context/AuthContext';
 
 const FollowButton = ({ targetUser, variant = 'icon' }) => {
     const { currentUser } = useAuth();
+    const navigate = useNavigate();
     const { follow, isPending } = useFollow(targetUser?._id);
 
-    if (!targetUser || !currentUser || targetUser._id === currentUser._id) return null;
+    if (!targetUser || (currentUser && targetUser._id === currentUser._id)) return null;
 
-    const isFollowing = targetUser.followers?.includes(currentUser._id);
+    const isFollowing = currentUser ? targetUser.followers?.includes(currentUser._id) : false;
+
+    const handleClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
+        follow();
+    };
 
     if (variant === 'icon') {
         return (
             <button 
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    follow();
-                }}
+                onClick={handleClick}
                 disabled={isPending}
                 className={`p-2 rounded-full transition flex-shrink-0 ${
                     isFollowing 
                         ? 'text-blue-600 hover:bg-gray-100' 
                         : 'text-blue-600 hover:bg-blue-50'
                 }`}
-                title={isFollowing ? 'Unfollow' : 'Follow'}
+                title={!currentUser ? 'Log in to follow' : isFollowing ? 'Unfollow' : 'Follow'}
             >
                 {isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -41,11 +49,7 @@ const FollowButton = ({ targetUser, variant = 'icon' }) => {
 
     return (
         <button
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                follow();
-            }}
+            onClick={handleClick}
             disabled={isPending}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
                 isFollowing

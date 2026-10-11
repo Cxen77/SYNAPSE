@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaArrowLeft } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaTrophy, FaArrowLeft, FaBolt, FaExternalLinkAlt } from 'react-icons/fa';
 import { FiShare2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
@@ -236,45 +236,128 @@ const EventDetails = () => {
                                 </div>
                             </div>
                         )}
-                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-800 shadow-sm">
-                            {event.category}
+                        <div className="absolute top-4 right-4 flex items-center gap-2">
+                            {event.isExternal && (
+                                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1">
+                                    <FaBolt className="text-yellow-300 text-[10px]" />
+                                    {event.platform || 'External'}
+                                </span>
+                            )}
+                            <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-800 shadow-sm">
+                                {event.category}
+                            </div>
                         </div>
                     </div>
 
                     <div className="p-6 sm:p-8">
                         <div className="max-w-3xl mx-auto">
+                            {/* External Event Callout Card */}
+                            {event.isExternal && (
+                                <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-900/10 via-purple-900/10 to-blue-900/10 border border-indigo-200 dark:border-indigo-800/50">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                                                    {event.platform || 'External'} Competition
+                                                </span>
+                                                <span className="text-xs text-indigo-700 dark:text-indigo-300 font-semibold flex items-center gap-1">
+                                                    <FaBolt className="text-yellow-500 text-[10px]" /> Auto-Team Squad Formation
+                                                </span>
+                                            </div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white text-base">
+                                                Want to participate but don't have a team?
+                                            </h4>
+                                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1 max-w-xl leading-relaxed">
+                                                Join solo! Synapse matches you into a prospective squad with a dedicated group chat to review project ideas and tech stack. Once everyone clicks <strong>Confirm Squad</strong>, you can officially register on {event.platform || 'the platform'}!
+                                            </p>
+                                        </div>
+
+                                        <div className="flex sm:flex-col gap-2 shrink-0">
+                                            {event.externalUrl && (
+                                                <a
+                                                    href={event.externalUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs sm:text-sm rounded-xl border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-all shadow-sm"
+                                                >
+                                                    <span>Open on {event.platform || 'Platform'}</span>
+                                                    <FaExternalLinkAlt className="text-xs" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Title & Actions */}
                             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex-1 pr-4">{event.title}</h1>
 
                                 {/* Action Buttons Row */}
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <button
-                                        onClick={handleJoin}
-                                        disabled={joinLoading || isJoined}
-                                        className={`px-6 py-2 rounded-xl font-bold text-sm transition ${isJoined
-                                            ? "bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white cursor-default"
-                                            : "bg-[#3B82F6] text-white hover:opacity-90"
-                                            }`}
-                                    >
-                                        {joinLoading ? "Joining..." : isJoined ? "Going" : "Join Event"}
-                                    </button>
+                                    {event.isExternal ? (
+                                        <>
+                                            {/* External: Find Squad is Primary */}
+                                            {isQueued !== null && (
+                                                <button
+                                                    onClick={() => !isQueued && setShowAutoTeamModal(true)}
+                                                    disabled={isQueued}
+                                                    className={`px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-md ${
+                                                        isQueued
+                                                            ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 cursor-default"
+                                                            : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white hover:scale-105 active:scale-95 shadow-indigo-200"
+                                                    }`}
+                                                >
+                                                    <FaBolt className="text-yellow-300" />
+                                                    <span>{isQueued ? "Queued in Auto-Team..." : "Find Squad (Auto-Team)"}</span>
+                                                </button>
+                                            )}
+                                            {isQueued === null && (
+                                                <div className="h-10 w-36 bg-gray-100 dark:bg-[#262626] rounded-xl animate-pulse"></div>
+                                            )}
 
-                                    {/* Auto Match Button */}
-                                    {!isJoined && isQueued !== null && (
-                                        <button
-                                            onClick={() => !isQueued && setShowAutoTeamModal(true)}
-                                            disabled={isQueued}
-                                            className={`px-5 py-2 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${isQueued
-                                                ? "bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 cursor-default"
-                                                : "bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#363636]"
-                                                }`}
-                                        >
-                                            {isQueued ? "Searching..." : "Auto Match"}
-                                        </button>
-                                    )}
-                                    {!isJoined && isQueued === null && (
-                                        <div className="h-9 w-28 bg-gray-100 dark:bg-[#262626] rounded-xl animate-pulse"></div>
+                                            {event.externalUrl && (
+                                                <a
+                                                    href={event.externalUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#363636] transition flex items-center gap-1.5"
+                                                >
+                                                    <span>{event.platform || 'External'} Portal</span>
+                                                    <FaExternalLinkAlt className="text-xs" />
+                                                </a>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={handleJoin}
+                                                disabled={joinLoading || isJoined}
+                                                className={`px-6 py-2 rounded-xl font-bold text-sm transition ${isJoined
+                                                    ? "bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white cursor-default"
+                                                    : "bg-[#3B82F6] text-white hover:opacity-90"
+                                                    }`}
+                                            >
+                                                {joinLoading ? "Joining..." : isJoined ? "Going" : "Join Event"}
+                                            </button>
+
+                                            {/* Auto Match Button */}
+                                            {!isJoined && isQueued !== null && (
+                                                <button
+                                                    onClick={() => !isQueued && setShowAutoTeamModal(true)}
+                                                    disabled={isQueued}
+                                                    className={`px-5 py-2 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 ${isQueued
+                                                        ? "bg-gray-100 dark:bg-[#262626] text-gray-500 dark:text-gray-400 cursor-default"
+                                                        : "bg-gray-100 dark:bg-[#262626] text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#363636]"
+                                                        }`}
+                                                >
+                                                    {isQueued ? "Searching..." : "Auto Match"}
+                                                </button>
+                                            )}
+                                            {!isJoined && isQueued === null && (
+                                                <div className="h-9 w-28 bg-gray-100 dark:bg-[#262626] rounded-xl animate-pulse"></div>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* Share Button */}

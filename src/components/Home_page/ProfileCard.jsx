@@ -104,15 +104,31 @@ export default function ProfileCard({ user, loading }) {
 
   if (!user) {
     return (
-      <aside className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-          <Users className="text-gray-400 w-7 h-7" />
+      <aside className="bg-white rounded-2xl shadow-sm border border-gray-200/80 p-5 overflow-hidden">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white mb-4 shadow-md shadow-blue-500/20">
+          <Users className="w-6 h-6" />
         </div>
-        <h3 className="font-bold text-gray-900">Welcome!</h3>
-        <p className="text-sm text-gray-500 mt-1 mb-4">Sign in to see your profile</p>
-        <Link to="/login" className="block w-full bg-blue-600 text-white text-sm font-semibold py-2 rounded-lg hover:bg-blue-700 transition text-center">
-          Sign In
-        </Link>
+        <h3 className="text-lg font-bold text-gray-900 leading-snug">New to Synapse?</h3>
+        <p className="text-xs text-gray-500 mt-1.5 mb-5 leading-relaxed">
+          Sign up now to find hackathon teammates, share your projects, and connect with campus peers.
+        </p>
+        <div className="space-y-2.5">
+          <Link
+            to="/signup"
+            className="block w-full bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-blue-700 transition text-center shadow-sm"
+          >
+            Create account
+          </Link>
+          <Link
+            to="/login"
+            className="block w-full bg-white text-gray-700 text-xs font-bold py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition text-center"
+          >
+            Sign in
+          </Link>
+        </div>
+        <p className="text-[10px] text-gray-400 mt-4 leading-normal">
+          By signing up, you agree to the Terms of Service and Privacy Policy.
+        </p>
       </aside>
     );
   }

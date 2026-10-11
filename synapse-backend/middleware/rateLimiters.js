@@ -12,7 +12,7 @@ export const globalLimiter = rateLimit({
 // Auth Limiter - Prevent Brute Force Attacks on Login/Register
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 requests per window (strict!)
+    max: process.env.NODE_ENV === 'development' ? 500 : 5, // Lenient in development
     message: { message: 'Too many login attempts, please try again after 15 minutes' },
     standardHeaders: true,
     legacyHeaders: false,

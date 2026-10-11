@@ -119,31 +119,42 @@ const MobileCommentsSheet = ({
                         </div>
                     )}
 
-                    <form onSubmit={handleFormSubmit} className="flex gap-3 items-end">
-                        <Avatar
-                            src={currentUser?.profilePic}
-                            alt="You"
-                            size="sm"
-                            className="hidden sm:block mb-1"
-                        />
-                        <div className="relative flex-1">
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={localComment}
-                                onChange={(e) => setLocalComment(e.target.value)}
-                                placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
-                                className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-2xl px-5 py-3.5 pr-12 text-sm focus:outline-none transition-all shadow-sm ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
+                    {currentUser?._id ? (
+                        <form onSubmit={handleFormSubmit} className="flex gap-3 items-end">
+                            <Avatar
+                                src={currentUser?.profilePic}
+                                alt="You"
+                                size="sm"
+                                className="hidden sm:block mb-1"
                             />
-                            <button
-                                type="submit"
-                                disabled={!localComment.trim() || submitting}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md"
-                            >
-                                <FaPaperPlane size={14} className="" />
-                            </button>
+                            <div className="relative flex-1">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={localComment}
+                                    onChange={(e) => setLocalComment(e.target.value)}
+                                    placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
+                                    className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-2xl px-5 py-3.5 pr-12 text-sm focus:outline-none transition-all shadow-sm ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!localComment.trim() || submitting}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md"
+                                >
+                                    <FaPaperPlane size={14} className="" />
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
+                            <p className="text-xs text-gray-500 font-medium">Log in to leave a comment</p>
+                            <div className="flex items-center gap-3">
+                                <a href="/login" className="text-xs font-bold text-blue-600 hover:text-blue-700">Log in</a>
+                                <span className="text-gray-300">•</span>
+                                <a href="/signup" className="text-xs font-bold text-blue-600 hover:text-blue-700">Sign up</a>
+                            </div>
                         </div>
-                    </form>
+                    )}
                 </div>
             </div>
         </div>,

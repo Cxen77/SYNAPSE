@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import PropTypes from 'prop-types';
 import { HiThumbUp, HiOutlineThumbUp, HiChatAlt, HiShare, HiDotsHorizontal, HiPaperAirplane, HiTrash } from "react-icons/hi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../../api/axios";
 import Avatar from "../common/Avatar";
 import useIsMobile from "../../hooks/useIsMobile";
@@ -15,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function PostCard({ post, currentUser = {}, onDelete }) {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Normalize data to handle both frontend mock and backend data formats
   const displayPost = {
@@ -73,6 +75,12 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
   };
 
   const handleReply = (commentId, username) => {
+    if (!currentUser?._id) {
+      toast("Please log in to reply", { icon: "🔒" });
+      navigate("/login");
+      return;
+    }
+
     setReplyingTo({ id: commentId, username });
     setNewComment(`@${username} `);
 
@@ -90,6 +98,12 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
   };
 
   const handleLike = async () => {
+    if (!currentUser?._id) {
+      toast("Please log in to like posts", { icon: "🔒" });
+      navigate("/login");
+      return;
+    }
+
     try {
       // Optimistic update
       setLiked(!liked);
@@ -131,6 +145,12 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
 
   const handleCommentSubmit = async (e, customText) => {
     e.preventDefault();
+    if (!currentUser?._id) {
+      toast("Please log in to comment", { icon: "🔒" });
+      navigate("/login");
+      return;
+    }
+
     const textToSubmit = customText || newComment;
     if (!textToSubmit.trim()) return;
 
@@ -400,39 +420,50 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
               </div>
             )}
 
-            <div className="flex gap-3 items-start pt-2 border-t border-gray-100">
-              <Avatar
-                src={currentUser?.profilePic}
-                alt="You"
-                size="sm"
-                className="flex-shrink-0"
-              />
-              <div className="flex-1">
-                {replyingTo && (
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1 ml-1">
-                    <span>Replying to <span className="font-bold text-blue-600">@{replyingTo.username}</span></span>
-                    <button onClick={cancelReply} className="hover:text-red-500">Cancel</button>
-                  </div>
-                )}
-                <form onSubmit={handleCommentSubmit} className="relative">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
-                    className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none transition-all ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newComment.trim() || submittingComment}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <HiPaperAirplane size={16} className="rotate-90" />
-                  </button>
-                </form>
+            {currentUser?._id ? (
+              <div className="flex gap-3 items-start pt-2 border-t border-gray-100">
+                <Avatar
+                  src={currentUser?.profilePic}
+                  alt="You"
+                  size="sm"
+                  className="flex-shrink-0"
+                />
+                <div className="flex-1">
+                  {replyingTo && (
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1 ml-1">
+                      <span>Replying to <span className="font-bold text-blue-600">@{replyingTo.username}</span></span>
+                      <button onClick={cancelReply} className="hover:text-red-500">Cancel</button>
+                    </div>
+                  )}
+                  <form onSubmit={handleCommentSubmit} className="relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
+                      className={`w-full bg-gray-100 border-transparent focus:bg-white border focus:border-blue-500 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none transition-all ${replyingTo ? 'ring-2 ring-blue-100' : ''}`}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newComment.trim() || submittingComment}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <HiPaperAirplane size={16} className="rotate-90" />
+                    </button>
+                  </form>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100 mt-2">
+                <p className="text-xs text-gray-500 font-medium">Log in or sign up to leave a comment</p>
+                <div className="flex items-center gap-3">
+                  <Link to="/login" className="text-xs font-bold text-blue-600 hover:text-blue-700">Log in</Link>
+                  <span className="text-gray-300">•</span>
+                  <Link to="/signup" className="text-xs font-bold text-blue-600 hover:text-blue-700">Sign up</Link>
+                </div>
+              </div>
+            )}
           </div>
         )
       )}

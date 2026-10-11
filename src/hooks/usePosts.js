@@ -13,7 +13,7 @@ export const usePosts = (feedType) => {
     } = useInfiniteQuery({
         queryKey: ['posts', feedType],
         queryFn: async ({ pageParam = 1 }) => {
-            const { data } = await api.get(`/posts?pageNumber=${pageParam}&filter=${filterParam}`);
+            const { data } = await api.get(`/posts?pageNumber=${pageParam}&filter=${filterParam}`, { _skipAuthRedirect: true });
             return data;
         },
         getNextPageParam: (lastPage) => {

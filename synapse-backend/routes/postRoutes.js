@@ -1,7 +1,7 @@
 import express from 'express';
 
 import { createPost, getPosts, deletePost, likePost, addComment, deleteComment, getPostComments } from '../controllers/postController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 import requireFeature from '../middleware/requireFeature.js';
 import validate from '../middleware/validate.js';
 import { postSchema, commentSchema } from '../utils/validationSchemas.js';
@@ -12,7 +12,7 @@ import upload from '../middleware/uploadMiddleware.js';
 
 router.route('/')
     .post(protect, requireFeature('textPost'), upload.single('image'), validate(postSchema), createPost)
-    .get(protect, getPosts);
+    .get(optionalProtect, getPosts);
 
 router.route('/:id')
     .delete(protect, deletePost);
@@ -20,7 +20,7 @@ router.route('/:id')
 router.put('/:id/like', protect, likePost);
 
 router.route('/:id/comments')
-    .get(protect, getPostComments)
+    .get(optionalProtect, getPostComments)
     .post(protect, validate(commentSchema), addComment);
 
 router.route('/:id/comments/:commentId')

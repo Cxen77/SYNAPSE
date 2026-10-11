@@ -8,7 +8,7 @@ import Event from '../models/Event.js';
 const formatPosts = (posts, currentUserId) => {
     return posts.map(post => {
         const likesList = post.likes || [];
-        const likedByUser = likesList.some(id => id.toString() === currentUserId.toString());
+        const likedByUser = currentUserId ? likesList.some(id => id.toString() === currentUserId.toString()) : false;
 
         // Build minimal team payload (same as postController)
         let attachedTeam = null;
@@ -99,7 +99,7 @@ const formatUserResponse = (user) => {
 // @access  Private
 const getHomeData = asyncHandler(async (req, res) => {
     const isMobile = req.query.device === 'mobile';
-    const userId = req.user._id;
+    const userId = req.user ? req.user._id : null;
 
     // 1. Fetch Posts (Feed) - Always needed for both Desktop and Mobile
     // Default to "For You" feed (all posts) for the initial load
@@ -131,12 +131,12 @@ const getHomeData = asyncHandler(async (req, res) => {
     }
 
     // 2. Fetch Profile, Trending Events, Recommended Users, Open Teams for Desktop
-    const profilePromise = User.findById(userId)
+    const profilePromise = userId ? User.findById(userId)
         .populate({
             path: 'teams',
             select: 'name category members admins',
             populate: { path: 'admins', select: '_id' }
-        });
+        }) : Promise.resolve(null);
 
     const eventsPromise = Event.find({ isApproved: true, isDeleted: { $ne: true } })
         .populate('organizer', 'name username profilePic')
@@ -144,7 +144,7 @@ const getHomeData = asyncHandler(async (req, res) => {
         .limit(3)
         .lean();
 
-    const recommendedUsersPromise = User.find({ _id: { $ne: userId } })
+    const recommendedUsersPromise = User.find(userId ? { _id: { $ne: userId } } : {})
         .select('name username profilePic skills collegeVerified')
         .limit(5)
         .lean();

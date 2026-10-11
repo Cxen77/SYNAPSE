@@ -345,6 +345,134 @@ const deleteEvent = asyncHandler(async (req, res) => {
     res.json({ message: 'Event removed' });
 });
 
+// @desc    Parse an external event link and return scraped metadata
+// @route   POST /api/events/parse-external-link
+// @access  Private
+const parseExternalLink = asyncHandler(async (req, res) => {
+    const { url } = req.body;
+
+    if (!url || typeof url !== 'string') {
+        res.status(400);
+        throw new Error('Please provide a valid event URL');
+    }
+
+    // Validate URL format
+    try {
+        new URL(url);
+    } catch (_) {
+        res.status(400);
+        throw new Error('Invalid URL format. Please paste a valid event link.');
+    }
+
+    // Check if this event already exists in DB (dedup by URL)
+    const normalizedUrl = url.trim().replace(/\/+$/, '').toLowerCase();
+    const existingEvent = await Event.findOne({
+        externalUrl: { $regex: new RegExp('^' + normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?$', 'i') },
+        isDeleted: { $ne: true }
+    }).populate('organizer', 'name username profilePic').lean();
+
+    if (existingEvent) {
+        return res.json({
+            metadata: {
+                title: existingEvent.title,
+                description: existingEvent.description,
+                imageUrl: existingEvent.imageUrl,
+                date: existingEvent.date,
+                location: existingEvent.location,
+                prize: existingEvent.prize,
+                maxTeamSize: existingEvent.maxTeamSize,
+                minTeamSize: existingEvent.minTeamSize || 1,
+                category: existingEvent.category,
+                platform: existingEvent.platform,
+                externalUrl: existingEvent.externalUrl,
+            },
+            alreadyImported: true,
+            existingEvent
+        });
+    }
+
+    // Scrape the URL
+    const { scrapeEventFromUrl } = await import('../services/eventScraperService.js');
+
+    try {
+        const metadata = await scrapeEventFromUrl(url);
+        res.json({ metadata, alreadyImported: false });
+    } catch (scrapeErr) {
+        console.error('[parseExternalLink] Scrape failed:', scrapeErr.message);
+        res.status(422);
+        throw new Error(scrapeErr.message || 'Could not extract event details from this link.');
+    }
+});
+
+// @desc    Import/create an external event from scraped metadata
+// @route   POST /api/events/import-external
+// @access  Private
+const importExternalEvent = asyncHandler(async (req, res) => {
+    const {
+        title,
+        description,
+        date,
+        location,
+        category,
+        prize,
+        imageUrl,
+        maxTeamSize,
+        minTeamSize,
+        platform,
+        externalUrl
+    } = req.body;
+
+    if (!title || !externalUrl) {
+        res.status(400);
+        throw new Error('Event title and external URL are required');
+    }
+
+    // Validate category against allowed enum
+    const validCategories = ['Hackathon', 'Workshop', 'Seminar', 'Tournament', 'Meetup', 'Project', 'Game', 'Sport'];
+    const finalCategory = validCategories.includes(category) ? category : 'Hackathon';
+
+    // Dedup check — try to find existing by URL
+    const normalizedUrl = externalUrl.trim().replace(/\/+$/, '').toLowerCase();
+    const existing = await Event.findOne({
+        externalUrl: { $regex: new RegExp('^' + normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?$', 'i') },
+        isDeleted: { $ne: true }
+    }).populate('organizer', 'name username profilePic').lean();
+
+    if (existing) {
+        return res.status(409).json({
+            message: 'This event has already been imported',
+            event: existing
+        });
+    }
+
+    // Create the external event
+    const event = await Event.create({
+        title: title.trim(),
+        description: (description || 'External competition — find your squad on Synapse!').trim(),
+        date: date ? new Date(date) : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+        location: location || 'Online',
+        category: finalCategory,
+        prize: prize || '',
+        imageUrl: imageUrl || '',
+        maxTeamSize: Math.min(Math.max(Number(maxTeamSize) || 4, 1), 50),
+        minTeamSize: Math.min(Math.max(Number(minTeamSize) || 1, 1), 50),
+        organizer: req.user._id,
+        importedBy: req.user._id,
+        attendees: [req.user._id],
+        isExternal: true,
+        externalUrl: externalUrl.trim(),
+        platform: platform || 'External',
+        isMultiCollege: true,
+        allowTeamRegistration: true,
+        isApproved: true, // External events are auto-approved
+    });
+
+    // Populate organizer for the response
+    await event.populate('organizer', 'name username profilePic');
+
+    res.status(201).json(event);
+});
+
 export {
     createEvent,
     getEvents,
@@ -353,5 +481,7 @@ export {
     getEventQRPayload,
     updateEvent,
     getEventById,
-    deleteEvent
+    deleteEvent,
+    parseExternalLink,
+    importExternalEvent
 };

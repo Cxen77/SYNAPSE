@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { FaPlus, FaFilter, FaCalendarCheck, FaSearch } from "react-icons/fa";
+import { FaPlus, FaFilter, FaCalendarCheck, FaSearch, FaLink, FaBolt } from "react-icons/fa";
 import Cards from "./cards";
 import Slider from "./Slider";
 import CreateEventModal from "./CreateEventModal";
+import ImportExternalEventModal from "./ImportExternalEventModal";
 import MobileFilterModal from "./MobileFilterModal";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
@@ -21,11 +22,13 @@ function Events() {
     isRegistrationsView ? { joined: true } : {}
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
   const [searchText, setSearchText] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [filterType, setFilterType] = useState("All");
+  const [eventTypeFilter, setEventTypeFilter] = useState("all"); // 'all' | 'campus' | 'external'
   const [eventToEdit, setEventToEdit] = useState(null);
   const [expandedCategories, setExpandedCategories] = useState(new Set());
 
@@ -92,7 +95,15 @@ function Events() {
       else if (filterType === "Ongoing") matchesType = eventDate >= today;
     }
 
-    return matchesSearch && matchesCategory && matchesDate && matchesType;
+    // Filter by Event Type: all | campus | external
+    let matchesEventType = true;
+    if (eventTypeFilter === "campus") {
+      matchesEventType = !event.isExternal;
+    } else if (eventTypeFilter === "external") {
+      matchesEventType = !!event.isExternal;
+    }
+
+    return matchesSearch && matchesCategory && matchesDate && matchesType && matchesEventType;
   });
 
   const categories = [...new Set(filteredEvents.map((e) => e.category || "Upcoming Events"))];
@@ -144,6 +155,15 @@ function Events() {
             </div>
 
             <div className="flex flex-row sm:flex-col gap-3 min-w-[140px] w-full sm:w-auto mt-2 sm:mt-0">
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold transition hover:scale-105 active:scale-95 shadow-lg shadow-indigo-950/40 text-sm sm:text-base border border-indigo-400/30"
+                title="Paste a link from Unstop, Devfolio, etc. to form an auto-squad"
+              >
+                <FaLink className="w-3.5 h-3.5 text-blue-200" />
+                <span className="whitespace-nowrap">Paste Event Link</span>
+              </button>
+
               {['organizer', 'admin', 'moderator'].includes(currentUser?.role) && (
                 <button
                   onClick={handleCreateEvent}
@@ -162,6 +182,40 @@ function Events() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Quick Filter Tabs: All Events | Campus Events | External Competitions */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 custom-scrollbar">
+          <button
+            onClick={() => setEventTypeFilter('all')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              eventTypeFilter === 'all'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none'
+                : 'bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            All Events ({events.length})
+          </button>
+          <button
+            onClick={() => setEventTypeFilter('campus')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              eventTypeFilter === 'campus'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none'
+                : 'bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            🏫 Campus Events ({events.filter(e => !e.isExternal).length})
+          </button>
+          <button
+            onClick={() => setEventTypeFilter('external')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              eventTypeFilter === 'external'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
+                : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200'
+            }`}
+          >
+            ⚡ External Competitions ({events.filter(e => e.isExternal).length})
+          </button>
         </div>
 
         {/* Content */}
@@ -213,18 +267,21 @@ function Events() {
                           <Cards
                             eventData={{
                               ...event,
-                              organizerName: event.organizer?.name || "Unknown",
-                              organizerTitle: "Organizer",
+                              organizerName: event.isExternal ? (event.platform || "External Organizer") : (event.organizer?.name || "Unknown"),
+                              organizerTitle: event.isExternal ? "External Platform" : "Organizer",
                               organizerAvatar: event.organizer?.profilePic,
                               eventImageUrl: event.imageUrl || "",
                               eventName: event.title,
                               eventPrize: event.prize || "No Prize",
                               eventDescription: event.description,
                               location: event.location,
-                              date: event.date
+                              date: event.date,
+                              isExternal: event.isExternal,
+                              externalUrl: event.externalUrl,
+                              platform: event.platform
                             }}
                             onEdit={handleEditEvent}
-                            currentUserId={currentUser?.uid}
+                            currentUserId={currentUser?.uid || currentUser?._id}
                           />
                         </div>
                       ))}
@@ -237,18 +294,21 @@ function Events() {
                           <Cards
                             eventData={{
                               ...event,
-                              organizerName: event.organizer?.name || "Unknown",
-                              organizerTitle: "Organizer",
+                              organizerName: event.isExternal ? (event.platform || "External Organizer") : (event.organizer?.name || "Unknown"),
+                              organizerTitle: event.isExternal ? "External Platform" : "Organizer",
                               organizerAvatar: event.organizer?.profilePic,
                               eventImageUrl: event.imageUrl || "",
                               eventName: event.title,
                               eventPrize: event.prize || "No Prize",
                               eventDescription: event.description,
                               location: event.location,
-                              date: event.date
+                              date: event.date,
+                              isExternal: event.isExternal,
+                              externalUrl: event.externalUrl,
+                              platform: event.platform
                             }}
                             onEdit={handleEditEvent}
-                            currentUserId={currentUser?.uid}
+                            currentUserId={currentUser?.uid || currentUser?._id}
                           />
                         </div>
                       ))}
@@ -276,6 +336,12 @@ function Events() {
         onClose={() => setIsModalOpen(false)}
         onEventCreated={handleEventCreated}
         eventToEdit={eventToEdit}
+      />
+
+      <ImportExternalEventModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImported={(newEvent) => handleEventCreated(newEvent, false)}
       />
 
       <MobileFilterModal

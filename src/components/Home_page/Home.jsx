@@ -9,7 +9,7 @@ import useStickySidebar from "../../hooks/useStickySidebar";
 const Recommendations = React.lazy(() => import("./Recommendations"));
 
 export default function Home() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState(null);
   const [homeData, setHomeData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,15 +17,20 @@ export default function Home() {
   const { sidebarRef, style: stickyStyle } = useStickySidebar(96, 24); // 96px top, 24px bottom padding
 
   useEffect(() => {
-    const fetchHomeData = async () => {
-      if (!currentUser) return; // Wait for Firebase user
+    // Wait until AuthContext finishes checking session
+    if (authLoading) return;
 
+    const fetchHomeData = async () => {
       try {
         const isMobile = window.innerWidth < 1024;
         const url = isMobile ? '/home?device=mobile' : '/home';
-        const { data } = await api.get(url);
+        const { data } = await api.get(url, { _skipAuthRedirect: true });
 
-        if (data.profile) setUser(data.profile);
+        if (data.profile) {
+          setUser(data.profile);
+        } else {
+          setUser(null);
+        }
         setHomeData(data);
 
         // Seed React Query cache for the Feed so usePosts doesn't fetch again initially
@@ -42,10 +47,8 @@ export default function Home() {
       }
     };
 
-    if (currentUser) {
-      fetchHomeData();
-    }
-  }, [currentUser, queryClient]);
+    fetchHomeData();
+  }, [currentUser, authLoading, queryClient]);
 
   // Use backend user if available, otherwise fallback to Firebase currentUser
   const displayUser = user || (currentUser ? {

@@ -117,16 +117,28 @@ export default function Feed({ user }) {
               </h3>
               <p className="text-gray-500 max-w-xs mx-auto mb-6">
                 {feedType === "Following"
-                  ? "You aren't following anyone yet, or they haven't posted anything. Explore 'For You' to find people!"
+                  ? (!user 
+                      ? "Sign in to follow creators, developers, and project teams." 
+                      : "You aren't following anyone yet, or they haven't posted anything. Explore 'For You' to find people!")
                   : "Be the first to share something with the community!"}
               </p>
               {feedType === "Following" && (
-                <button
-                  onClick={() => setFeedType("For You")}
-                  className="text-blue-600 font-semibold hover:bg-blue-50 px-4 py-2 rounded-lg transition"
-                >
-                  Switch to For You
-                </button>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => setFeedType("For You")}
+                    className="text-blue-600 font-semibold hover:bg-blue-50 px-4 py-2 rounded-lg transition text-sm"
+                  >
+                    Switch to For You
+                  </button>
+                  {!user && (
+                    <a
+                      href="/login"
+                      className="bg-blue-600 text-white font-semibold hover:bg-blue-700 px-4 py-2 rounded-xl transition text-sm shadow-sm"
+                    >
+                      Log In
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           )}

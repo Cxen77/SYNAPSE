@@ -29,6 +29,7 @@ const ThreadPage = lazy(() => import('./components/Forum_page/ThreadPage.jsx'));
 const AdminDashboard = lazy(() => import('./components/Admin_page/AdminDashboard.jsx'));
 const ModeratorDashboard = lazy(() => import('./components/Moderator_page/ModeratorDashboard.jsx'));
 const OrganizerDashboard = lazy(() => import('./components/Organizer_page/OrganizerDashboard.jsx'));
+const CertificateStudio = lazy(() => import('./components/certificate/Editor'));
 const Unauthorized = lazy(() => import('./components/Unauthorized.jsx'));
 
 // ... existing imports ...
@@ -39,6 +40,7 @@ import Skeleton from './components/common/Skeleton';
 import ProfileSkeleton from './components/Profile_page/ProfileSkeleton';
 import InAppNotification from './components/common/InAppNotification';
 import FeatureGate from './components/common/FeatureGate';
+import GuestBanner from './components/common/GuestBanner';
 
 // Loading Fallback with Skeleton Layout
 const PageLoader = () => (
@@ -192,6 +194,7 @@ function App() {
       <main className={
         isAuthPage || isDashboardPage ? "" :
           isChatPage ? "h-screen overflow-hidden" :
+            !currentUser ? "pt-16 pb-24 md:pb-20" :
             "pt-16 pb-16 md:pb-0"
       }>
         <Suspense fallback={<PageLoader />}>
@@ -203,9 +206,11 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
+            {/* Home Route - Public like Twitter (Authenticated users get personalized feed) */}
+            <Route path="/" element={<Home />} />
+
             {/* Protected Routes */}
             <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
             <Route path="/teams/:id" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
             <Route path="/teams/:id/manage" element={<ProtectedRoute><ManageTeam /></ProtectedRoute>} />
@@ -269,6 +274,18 @@ function App() {
               }
             />
 
+            {/* Standalone Certificate Studio Route */}
+            <Route
+              path="/certificate-studio"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['organizer', 'admin']}>
+                    <CertificateStudio />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
             {/* Forum Routes (Feature Gated) */}
             <Route path="/forums" element={<ProtectedRoute><FeatureGate featureKey="forum" fallback={<Navigate to="/" replace />}><ForumLayout /></FeatureGate></ProtectedRoute>}>
               <Route index element={<ForumHome />} />
@@ -279,7 +296,8 @@ function App() {
         </Suspense>
       </main>
 
-      {!isAuthPage && !isDashboardPage && !isChatConversation && <BottomNav />}
+      {!isAuthPage && !isDashboardPage && !isChatConversation && currentUser && <BottomNav />}
+      {!isAuthPage && !isDashboardPage && !currentUser && <GuestBanner />}
 
       {/* Instagram-style in-app notification */}
       {activeNotification && (

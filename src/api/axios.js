@@ -103,6 +103,7 @@ api.interceptors.response.use(
                 // Only redirect if this wasn't a silent background check
                 // (skipAuthRedirect flag is set by AuthContext on initial load)
                 if (!originalRequest._skipAuthRedirect &&
+                    window.location.pathname !== '/' &&
                     window.location.pathname !== '/login' &&
                     window.location.pathname !== '/signup' &&
                     window.location.pathname !== '/verify-email' &&

@@ -15,10 +15,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const navigate = useNavigate();
-  const { login, googleLogin } = useAuth();
+  const { login, googleLogin, currentUser } = useAuth();
 
-  // No cleanup needed — tokens are in memory now
-  useEffect(() => { }, []);
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/", { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

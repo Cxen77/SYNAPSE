@@ -127,35 +127,52 @@ function Navbar() {
         {/* Divider */}
         <div className="h-8 w-px bg-gray-200 mx-3 hidden md:block"></div>
 
-        <div className="flex items-center gap-3">
-          {/* Notification Bell */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={toggleNotifications}
-              className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-all duration-200 relative group"
-            >
-              <HiBell className="w-6 h-6" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-              )}
-              {/* Tooltip */}
-              <span className="hidden md:block absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                Notifications
-              </span>
-            </button>
-            <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
-          </div>
+        {currentUser ? (
+          <div className="flex items-center gap-3">
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={toggleNotifications}
+                className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-all duration-200 relative group"
+              >
+                <HiBell className="w-6 h-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
+                {/* Tooltip */}
+                <span className="hidden md:block absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                  Notifications
+                </span>
+              </button>
+              <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+            </div>
 
-          {/* Profile Picture */}
-          <Link to="/profile">
-            <Avatar
-              src={currentUser?.profilePic}
-              alt={currentUser?.name || "User"}
-              size="sm"
-              className="ring-2 ring-gray-100 hover:ring-blue-100 transition-all cursor-pointer"
-            />
-          </Link>
-        </div>
+            {/* Profile Picture */}
+            <Link to="/profile">
+              <Avatar
+                src={currentUser?.profilePic}
+                alt={currentUser?.name || "User"}
+                size="sm"
+                className="ring-2 ring-gray-100 hover:ring-blue-100 transition-all cursor-pointer"
+              />
+            </Link>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className="px-3.5 py-1.5 text-xs md:text-sm font-semibold text-gray-700 hover:text-blue-600 hover:bg-gray-100 rounded-xl transition"
+            >
+              Log In
+            </Link>
+            <Link
+              to="/signup"
+              className="px-3.5 py-1.5 text-xs md:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition"
+            >
+              Sign Up
+            </Link>
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import api from '../../api/axios';
 import Avatar from '../common/Avatar';
-import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaTrophy, FaCalendarAlt, FaMapMarkerAlt, FaBolt, FaExternalLinkAlt } from 'react-icons/fa';
 import { FiShare2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import AutoTeamModal from './AutoTeamModal';
@@ -24,7 +24,10 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
     organizer,
     attendees = [],
     date, // Assuming date is passed
-    location // Assuming location is passed
+    location, // Assuming location is passed
+    isExternal,
+    externalUrl,
+    platform
   } = eventData;
 
   const [isJoined, setIsJoined] = useState(() => {
@@ -160,15 +163,41 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
           {/* Overlay Gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
 
-          {/* Date Badge */}
-          {formattedDate && (
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold text-gray-900 shadow-sm">
-              {formattedDate}
+          {/* Date & Platform Badge */}
+          {isExternal ? (
+            <div className="absolute top-4 left-4 flex flex-col gap-1 z-10">
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-2.5 py-1 rounded-xl text-[11px] font-black tracking-wider uppercase shadow-md flex items-center gap-1.5 backdrop-blur-sm border border-white/20">
+                <FaBolt className="text-yellow-300 text-[10px]" />
+                {platform || 'External'}
+              </span>
+              {formattedDate && (
+                <span className="bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-md text-[10px] font-semibold w-fit">
+                  {formattedDate}
+                </span>
+              )}
             </div>
+          ) : (
+            formattedDate && (
+              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold text-gray-900 shadow-sm">
+                {formattedDate}
+              </div>
+            )
           )}
 
           {/* Action Buttons */}
-          <div className="absolute top-4 right-4 flex gap-2">
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            {externalUrl && (
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-indigo-600 hover:text-indigo-800 shadow-sm transition-colors"
+                title={`Open on ${platform || 'Official Platform'}`}
+              >
+                <FaExternalLinkAlt className="w-3.5 h-3.5" />
+              </a>
+            )}
             <button
               onClick={handleShare}
               className="bg-white/90 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:text-blue-600 shadow-sm transition-colors"
@@ -231,46 +260,81 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
               )}
             </div>
 
-            {/* Auto-Team Button with Tooltip */}
-            <div className="flex gap-2">
-              {/* Auto-Team Button */}
-              {!isJoined && (
-                <div className="relative group/tooltip">
+            {/* Action Buttons */}
+            <div className="flex gap-2 items-center">
+              {isExternal ? (
+                <>
                   <button
                     onClick={handleAutoTeamClick}
                     disabled={loading || isQueued}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl font-bold transition-all shadow-sm border ${isQueued
-                      ? "bg-purple-50 text-purple-700 border-purple-200 cursor-default"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:text-blue-600 hover:-translate-y-0.5"
-                      }`}
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[12px] sm:text-[13px] rounded-xl font-bold transition-all shadow-sm flex items-center gap-1.5 ${
+                      isQueued
+                        ? "bg-purple-50 text-purple-700 border border-purple-200 cursor-default"
+                        : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-indigo-200 shadow-md hover:-translate-y-0.5"
+                    }`}
                   >
-                    {isQueued ? "Queued" : "Auto-Team"}
+                    <FaBolt className="text-yellow-300 text-[11px]" />
+                    <span>{isQueued ? "Queued" : "Find Squad"}</span>
                   </button>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none text-center shadow-xl z-20">
-                    Join solo and get automatically grouped with others.
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                  </div>
-                </div>
-              )}
 
-              {/* Join Button */}
-              <button
-                onClick={handleJoin}
-                disabled={loading || isJoined || isQueued}
-                className={`px-3 sm:px-5 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-1.5 sm:gap-2 ${isJoined
-                  ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
-                  : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
-                  }`}
-              >
-                {loading ? (
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : isJoined ? (
-                  <><span>Joined</span><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></>
-                ) : (
-                  "Join Event"
-                )}
-              </button>
+                  {externalUrl && (
+                    <a
+                      href={externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-[12px] sm:text-[13px] rounded-xl font-semibold border border-gray-200 hover:border-indigo-300 hover:text-indigo-600 text-gray-700 bg-white hover:bg-gray-50 transition-all flex items-center gap-1"
+                      title={`Open on ${platform}`}
+                    >
+                      <span className="hidden sm:inline">{platform || 'Link'}</span>
+                      <FaExternalLinkAlt className="text-[10px]" />
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  {!isJoined && (
+                    <div className="relative group/tooltip">
+                      <button
+                        onClick={handleAutoTeamClick}
+                        disabled={loading || isQueued}
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl font-bold transition-all shadow-sm border ${
+                          isQueued
+                            ? "bg-purple-50 text-purple-700 border-purple-200 cursor-default"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-blue-200 hover:text-blue-600 hover:-translate-y-0.5"
+                        }`}
+                      >
+                        {isQueued ? "Queued" : "Auto-Team"}
+                      </button>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none text-center shadow-xl z-20">
+                        Join solo and get automatically grouped with others.
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleJoin}
+                    disabled={loading || isJoined || isQueued}
+                    className={`px-3 sm:px-5 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl font-semibold transition-all shadow-sm flex items-center gap-1.5 sm:gap-2 ${
+                      isJoined
+                        ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
+                        : "bg-gray-900 text-white hover:bg-black hover:shadow-md hover:-translate-y-0.5"
+                    }`}
+                  >
+                    {loading ? (
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : isJoined ? (
+                      <>
+                        <span>Joined</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                      </>
+                    ) : (
+                      "Join Event"
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
