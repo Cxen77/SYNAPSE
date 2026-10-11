@@ -4,6 +4,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Suppress any injected Lovable badges, headers or watermarks */
+#lovable-badge,
+[id*="lovable"],
+[class*="lovable"],
+a[href*="lovable.dev"],
+iframe[src*="lovable"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

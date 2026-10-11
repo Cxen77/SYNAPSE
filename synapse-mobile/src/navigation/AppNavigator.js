@@ -50,13 +50,17 @@ export default function AppNavigator() {
           </>
         ) : (
           <>
+            {/* Public Browsing First (Twitter/TikTok style) */}
+            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+            <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+            <Stack.Screen name="TeamDetails" component={TeamDetailsScreen} />
+            <Stack.Screen name="ThreadDetails" component={ThreadDetailsScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
             {/* Auth Flow */}
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Signup" component={SignupScreen} />
             <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-            {/* Can also preview public feed */}
-            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
           </>
         )}
       </Stack.Navigator>

@@ -84,12 +84,15 @@ function Navbar() {
 
       {/* Left Section */}
       <div className="flex items-center gap-4">
-        <a href="/">
+        <a href="/" className="flex items-center gap-2.5 group">
           <img
             src={Logo}
-            alt="Fuseon Logo"
-            className="h-12 w-auto object-contain"
+            alt="Synapse Logo"
+            className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
           />
+          <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hidden sm:inline-block">
+            Synapse
+          </span>
         </a>
 
         <div className="hidden md:block">

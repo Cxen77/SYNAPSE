@@ -13,9 +13,6 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
-  optimizeDeps: {
-    exclude: ['canvg', 'html2canvas']
-  },
   plugins: [
     react(),
     VitePWA({

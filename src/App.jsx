@@ -290,6 +290,9 @@ function App() {
               <Route path="post/:id" element={<ThreadPage />} />
               <Route path=":id" element={<ForumDetails />} />
             </Route>
+
+            {/* Catch-all redirect to Home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>

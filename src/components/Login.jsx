@@ -83,10 +83,10 @@ const Login = () => {
           {/* Header */}
           <div className="text-center mb-4">
             <div className="flex justify-center mb-2">
-              <img src={Logo} alt="Fuseon Logo" className="h-12 w-auto object-contain" />
+              <img src={Logo} alt="Synapse Logo" className="h-12 w-auto object-contain" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Welcome Back</h1>
-            <p className="text-gray-500 text-sm mt-1">Sign in to your Fuseon account</p>
+            <p className="text-gray-500 text-sm mt-1">Sign in to your Synapse account</p>
           </div>
 
           {error && (
