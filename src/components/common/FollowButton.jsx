@@ -1,13 +1,11 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useFollow } from '../../hooks/useFollow';
 import { HiUserAdd, HiUserRemove } from "react-icons/hi";
 import { Loader2, Check } from "lucide-react";
 import { useAuth } from '../../context/AuthContext';
 
 const FollowButton = ({ targetUser, variant = 'icon' }) => {
-    const { currentUser } = useAuth();
-    const navigate = useNavigate();
+    const { currentUser, requireAuth } = useAuth();
     const { follow, isPending } = useFollow(targetUser?._id);
 
     if (!targetUser || (currentUser && targetUser._id === currentUser._id)) return null;
@@ -17,10 +15,7 @@ const FollowButton = ({ targetUser, variant = 'icon' }) => {
     const handleClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!currentUser) {
-            navigate('/login');
-            return;
-        }
+        if (!requireAuth(null, 'follow')) return;
         follow();
     };
 

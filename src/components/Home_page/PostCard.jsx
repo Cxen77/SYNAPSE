@@ -77,11 +77,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
   };
 
   const handleReply = (commentId, username) => {
-    if (!currentUser?._id) {
-      toast("Please log in to reply", { icon: "🔒" });
-      navigate("/login");
-      return;
-    }
+    if (!requireAuth(null, 'comment')) return;
 
     setReplyingTo({ id: commentId, username });
     setNewComment(`@${username} `);

@@ -131,7 +131,7 @@ function App() {
 
       if (!isChatActive) {
         // Prevent self-notification
-        if (newMessage.senderId._id === currentUser._id || newMessage.senderId === currentUser._id) {
+        if (!currentUser || newMessage.senderId._id === currentUser._id || newMessage.senderId === currentUser._id) {
           return;
         }
 
