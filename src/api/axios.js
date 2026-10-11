@@ -101,14 +101,17 @@ api.interceptors.response.use(
                 refreshSubscribers = [];
 
                 // Only redirect if this wasn't a silent background check
-                // (skipAuthRedirect flag is set by AuthContext on initial load)
-                if (!originalRequest._skipAuthRedirect &&
-                    window.location.pathname !== '/' &&
-                    window.location.pathname !== '/login' &&
-                    window.location.pathname !== '/signup' &&
-                    window.location.pathname !== '/verify-email' &&
-                    window.location.pathname !== '/forgot-password' &&
-                    window.location.pathname !== '/reset-password') {
+                // AND the current page strictly requires authentication (like chat, settings, admin)
+                const isStrictlyAuthPage = (pathname) => {
+                    return pathname.startsWith('/chat') ||
+                           pathname.startsWith('/settings') ||
+                           pathname.startsWith('/admin') ||
+                           pathname.startsWith('/organizer') ||
+                           pathname.startsWith('/moderator') ||
+                           pathname.endsWith('/manage');
+                };
+
+                if (!originalRequest._skipAuthRedirect && isStrictlyAuthPage(window.location.pathname)) {
                     window.location.href = '/login';
                 }
                 return Promise.reject(refreshError);

@@ -11,7 +11,7 @@ import USNPromptModal from './USNPromptModal';
 import { useAuth } from '../../context/AuthContext';
 
 const Cards = ({ eventData, onEdit, currentUserId }) => {
-  const { user: currentUserProfile } = useAuth(); // Get full profile for matching
+  const { user: currentUserProfile, requireAuth } = useAuth(); // Get full profile for matching
   const {
     _id,
     organizerName,
@@ -40,6 +40,10 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
 
   const handleAutoTeamClick = (e) => {
     e.stopPropagation();
+    if (!currentUserId) {
+      requireAuth(() => {}, 'team');
+      return;
+    }
     if (isJoined || isQueued) return;
     setShowAutoTeamModal(true);
   };
@@ -53,6 +57,10 @@ const Cards = ({ eventData, onEdit, currentUserId }) => {
 
   const handleJoin = async (e) => {
     e.stopPropagation();
+    if (!currentUserId) {
+      requireAuth(() => {}, 'event');
+      return;
+    }
     if (isJoined) return;
 
     setLoading(true);

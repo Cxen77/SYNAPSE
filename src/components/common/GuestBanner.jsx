@@ -10,7 +10,7 @@ export default function GuestBanner() {
   return (
     <aside 
       aria-label="Join Synapse banner"
-      className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-2xl border-t border-blue-400/30 backdrop-blur-md"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 dark:from-gray-900/95 dark:via-blue-950/90 dark:to-gray-900/95 text-white shadow-2xl border-t border-blue-400/30 dark:border-gray-800 backdrop-blur-md"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 md:py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 relative">
         {/* Left text */}

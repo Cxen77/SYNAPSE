@@ -292,7 +292,7 @@ function GoalsContent({ team, canManage, onRefresh, editing, setEditing }) {
 const TeamDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, requireAuth } = useAuth();
     const [team, setTeam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -612,7 +612,7 @@ const TeamDetails = () => {
 
                                         {joinStatus !== 'pending' && joinStatus !== 'member' && (
                                             <button
-                                                onClick={() => setShowApplyModal(true)}
+                                                onClick={() => requireAuth(() => setShowApplyModal(true), 'team')}
                                                 className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${joinStatus === 'rejected'
                                                     ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
                                                     : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
@@ -655,7 +655,7 @@ const TeamDetails = () => {
                                 )}
 
                                 <button
-                                    onClick={handleOpenTeamChat}
+                                    onClick={() => requireAuth(handleOpenTeamChat, 'chat')}
                                     disabled={isJoiningChat}
                                     className="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm disabled:opacity-50"
                                 >

@@ -3,6 +3,7 @@ import api, { setAccessToken, getAccessToken, refreshAccessToken } from '../api/
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseClient';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import AuthPromptModal from '../components/common/AuthPromptModal';
 
 const AuthContext = createContext();
 
@@ -107,6 +108,46 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(null);
     };
 
+    const [authModalConfig, setAuthModalConfig] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+    });
+
+    const openAuthModal = (title, message) => {
+        setAuthModalConfig({
+            isOpen: true,
+            title: title || "Don't miss what's happening",
+            message: message || "Sign in or create an account to like, comment, and connect on Synapse.",
+        });
+    };
+
+    const closeAuthModal = () => {
+        setAuthModalConfig(prev => ({ ...prev, isOpen: false }));
+    };
+
+    // Helper: checks if user is authenticated; if yes, runs action; if no, pops auth modal
+    const requireAuth = (action, actionName = 'interact') => {
+        if (currentUser?._id) {
+            return typeof action === 'function' ? action() : true;
+        }
+        const actionMessages = {
+            like: { title: "Log in to like posts", message: "Sign in to like posts, react to updates, and support creators." },
+            comment: { title: "Log in to comment", message: "Join the conversation on Synapse by signing in to reply." },
+            post: { title: "Sign in to post", message: "Share your thoughts, hackathons, and projects with the community." },
+            team: { title: "Sign in to join teams", message: "Collaborate with talented peers and build projects together." },
+            event: { title: "Sign in to register", message: "Get your digital event pass and match with teammates." },
+            chat: { title: "Sign in to chat", message: "Connect in real-time with teammates and community members." },
+            follow: { title: "Sign in to follow", message: "Stay updated with creators, organizers, and friends." },
+        };
+        const config = actionMessages[actionName] || {
+            title: "Sign in to continue",
+            message: "Create an account or log in to interact on Synapse."
+        };
+        openAuthModal(config.title, config.message);
+        return false;
+    };
+
     const value = {
         currentUser,
         signup,
@@ -117,12 +158,21 @@ export const AuthProvider = ({ children }) => {
         resetPassword,
         logout,
         logoutAll,
-        loading
+        loading,
+        openAuthModal,
+        closeAuthModal,
+        requireAuth
     };
 
     return (
         <AuthContext.Provider value={value}>
             {!loading && children}
+            <AuthPromptModal
+                isOpen={authModalConfig.isOpen}
+                onClose={closeAuthModal}
+                title={authModalConfig.title}
+                message={authModalConfig.message}
+            />
         </AuthContext.Provider>
     );
 };

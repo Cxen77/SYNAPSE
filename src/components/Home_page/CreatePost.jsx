@@ -167,14 +167,14 @@ export default function CreatePost({ user, onPostCreated }) {
 
     if (!displayUser._id) {
         return (
-            <div className="p-5 md:p-6 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-5 md:p-6 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 dark:from-blue-950/30 dark:via-gray-900 dark:to-indigo-950/20 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
                     <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-blue-500/20 flex-shrink-0">
                         ⚡
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-900 text-sm md:text-base">What's happening?</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base">What's happening?</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             Join Synapse to share updates, showcase projects, and connect with teammates.
                         </p>
                     </div>
@@ -182,7 +182,7 @@ export default function CreatePost({ user, onPostCreated }) {
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <Link
                         to="/login"
-                        className="flex-1 sm:flex-initial text-center px-4 py-2 text-xs font-bold text-gray-700 hover:text-blue-600 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition shadow-sm"
+                        className="flex-1 sm:flex-initial text-center px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-xl transition shadow-sm"
                     >
                         Log In
                     </Link>

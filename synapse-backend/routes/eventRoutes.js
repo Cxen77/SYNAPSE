@@ -12,7 +12,7 @@ import {
     importExternalEvent
 } from '../controllers/eventController.js';
 import { getEventTeams } from '../controllers/teamController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 import requireFeature from '../middleware/requireFeature.js';
 import validate from '../middleware/validate.js';
 import { eventSchema } from '../utils/validationSchemas.js';
@@ -22,14 +22,14 @@ const router = express.Router();
 
 router.route('/')
     .post(protect, requireFeature('events'), upload.single('imageFile'), validate(eventSchema), createEvent)
-    .get(protect, getEvents);
+    .get(optionalProtect, getEvents);
 
 // ── External event scraping & import (MUST be before /:id routes) ──
 router.post('/parse-external-link', protect, parseExternalLink);
 router.post('/import-external', protect, importExternalEvent);
 
 router.route('/:id')
-    .get(protect, getEventById)
+    .get(optionalProtect, getEventById)
     .put(protect, upload.single('imageFile'), validate(eventSchema), updateEvent)
     .delete(protect, deleteEvent);
 

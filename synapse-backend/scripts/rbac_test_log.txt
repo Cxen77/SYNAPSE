@@ -1,0 +1,9 @@
+Starting RBAC Verification...
+Setting up Test Data...
+Created Admin: rbac_admin@example.com
+Created User: rbac_user@example.com
+Login failed for rbac_admin@example.com: Error
+TEST SUITE FAILED: Admin login failed
+
+Cleaning up...
+Done.

@@ -12,11 +12,13 @@ import VerifiedBadge from "../common/VerifiedBadge";
 import AttachedTeamCard from "./AttachedTeamCard";
 import AttachedEventCard from "./AttachedEventCard";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../../context/AuthContext";
 
 export default function PostCard({ post, currentUser = {}, onDelete }) {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { requireAuth } = useAuth();
 
   // Normalize data to handle both frontend mock and backend data formats
   const displayPost = {
@@ -99,8 +101,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
 
   const handleLike = async () => {
     if (!currentUser?._id) {
-      toast("Please log in to like posts", { icon: "🔒" });
-      navigate("/login");
+      requireAuth(() => {}, 'like');
       return;
     }
 
@@ -146,8 +147,7 @@ export default function PostCard({ post, currentUser = {}, onDelete }) {
   const handleCommentSubmit = async (e, customText) => {
     e.preventDefault();
     if (!currentUser?._id) {
-      toast("Please log in to comment", { icon: "🔒" });
-      navigate("/login");
+      requireAuth(() => {}, 'comment');
       return;
     }
 

@@ -5,10 +5,12 @@ import api from '../../api/axios';
 import Avatar from '../common/Avatar';
 import Skeleton from '../common/Skeleton';
 import ForumReplyList from './ForumReplyList';
+import { useAuth } from '../../context/AuthContext';
 
 const ThreadPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { requireAuth } = useAuth();
     const [thread, setThread] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -150,7 +152,9 @@ const ThreadPage = () => {
 
                     {/* ActionBar */}
                     <div className="flex items-center gap-6 pt-6 border-t border-gray-100">
-                        <button className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-medium transition-colors">
+                        <button
+                            onClick={() => requireAuth(null, 'like')}
+                            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-medium transition-colors">
                             <ThumbsUp className="w-5 h-5" />
                             <span>{thread.likes?.length || 0} Likes</span>
                         </button>

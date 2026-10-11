@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import ForumReplyItem from './ForumReplyItem';
 import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const ForumReplyList = ({ threadId, replies = [], onReplyAdded }) => {
+    const { requireAuth } = useAuth();
     const [newReply, setNewReply] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!requireAuth(null, 'comment')) return;
         if (!newReply.trim()) return;
 
         setSubmitting(true);

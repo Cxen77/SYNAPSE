@@ -18,7 +18,7 @@ import {
     toggleSavePost,
     reportPost
 } from '../controllers/forumController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 import requireFeature from '../middleware/requireFeature.js';
 
 const router = express.Router();
@@ -26,16 +26,16 @@ const router = express.Router();
 // Forum Routes
 router.route('/')
     .post(protect, requireFeature('forum'), createForum)
-    .get(protect, getAllForums);
+    .get(optionalProtect, getAllForums);
 
 router.route('/posts/feed')
-    .get(protect, getAllPosts);
+    .get(optionalProtect, getAllPosts);
 
 router.route('/posts/search')
-    .get(protect, searchPosts);
+    .get(optionalProtect, searchPosts);
 
 router.route('/:id')
-    .get(protect, getForumById);
+    .get(optionalProtect, getForumById);
 
 router.route('/:id/join')
     .put(protect, joinForum);
@@ -46,11 +46,11 @@ router.route('/:id/leave')
 // Post Routes (nested under forums for creation, but also standalone for actions)
 router.route('/:id/posts')
     .post(protect, requireFeature('forum'), createPost)
-    .get(protect, getForumPosts);
+    .get(optionalProtect, getForumPosts);
 
 // Single Post Actions
 router.route('/post/:id')
-    .get(protect, getPostDetails);
+    .get(optionalProtect, getPostDetails);
 
 router.route('/post/:id/reply')
     .post(protect, requireFeature('forum'), createReply);

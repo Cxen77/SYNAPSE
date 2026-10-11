@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import ForumSidebar from './ForumSidebar';
 import CreateForumModal from './CreateForumModal'; // We'll build this next
+import { useAuth } from '../../context/AuthContext';
 
 const ForumLayout = () => {
+    const { requireAuth } = useAuth();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const handleCreateThread = () => {
-        setIsCreateModalOpen(true);
+        requireAuth(() => setIsCreateModalOpen(true), 'post');
     };
 
     return (

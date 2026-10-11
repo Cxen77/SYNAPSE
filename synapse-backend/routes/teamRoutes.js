@@ -24,22 +24,22 @@ import {
     transferOwnership,
     deleteTeam
 } from '../controllers/teamController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // ── Existing routes (unchanged) ───────────────────────
-router.get('/search', protect, searchTeams);
+router.get('/search', optionalProtect, searchTeams);
 router.get('/invites', protect, getMyInvites);
-router.get('/open', protect, getOpenTeams);
-router.get('/user/:userId', protect, getUserTeams);   // profile teams tab
+router.get('/open', optionalProtect, getOpenTeams);
+router.get('/user/:userId', optionalProtect, getUserTeams);   // profile teams tab
 
 router.route('/')
     .post(protect, createTeam)
     .get(protect, getMyTeams);
 
 router.route('/:id')
-    .get(protect, getTeamById)
+    .get(optionalProtect, getTeamById)
     .delete(protect, deleteTeam);
 
 // Invite management

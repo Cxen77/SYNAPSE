@@ -211,13 +211,13 @@ function App() {
 
             {/* Protected Routes */}
             <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-            <Route path="/teams/:id" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
+            {/* Public Browsing Routes (Like Twitter/TikTok: browse freely, interact requires login) */}
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:id" element={<TeamDetails />} />
             <Route path="/teams/:id/manage" element={<ProtectedRoute><ManageTeam /></ProtectedRoute>} />
 
-            {/* Feature Gated Routes */}
-            <Route path="/events" element={<ProtectedRoute><FeatureGate featureKey="events" fallback={<Navigate to="/" replace />}><Events /></FeatureGate></ProtectedRoute>} />
-            <Route path="/events/:id" element={<ProtectedRoute><FeatureGate featureKey="events" fallback={<Navigate to="/" replace />}><EventDetails /></FeatureGate></ProtectedRoute>} />
+            <Route path="/events" element={<FeatureGate featureKey="events" fallback={<Navigate to="/" replace />}><Events /></FeatureGate>} />
+            <Route path="/events/:id" element={<FeatureGate featureKey="events" fallback={<Navigate to="/" replace />}><EventDetails /></FeatureGate>} />
 
             <Route path="/chat" element={<ProtectedRoute><FeatureGate featureKey="chat" fallback={<Navigate to="/" replace />}><Chat /></FeatureGate></ProtectedRoute>} />
             <Route path="/chat/:id" element={<ProtectedRoute><FeatureGate featureKey="chat" fallback={<Navigate to="/" replace />}><Chat /></FeatureGate></ProtectedRoute>} />
@@ -230,11 +230,9 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/profile/:username" element={
-              <ProtectedRoute>
-                <Suspense fallback={<ProfileSkeleton />}>
-                  <Profile />
-                </Suspense>
-              </ProtectedRoute>
+              <Suspense fallback={<ProfileSkeleton />}>
+                <Profile />
+              </Suspense>
             } />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
@@ -286,8 +284,8 @@ function App() {
               }
             />
 
-            {/* Forum Routes (Feature Gated) */}
-            <Route path="/forums" element={<ProtectedRoute><FeatureGate featureKey="forum" fallback={<Navigate to="/" replace />}><ForumLayout /></FeatureGate></ProtectedRoute>}>
+            {/* Forum Routes (Feature Gated, Public Browsing) */}
+            <Route path="/forums" element={<FeatureGate featureKey="forum" fallback={<Navigate to="/" replace />}><ForumLayout /></FeatureGate>}>
               <Route index element={<ForumHome />} />
               <Route path="post/:id" element={<ThreadPage />} />
               <Route path=":id" element={<ForumDetails />} />
