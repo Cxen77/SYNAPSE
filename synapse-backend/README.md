@@ -164,6 +164,28 @@ All errors return JSON in the following format:
 }
 ```
 
+## Event import tests
+
+From `synapse-backend`, run the extraction and controller regression tests:
+
+```sh
+node --test services/eventScraperService.test.js controllers/eventImport.test.js
+```
+
+To also test live Unstop and Devpost pages, password login, authenticated event
+routes, and persistent MongoDB saves, start local MongoDB on `127.0.0.1:27017`
+and run in PowerShell:
+
+```powershell
+$env:RUN_EVENT_IMPORT_INTEGRATION = '1'
+node --test controllers/eventImport.integration.test.js
+Remove-Item Env:RUN_EVENT_IMPORT_INTEGRATION
+```
+
+The integration test creates and removes its own uniquely named
+`synapse_import_qa_*` database. It never uses the configured production database.
+CAPTCHA and OAuth providers are outside this local integration test.
+
 ## License
 
 MIT

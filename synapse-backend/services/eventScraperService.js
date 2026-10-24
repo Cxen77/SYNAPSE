@@ -1,567 +1,184 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { lookup } from 'node:dns/promises';
+import { isIP, BlockList } from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
 
-// ─── Platform Detection ────────────────────────────────────────────────────
-function detectPlatform(url) {
-    const host = new URL(url).hostname.toLowerCase();
-    if (host.includes('unstop.com') || host.includes('dare2compete.com')) return 'Unstop';
-    if (host.includes('devfolio.co')) return 'Devfolio';
-    if (host.includes('devpost.com')) return 'Devpost';
-    if (host.includes('hackerearth.com')) return 'HackerEarth';
-    if (host.includes('mlh.io')) return 'MLH';
-    if (host.includes('eventbrite.com')) return 'Eventbrite';
-    if (host.includes('lu.ma') || host.includes('luma.com')) return 'Luma';
-    return 'Other';
+const blocked = new BlockList();
+for (const [ip, prefix] of [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.168.0.0', 16], ['192.0.0.0', 24], ['192.0.2.0', 24], ['198.18.0.0', 15], ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 3]]) blocked.addSubnet(ip, prefix, 'ipv4');
+const globalV6 = new BlockList();
+globalV6.addSubnet('2000::', 3, 'ipv6');
+blocked.addSubnet('2001::', 23, 'ipv6');
+blocked.addSubnet('2001:db8::', 32, 'ipv6');
+blocked.addSubnet('2002::', 16, 'ipv6');
+const publicIP = ip => isIP(ip) === 4 ? !blocked.check(ip, 'ipv4') : isIP(ip) === 6 && globalV6.check(ip, 'ipv6') && !blocked.check(ip, 'ipv6');
+
+export function normalizeEventUrl(value) {
+    let url;
+    try { url = new URL(value); } catch { throw new Error('Please paste a valid event page URL.'); }
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error('Only public HTTP/HTTPS event links are supported.');
+    const host = url.hostname.replace(/^\[|\]$/g, '');
+    if (host === 'localhost' || (isIP(host) && !publicIP(host))) throw new Error('Only public event links are supported.');
+    url.hash = '';
+    for (const key of [...url.searchParams.keys()]) if (/^utm_|^(fbclid|gclid)$/i.test(key)) url.searchParams.delete(key);
+    if (/^(?:(?:www|api)\.)?(?:unstop\.com|dare2compete\.com)$/.test(host)) {
+        const id = url.pathname.match(/^\/o\/(\d+)\/?$/)?.[1]
+            || url.pathname.match(/^\/(?:hackathons|competitions|workshops|conferences|quizzes|events)\/[^/]+-(\d+)\/?$/)?.[1];
+        if (id) return `https://unstop.com/o/${id}`;
+    }
+    return url.href.replace(/\/$/, '');
 }
 
-// ─── HTTP Fetch with realistic headers ─────────────────────────────────────
-async function fetchPage(url) {
-    const response = await axios.get(url, {
-        timeout: 15000,
-        maxRedirects: 5,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
-        },
-        decompress: true,
-    });
-    return response.data;
+export function externalEventUrlPattern(value) {
+    const url = normalizeEventUrl(value);
+    const unstopId = url.match(/^https:\/\/unstop\.com\/o\/(\d+)$/)?.[1];
+    if (unstopId) return new RegExp(`^https?://(?:(?:www|api)\\.)?(?:unstop\\.com|dare2compete\\.com)/(?:o/|[^?#]*-)${unstopId}/?(?:[?#].*)?$`, 'i');
+    return new RegExp('^' + url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?$');
 }
 
-// ─── Utility: Clean text ───────────────────────────────────────────────────
-function cleanText(text) {
-    if (!text) return '';
-    return text.replace(/\s+/g, ' ').trim();
+export function detectPlatform(value) {
+    const host = new URL(value).hostname.toLowerCase();
+    const platforms = { 'unstop.com': 'Unstop', 'dare2compete.com': 'Unstop', 'devfolio.co': 'Devfolio', 'devpost.com': 'Devpost', 'hackerearth.com': 'HackerEarth', 'mlh.io': 'MLH', 'eventbrite.com': 'Eventbrite', 'lu.ma': 'Luma', 'luma.com': 'Luma' };
+    return Object.entries(platforms).find(([domain]) => host === domain || host.endsWith(`.${domain}`))?.[1] || 'Other';
 }
 
-function truncate(text, max = 500) {
-    if (!text) return '';
-    return text.length > max ? text.substring(0, max) + '…' : text;
+async function fetchPage(value, { unstopPublicPage = false } = {}) {
+    let url = normalizeEventUrl(value);
+    // Unstop's public HTML/AMP page exposes the same event without needing
+    // its JavaScript app. Always derive this address from a verified event ID.
+    // Resolve and pin each connection, including redirects, to a public address.
+    for (let redirect = 0; redirect <= 5; redirect++) {
+        if (unstopPublicPage && /^https:\/\/unstop\.com\/o\/\d+$/.test(url)) url = url.replace('https://unstop.com/', 'https://api.unstop.com/');
+        const host = new URL(url).hostname.replace(/^\[|\]$/g, '');
+        const addresses = await lookup(host, { all: true });
+        if (!addresses.length || addresses.some(({ address }) => !publicIP(address))) throw new Error('Only public event links are supported.');
+        const pinnedLookup = (_host, options, callback) => options.all
+            ? callback(null, [addresses[0]]) : callback(null, addresses[0].address, addresses[0].family);
+        const response = await axios.get(url, {
+            timeout: 15000, maxRedirects: 0, maxContentLength: 5 * 1024 * 1024,
+            proxy: false,
+            httpAgent: new http.Agent({ lookup: pinnedLookup }),
+            httpsAgent: new https.Agent({ lookup: pinnedLookup }),
+            headers: { Accept: 'application/json, text/plain, */*' },
+            validateStatus: status => status >= 200 && status < 400,
+        });
+        if (response.status >= 300) {
+            if (!response.headers.location) throw new Error('The event page returned an invalid redirect.');
+            url = normalizeEventUrl(new URL(response.headers.location, url).href);
+            continue;
+        }
+        return { html: response.data, url };
+    }
+    throw new Error('The event link redirects too many times.');
 }
 
-// ─── Parse date string loosely ─────────────────────────────────────────────
-function parseDate(dateStr) {
-    if (!dateStr) return null;
-    try {
-        const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) return d.toISOString();
-    } catch (_) { }
-
-    // Try common patterns like "Jan 15, 2025" or "15 Jan 2025"
-    const cleaned = dateStr.replace(/(\d+)(st|nd|rd|th)/gi, '$1').trim();
-    try {
-        const d = new Date(cleaned);
-        if (!isNaN(d.getTime())) return d.toISOString();
-    } catch (_) { }
+const text = value => {
+    if (typeof value !== 'string') return '';
+    let cleaned = cheerio.load(value).text();
+    // Some providers HTML-encode their JSON-LD descriptions a second time.
+    if (/<\/?[a-z][^>]*>/i.test(cleaned)) cleaned = cheerio.load(cleaned).text();
+    return cleaned.replace(/\\n|\s+/g, ' ').trim();
+};
+const dateValue = value => {
+    if (!value || !['string', 'number'].includes(typeof value)) return null;
+    const date = new Date(typeof value === 'number' && value < 1e12 ? value * 1000 : value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+function imageValue(value, base) {
+    if (Array.isArray(value)) value = value[0];
+    if (value && typeof value === 'object') value = value.url || value.contentUrl || value.secure_url;
+    if (typeof value !== 'string' || !value.trim()) return '';
+    try { const url = new URL(value, base); return ['http:', 'https:'].includes(url.protocol) ? url.href : ''; } catch { return ''; }
+}
+function locationValue(value) {
+    if (Array.isArray(value)) return value.map(locationValue).filter(Boolean).join(' / ');
+    if (typeof value === 'string') return text(value);
+    if (!value || typeof value !== 'object') return '';
+    if (value['@type'] === 'VirtualLocation') return 'Online';
+    const address = value.address;
+    return [...new Set([text(value.name), typeof address === 'string' ? text(address) : [address?.streetAddress, address?.addressLocality, address?.addressRegion, address?.addressCountry?.name || address?.addressCountry].map(text).filter(Boolean).join(', ')].filter(Boolean))].join(', ');
+}
+function findEvent(value, depth = 0) {
+    if (!value || typeof value !== 'object' || depth > 15) return null;
+    const types = [value['@type']].flat();
+    if (types.some(type => typeof type === 'string' && /Event$/.test(type))) return value;
+    for (const child of Object.values(value)) { const event = findEvent(child, depth + 1); if (event) return event; }
     return null;
 }
-
-// ─── Guess category from text ──────────────────────────────────────────────
-function guessCategory(title, description) {
-    const text = `${title} ${description}`.toLowerCase();
-    if (text.includes('hackathon') || text.includes('hack')) return 'Hackathon';
-    if (text.includes('workshop') || text.includes('bootcamp')) return 'Workshop';
-    if (text.includes('seminar') || text.includes('webinar') || text.includes('conference') || text.includes('talk')) return 'Seminar';
-    if (text.includes('tournament') || text.includes('competition') || text.includes('contest') || text.includes('challenge')) return 'Tournament';
-    if (text.includes('meetup') || text.includes('networking')) return 'Meetup';
-    if (text.includes('game') || text.includes('gaming') || text.includes('esport')) return 'Game';
-    if (text.includes('sport') || text.includes('athletic') || text.includes('cricket') || text.includes('football')) return 'Sport';
-    return 'Hackathon'; // Default for external platform events
+function categoryValue(title, description) {
+    const content = `${title} ${description}`;
+    for (const [pattern, category] of [[/hackathon/i, 'Hackathon'], [/workshop|bootcamp/i, 'Workshop'], [/seminar|webinar|conference|\btalk\b/i, 'Seminar'], [/tournament|competition|contest|challenge/i, 'Tournament'], [/meetup|networking/i, 'Meetup'], [/gaming|esport/i, 'Game'], [/sport|cricket|football/i, 'Sport']]) if (pattern.test(content)) return category;
+    return '';
 }
 
-// ─── Extract team size from text ───────────────────────────────────────────
-function extractTeamSize(text) {
-    if (!text) return { min: 1, max: 4 };
-
-    // "team of 2-5" or "2 to 5 members" or "team size: 1-4"
-    const rangeMatch = text.match(/(?:team\s*(?:size|of)?[\s:]*)?(\d+)\s*[-–to]+\s*(\d+)\s*(?:members?|people|participants?)?/i);
-    if (rangeMatch) {
-        return { min: parseInt(rangeMatch[1]), max: parseInt(rangeMatch[2]) };
-    }
-
-    // "max team size 4" or "maximum 5 members"
-    const maxMatch = text.match(/(?:max(?:imum)?)\s*(?:team\s*size)?[\s:]*(\d+)/i);
-    if (maxMatch) {
-        return { min: 1, max: parseInt(maxMatch[1]) };
-    }
-
-    // "team of 4" or "4 members"
-    const singleMatch = text.match(/(?:team\s*(?:size|of)?[\s:]*)?(\d+)\s*(?:members?|people|participants?)/i);
-    if (singleMatch) {
-        const n = parseInt(singleMatch[1]);
-        return { min: 1, max: n };
-    }
-
-    return { min: 1, max: 4 };
+function unstopDetails($) {
+    const details = $('.details .default-editor, .details .detail-page').first().clone();
+    details.find('br').replaceWith('\n');
+    details.find('p, li').append('\n');
+    const lines = details.text().split(/\n+/).map(line => line.trim()).filter(Boolean);
+    const labelledDate = lines.find(line => /^(?:event\s+date|dates?|starts?\s+on)\s*:/i.test(line));
+    const datePart = labelledDate?.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(\d{4})\b/i);
+    const date = datePart ? dateValue(`${datePart[1]} ${datePart[2]} ${datePart[3]} UTC`) : null;
+    const locationLine = lines.find(line => /^(?:venue|location)\s*:/i.test(line))
+        || lines.find(line => /^(?:mode|event\s+mode)\s*:/i.test(line));
+    const location = locationLine ? locationLine.replace(/^[^:]+:\s*/, '').trim() : '';
+    return { description: text(details.html()), date, location };
 }
 
-// ─── OpenGraph / Meta Tag Fallback ─────────────────────────────────────────
-function extractMetaTags($) {
-    const getMeta = (name) => {
-        return $(`meta[property="${name}"]`).attr('content')
-            || $(`meta[name="${name}"]`).attr('content')
-            || '';
-    };
-
-    return {
-        title: getMeta('og:title') || getMeta('twitter:title') || $('title').text() || '',
-        description: getMeta('og:description') || getMeta('twitter:description') || getMeta('description') || '',
-        imageUrl: getMeta('og:image') || getMeta('twitter:image') || '',
-        siteName: getMeta('og:site_name') || '',
-        url: getMeta('og:url') || '',
-    };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  PLATFORM-SPECIFIC SCRAPERS
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ─── Unstop (dare2compete) ─────────────────────────────────────────────────
-async function scrapeUnstop(url, html) {
-    const $ = cheerio.load(html);
-    const meta = extractMetaTags($);
-
-    // Unstop renders heavily with JS, so we primarily rely on meta tags
-    // but also try to extract from JSON-LD and visible HTML
-    let title = meta.title || '';
-    let description = meta.description || '';
-    let imageUrl = meta.imageUrl || '';
-    let date = null;
-    let location = 'Online';
-    let prize = '';
-    let teamSize = { min: 1, max: 4 };
-
-    // Clean up Unstop title (often has " | Unstop" suffix)
-    title = title.replace(/\s*\|?\s*Unstop.*$/i, '').replace(/\s*\|?\s*Dare2Compete.*$/i, '').trim();
-
-    // Try JSON-LD structured data
-    $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-            const json = JSON.parse($(el).html());
-            if (json['@type'] === 'Event' || json['@type'] === 'HackathonEvent') {
-                title = title || json.name || '';
-                description = description || json.description || '';
-                imageUrl = imageUrl || json.image || '';
-                if (json.startDate) date = parseDate(json.startDate);
-                if (json.location) {
-                    if (typeof json.location === 'string') location = json.location;
-                    else if (json.location.name) location = json.location.name;
-                    else if (json.location.address) location = json.location.address;
-                }
-                if (json.offers?.price) prize = `₹${json.offers.price}`;
-            }
-        } catch (_) { }
+// Pure extraction is shared by every platform: Event JSON-LD takes precedence
+// over site-wide metadata, followed by embedded event state and visible content.
+export function extractEventMetadata(html, url) {
+    const $ = cheerio.load(typeof html === 'string' ? html : '');
+    const meta = name => $(`meta[property="${name}"], meta[name="${name}"]`).first().attr('content') || '';
+    let structured = null;
+    $('script[type="application/ld+json"]').each((_, element) => {
+        try { structured ||= findEvent(JSON.parse($(element).html())); } catch { /* Ignore malformed unrelated scripts. */ }
     });
-
-    // Try extracting from visible page content
-    const pageText = $('body').text();
-    if (!date) {
-        // Look for date patterns in the page
-        const dateMatch = pageText.match(/(?:starts?|begins?|date)[\s:]*(\w+\s+\d{1,2},?\s+\d{4})/i);
-        if (dateMatch) date = parseDate(dateMatch[1]);
-    }
-
-    // Extract prize info
-    if (!prize) {
-        const prizeMatch = pageText.match(/(?:prize|reward|worth|pool)[\s:]*(?:₹|INR|Rs\.?|USD|\$)?\s*([\d,]+(?:\.\d+)?(?:\s*(?:lakh|lac|lakhs|k|cr|crore))?)/i);
-        if (prizeMatch) prize = `₹${prizeMatch[1]}`;
-    }
-
-    // Extract team size
-    teamSize = extractTeamSize(pageText);
-
-    // Try to get location/mode
-    if (pageText.match(/\b(?:offline|in[\s-]?person|on[\s-]?site|venue)\b/i)) {
-        const locMatch = pageText.match(/(?:venue|location|city|place)[\s:]+([A-Za-z\s,]+?)(?:\.|$|\n)/i);
-        if (locMatch) location = cleanText(locMatch[1]);
-        else location = 'Offline';
-    } else if (pageText.match(/\bonline\b/i)) {
-        location = 'Online';
-    } else if (pageText.match(/\bhybrid\b/i)) {
-        location = 'Hybrid';
-    }
-
-    // Fallback date: 3 weeks from now
-    if (!date) {
-        date = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-        title: cleanText(title) || 'Unstop Competition',
-        description: truncate(cleanText(description)),
-        imageUrl,
-        date,
-        location,
-        prize,
-        maxTeamSize: teamSize.max,
-        minTeamSize: teamSize.min,
-        category: guessCategory(title, description),
-        platform: 'Unstop',
-        externalUrl: url,
-    };
-}
-
-// ─── Devfolio ──────────────────────────────────────────────────────────────
-async function scrapeDevfolio(url, html) {
-    const $ = cheerio.load(html);
-    const meta = extractMetaTags($);
-
-    let title = meta.title || '';
-    let description = meta.description || '';
-    let imageUrl = meta.imageUrl || '';
-    let date = null;
-    let location = 'Online';
-    let prize = '';
-    let teamSize = { min: 1, max: 4 };
-
-    // Clean title
-    title = title.replace(/\s*[-|]\s*Devfolio.*$/i, '').trim();
-
-    // JSON-LD
-    $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-            const json = JSON.parse($(el).html());
-            if (json.name) title = title || json.name;
-            if (json.description) description = description || json.description;
-            if (json.image) imageUrl = imageUrl || json.image;
-            if (json.startDate) date = parseDate(json.startDate);
-            if (json.location?.name) location = json.location.name;
-        } catch (_) { }
-    });
-
-    // Devfolio often embeds data in __NEXT_DATA__
-    $('script#__NEXT_DATA__').each((_, el) => {
-        try {
-            const nextData = JSON.parse($(el).html());
-            const hackathon = nextData?.props?.pageProps?.hackathon
-                || nextData?.props?.pageProps?.data
-                || null;
-            if (hackathon) {
-                title = title || hackathon.name || hackathon.title || '';
-                description = description || hackathon.tagline || hackathon.description || '';
-                imageUrl = imageUrl || hackathon.cover_img || hackathon.logo || '';
-                if (hackathon.starts_at || hackathon.start_date) {
-                    date = parseDate(hackathon.starts_at || hackathon.start_date);
-                }
-                if (hackathon.is_online === false) location = hackathon.city || 'Offline';
-                else location = 'Online';
-                if (hackathon.prize_amount) prize = `$${hackathon.prize_amount}`;
-                if (hackathon.team_max) teamSize.max = hackathon.team_max;
-                if (hackathon.team_min) teamSize.min = hackathon.team_min;
-            }
-        } catch (_) { }
-    });
-
-    const pageText = $('body').text();
-    teamSize = teamSize.max > 1 ? teamSize : extractTeamSize(pageText);
-
-    if (!date) {
-        date = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-        title: cleanText(title) || 'Devfolio Hackathon',
-        description: truncate(cleanText(description)),
-        imageUrl,
-        date,
-        location,
-        prize,
-        maxTeamSize: teamSize.max,
-        minTeamSize: teamSize.min,
-        category: guessCategory(title, description),
-        platform: 'Devfolio',
-        externalUrl: url,
-    };
-}
-
-// ─── Devpost ───────────────────────────────────────────────────────────────
-async function scrapeDevpost(url, html) {
-    const $ = cheerio.load(html);
-    const meta = extractMetaTags($);
-
-    let title = meta.title || $('h1').first().text() || '';
-    let description = meta.description || '';
-    let imageUrl = meta.imageUrl || '';
-    let date = null;
-    let location = 'Online';
-    let prize = '';
-    let teamSize = { min: 1, max: 5 };
-
-    // Clean title
-    title = title.replace(/\s*[-|]\s*Devpost.*$/i, '').trim();
-
-    // Devpost has cleaner HTML, try direct selectors
-    const headerText = $('#challenge-header, .challenge-header, [class*="challenge"]').text();
-    if (!description) {
-        description = $('#challenge-description, .challenge-description, [class*="description"]').text();
-    }
-
-    // Try to find cover image
-    if (!imageUrl) {
-        imageUrl = $('#challenge-header img, .cover-image img, [class*="banner"] img').first().attr('src') || '';
-    }
-
-    // Dates
-    const dateText = $('.date, .dates, [class*="date"], [class*="deadline"]').text();
-    const dateMatch = dateText.match(/(\w+\s+\d{1,2},?\s+\d{4})/);
-    if (dateMatch) date = parseDate(dateMatch[1]);
-
-    // Prizes
-    const prizeText = $('.prize, .prizes, [class*="prize"]').text();
-    const prizeMatch = prizeText.match(/\$?([\d,]+)/);
-    if (prizeMatch) prize = `$${prizeMatch[1]}`;
-
-    const pageText = $('body').text();
-    teamSize = extractTeamSize(pageText);
-
-    // Online/offline
-    if (pageText.match(/\b(?:in[\s-]?person|offline|venue)\b/i)) {
-        location = 'Offline';
-    }
-
-    if (!date) {
-        date = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-        title: cleanText(title) || 'Devpost Hackathon',
-        description: truncate(cleanText(description)),
-        imageUrl,
-        date,
-        location,
-        prize,
-        maxTeamSize: teamSize.max,
-        minTeamSize: teamSize.min,
-        category: guessCategory(title, description),
-        platform: 'Devpost',
-        externalUrl: url,
-    };
-}
-
-// ─── HackerEarth ───────────────────────────────────────────────────────────
-async function scrapeHackerEarth(url, html) {
-    const $ = cheerio.load(html);
-    const meta = extractMetaTags($);
-
-    let title = meta.title || $('h1').first().text() || '';
-    let description = meta.description || '';
-    let imageUrl = meta.imageUrl || '';
-    let date = null;
-    let location = 'Online';
-    let prize = '';
-
-    title = title.replace(/\s*[-|]\s*HackerEarth.*$/i, '').trim();
-
-    // JSON-LD
-    $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-            const json = JSON.parse($(el).html());
-            if (json.name) title = title || json.name;
-            if (json.description) description = description || json.description;
-            if (json.image) imageUrl = imageUrl || json.image;
-            if (json.startDate) date = parseDate(json.startDate);
-        } catch (_) { }
-    });
-
-    const pageText = $('body').text();
-    const teamSize = extractTeamSize(pageText);
-
-    const prizeMatch = pageText.match(/(?:prize|reward)[\s:]*(?:\$|₹|€)?\s*([\d,]+)/i);
-    if (prizeMatch) prize = prizeMatch[0];
-
-    if (!date) {
-        date = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-        title: cleanText(title) || 'HackerEarth Challenge',
-        description: truncate(cleanText(description)),
-        imageUrl,
-        date,
-        location,
-        prize,
-        maxTeamSize: teamSize.max,
-        minTeamSize: teamSize.min,
-        category: guessCategory(title, description),
-        platform: 'HackerEarth',
-        externalUrl: url,
-    };
-}
-
-// ─── MLH ───────────────────────────────────────────────────────────────────
-async function scrapeMLH(url, html) {
-    const $ = cheerio.load(html);
-    const meta = extractMetaTags($);
-
-    let title = meta.title || $('h1, h2').first().text() || '';
-    let description = meta.description || '';
-    let imageUrl = meta.imageUrl || '';
-    let date = null;
-    let location = 'Online';
-
-    title = title.replace(/\s*[-|]\s*MLH.*$/i, '').trim();
-
-    // JSON-LD
-    $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-            const json = JSON.parse($(el).html());
-            if (json.name) title = title || json.name;
-            if (json.startDate) date = parseDate(json.startDate);
-            if (json.location?.name) location = json.location.name;
-            if (json.location?.address?.addressLocality) {
-                location = `${json.location.address.addressLocality}, ${json.location.address.addressRegion || ''}`.trim();
-            }
-        } catch (_) { }
-    });
-
-    // MLH event pages often have dates in specific elements
-    const dateEl = $('[class*="date"], .event-date, time').first();
-    if (dateEl.length) {
-        date = parseDate(dateEl.attr('datetime') || dateEl.text());
-    }
-
-    if (!date) {
-        date = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-        title: cleanText(title) || 'MLH Hackathon',
-        description: truncate(cleanText(description)),
-        imageUrl,
-        date,
-        location,
-        prize: '',
-        maxTeamSize: 4,
-        minTeamSize: 1,
-        category: 'Hackathon',
-        platform: 'MLH',
-        externalUrl: url,
-    };
-}
-
-// ─── Generic / Fallback Scraper ────────────────────────────────────────────
-async function scrapeGeneric(url, html, platform) {
-    const $ = cheerio.load(html);
-    const meta = extractMetaTags($);
-
-    let title = meta.title || $('h1').first().text() || '';
-    let description = meta.description || $('p').first().text() || '';
-    let imageUrl = meta.imageUrl || '';
-    let date = null;
-
-    // JSON-LD
-    $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-            const json = JSON.parse($(el).html());
-            if (json['@type'] === 'Event') {
-                title = title || json.name || '';
-                description = description || json.description || '';
-                imageUrl = imageUrl || json.image || '';
-                if (json.startDate) date = parseDate(json.startDate);
-            }
-        } catch (_) { }
-    });
-
-    const pageText = $('body').text();
-    const teamSize = extractTeamSize(pageText);
-
-    if (!date) {
-        date = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-        title: cleanText(title) || 'External Event',
-        description: truncate(cleanText(description)),
-        imageUrl,
-        date,
-        location: 'Online',
-        prize: '',
-        maxTeamSize: teamSize.max,
-        minTeamSize: teamSize.min,
-        category: guessCategory(title, description),
-        platform: platform || 'External',
-        externalUrl: url,
-    };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  MAIN EXPORT
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Scrape event metadata from a given URL.
- * @param {string} url - The event page URL
- * @returns {Promise<Object>} - Extracted event metadata
- */
-export async function scrapeEventFromUrl(url) {
-    // Validate URL
-    let parsedUrl;
+    let embedded = typeof html === 'object' && html ? html : {};
     try {
-        parsedUrl = new URL(url);
-    } catch (_) {
-        throw new Error('Invalid URL format');
-    }
-
-    // Only allow http/https
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error('Only HTTP/HTTPS URLs are supported');
-    }
-
+        const props = JSON.parse($('#__NEXT_DATA__').html() || '{}')?.props?.pageProps;
+        embedded = props?.hackathon || props?.event || props?.data?.hackathon || props?.data?.event || (props?.data?.name ? props.data : embedded);
+    } catch { /* Metadata may still be available. */ }
+    const event = structured || {};
     const platform = detectPlatform(url);
-    let html;
-
-    try {
-        html = await fetchPage(url);
-    } catch (fetchErr) {
-        console.error(`[EventScraper] Failed to fetch ${url}:`, fetchErr.message);
-        throw new Error(`Could not fetch the page. The site may be blocking automated requests. Status: ${fetchErr.response?.status || 'Network Error'}`);
+    const platformDetails = platform === 'Unstop' ? unstopDetails($) : {};
+    const title = text(event.name || embedded.name || embedded.title || meta('og:title') || meta('twitter:title') || $('h1').first().text() || $('title').text())
+        .replace(/\s*[|–-]\s*(Unstop|Dare2Compete|Devfolio|Devpost|HackerEarth|MLH|Eventbrite|Luma).*$/i, '').trim();
+    const description = text(event.description || embedded.description || embedded.tagline || platformDetails.description || meta('og:description') || meta('twitter:description') || meta('description') || $('[itemprop="description"]').first().text());
+    const pageTitle = text($('title').text());
+    if (!title || /^(just a moment|access denied|attention required|security check|sign in|log in|page not found|404|enable javascript)/i.test(title) || /just a moment|access denied|attention required|page not found/i.test(pageTitle) || (platform !== 'Other' && title.toLowerCase() === platform.toLowerCase())) {
+        throw new Error('This page does not expose event details. It may require JavaScript, sign-in, or block automated access. Please use the direct public event page.');
     }
-
-    // If the response is not string (e.g. JSON from an API), handle it
-    if (typeof html !== 'string') {
-        // Some sites return JSON directly — try to extract from it
-        if (typeof html === 'object') {
-            return {
-                title: html.name || html.title || 'External Event',
-                description: truncate(html.description || html.tagline || ''),
-                imageUrl: html.image || html.cover_image || html.logo || '',
-                date: parseDate(html.start_date || html.starts_at || html.date) || new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-                location: html.location || html.city || 'Online',
-                prize: html.prize || '',
-                maxTeamSize: html.team_max || html.max_team_size || 4,
-                minTeamSize: html.team_min || html.min_team_size || 1,
-                category: guessCategory(html.name || html.title || '', html.description || ''),
-                platform,
-                externalUrl: url,
-            };
-        }
-        html = String(html);
-    }
-
-    // Route to platform-specific scraper
-    switch (platform) {
-        case 'Unstop':
-            return scrapeUnstop(url, html);
-        case 'Devfolio':
-            return scrapeDevfolio(url, html);
-        case 'Devpost':
-            return scrapeDevpost(url, html);
-        case 'HackerEarth':
-            return scrapeHackerEarth(url, html);
-        case 'MLH':
-            return scrapeMLH(url, html);
-        default:
-            return scrapeGeneric(url, html, platform);
-    }
+    if (!structured && !embedded.name && !embedded.title && !description) throw new Error('No event details were found. Please paste a direct public event page link.');
+    const date = dateValue(event.startDate || embedded.starts_at || embedded.start_date || embedded.startDate || platformDetails.date || $('[itemprop="startDate"]').first().attr('content') || $('time[itemprop="startDate"], time.event-date, time.start-date').first().attr('datetime') || meta('event:start_time'));
+    const location = embedded.is_online === true || /OnlineEventAttendanceMode$/.test(event.eventAttendanceMode || '')
+        ? 'Online' : locationValue(event.location || embedded.location || embedded.city) || platformDetails.location || '';
+    const imageUrl = imageValue(event.image, url) || imageValue(embedded.cover_img || embedded.cover_image || embedded.image || embedded.logo, url) || imageValue(meta('og:image') || meta('twitter:image') || $('[itemprop="image"]').first().attr('src'), url);
+    const category = categoryValue(title, description);
+    const positiveInt = value => Number.isInteger(Number(value)) && Number(value) > 0 && Number(value) <= 50 ? Number(value) : null;
+    const body = $('body').clone();
+    body.find('script, style, nav, footer, .featured-opp, .similar-opp, .related-opp').remove();
+    const teamPattern = /teams?\s*(?:size|of|are|must\s+have|consist\s+of)\s*:?\s*(\d+)\s*(?:-|–|to)\s*(\d+)/i;
+    const team = description.match(teamPattern) || body.text().match(teamPattern);
+    const maxTeamSize = positiveInt(embedded.team_max || embedded.max_team_size || team?.[2]);
+    const minTeamSize = positiveInt(embedded.team_min || embedded.min_team_size || team?.[1]);
+    return {
+        title, description, imageUrl, date, location, category,
+        // Ticket prices (Event.offers.price) are not prize money.
+        prize: text(embedded.prize), maxTeamSize, minTeamSize, platform, externalUrl: url,
+        missingFields: Object.entries({ description, date, location, category, imageUrl }).filter(([, value]) => !value).map(([key]) => key),
+    };
 }
 
-export { detectPlatform };
+export async function scrapeEventFromUrl(value) {
+    try {
+        const normalized = normalizeEventUrl(value);
+        const unstop = /^https:\/\/unstop\.com\/o\/\d+$/.test(normalized);
+        const { html, url } = await fetchPage(normalized, { unstopPublicPage: unstop });
+        return extractEventMetadata(html, unstop ? normalized : url);
+    } catch (error) {
+        if (error.isAxiosError) throw new Error(`Could not read the event page${error.response?.status ? ` (HTTP ${error.response.status})` : ''}. The site may block automated access. Please try a direct public event link.`);
+        throw error;
+    }
+}

@@ -356,18 +356,18 @@ const parseExternalLink = asyncHandler(async (req, res) => {
         throw new Error('Please provide a valid event URL');
     }
 
-    // Validate URL format
+    const { normalizeEventUrl, scrapeEventFromUrl, externalEventUrlPattern } = await import('../services/eventScraperService.js');
+    let normalizedUrl;
     try {
-        new URL(url);
+        normalizedUrl = normalizeEventUrl(url);
     } catch (_) {
         res.status(400);
         throw new Error('Invalid URL format. Please paste a valid event link.');
     }
 
     // Check if this event already exists in DB (dedup by URL)
-    const normalizedUrl = url.trim().replace(/\/+$/, '').toLowerCase();
     const existingEvent = await Event.findOne({
-        externalUrl: { $regex: new RegExp('^' + normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?$', 'i') },
+        externalUrl: { $regex: externalEventUrlPattern(normalizedUrl) },
         isDeleted: { $ne: true }
     }).populate('organizer', 'name username profilePic').lean();
 
@@ -392,10 +392,8 @@ const parseExternalLink = asyncHandler(async (req, res) => {
     }
 
     // Scrape the URL
-    const { scrapeEventFromUrl } = await import('../services/eventScraperService.js');
-
     try {
-        const metadata = await scrapeEventFromUrl(url);
+        const metadata = await scrapeEventFromUrl(normalizedUrl);
         res.json({ metadata, alreadyImported: false });
     } catch (scrapeErr) {
         console.error('[parseExternalLink] Scrape failed:', scrapeErr.message);
@@ -427,14 +425,35 @@ const importExternalEvent = asyncHandler(async (req, res) => {
         throw new Error('Event title and external URL are required');
     }
 
+    const { normalizeEventUrl, externalEventUrlPattern } = await import('../services/eventScraperService.js');
+    let sourceUrl;
+    try { sourceUrl = normalizeEventUrl(externalUrl); } catch (error) {
+        res.status(400);
+        throw error;
+    }
+    if (![title, description, location].every(value => typeof value === 'string' && value.trim()) || !date || Number.isNaN(new Date(date).getTime())) {
+        res.status(400);
+        throw new Error('Please provide the real event title, description, date, and location before importing.');
+    }
+
     // Validate category against allowed enum
     const validCategories = ['Hackathon', 'Workshop', 'Seminar', 'Tournament', 'Meetup', 'Project', 'Game', 'Sport'];
-    const finalCategory = validCategories.includes(category) ? category : 'Hackathon';
+    if (!validCategories.includes(category)) {
+        res.status(400);
+        throw new Error('Please select an event category.');
+    }
+    const finalCategory = category;
+    const teamMax = Number(maxTeamSize);
+    const teamMin = Number(minTeamSize);
+    if (!Number.isInteger(teamMax) || !Number.isInteger(teamMin) || teamMin < 1 || teamMax > 50 || teamMax < teamMin) {
+        res.status(400);
+        throw new Error('Please provide a valid squad size between 1 and 50.');
+    }
 
     // Dedup check — try to find existing by URL
-    const normalizedUrl = externalUrl.trim().replace(/\/+$/, '').toLowerCase();
+    const normalizedUrl = sourceUrl;
     const existing = await Event.findOne({
-        externalUrl: { $regex: new RegExp('^' + normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?$', 'i') },
+        externalUrl: { $regex: externalEventUrlPattern(normalizedUrl) },
         isDeleted: { $ne: true }
     }).populate('organizer', 'name username profilePic').lean();
 
@@ -448,19 +467,19 @@ const importExternalEvent = asyncHandler(async (req, res) => {
     // Create the external event
     const event = await Event.create({
         title: title.trim(),
-        description: (description || 'External competition — find your squad on Synapse!').trim(),
-        date: date ? new Date(date) : new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
-        location: location || 'Online',
+        description: description.trim(),
+        date: new Date(date),
+        location: location.trim(),
         category: finalCategory,
         prize: prize || '',
         imageUrl: imageUrl || '',
-        maxTeamSize: Math.min(Math.max(Number(maxTeamSize) || 4, 1), 50),
-        minTeamSize: Math.min(Math.max(Number(minTeamSize) || 1, 1), 50),
+        maxTeamSize: teamMax,
+        minTeamSize: teamMin,
         organizer: req.user._id,
         importedBy: req.user._id,
         attendees: [req.user._id],
         isExternal: true,
-        externalUrl: externalUrl.trim(),
+        externalUrl: sourceUrl,
         platform: platform || 'External',
         isMultiCollege: true,
         allowTeamRegistration: true,

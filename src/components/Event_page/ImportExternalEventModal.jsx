@@ -23,6 +23,7 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
   const [metadata, setMetadata] = useState(null);
   const [alreadyImported, setAlreadyImported] = useState(false);
   const [existingEvent, setExistingEvent] = useState(null);
+  const [fetchError, setFetchError] = useState('');
 
   if (!isOpen) return null;
 
@@ -34,6 +35,7 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
     }
 
     setParsing(true);
+    setFetchError('');
     setMetadata(null);
     setAlreadyImported(false);
     setExistingEvent(null);
@@ -41,7 +43,7 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
     try {
       const res = await api.post('/events/parse-external-link', { url: url.trim() });
       if (res.data?.metadata) {
-        setMetadata(res.data.metadata);
+        setMetadata({ ...res.data.metadata, maxTeamSize: res.data.metadata.maxTeamSize ?? '', minTeamSize: res.data.metadata.minTeamSize ?? 1 });
         if (res.data.alreadyImported) {
           setAlreadyImported(true);
           setExistingEvent(res.data.existingEvent);
@@ -49,23 +51,15 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
         } else {
           toast.success(`Event details fetched from ${res.data.metadata.platform || 'link'}!`);
         }
+      } else {
+        throw new Error('The server returned no event details. Please try again.');
       }
     } catch (err) {
       console.error('Failed to parse event link', err);
-      toast.error(err.response?.data?.message || 'Could not parse this link. You can still fill details manually.');
-      // Provide basic editable template
-      setMetadata({
-        title: 'New External Hackathon',
-        description: 'Compete in this external competition. Find your squad on Synapse!',
-        platform: 'Unstop',
-        externalUrl: url.trim(),
-        category: 'Hackathon',
-        location: 'Online',
-        date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        maxTeamSize: 4,
-        minTeamSize: 1,
-        imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80'
-      });
+      const message = err.response?.data?.message || err.message || 'Could not read this event link.';
+      setFetchError(message);
+      setMetadata(null);
+      toast.error(message);
     } finally {
       setParsing(false);
     }
@@ -78,6 +72,10 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
   const handleSubmit = async () => {
     if (!metadata || !metadata.title || !metadata.externalUrl) {
       toast.error('Event title and link are required');
+      return;
+    }
+    if (!metadata.title.trim() || !metadata.description?.trim() || !metadata.location?.trim() || !metadata.date || !metadata.category || !metadata.maxTeamSize) {
+      toast.error('Complete the missing description, date, location, category, and squad size using the source event page.');
       return;
     }
 
@@ -141,7 +139,7 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
                   type="url"
                   placeholder="https://unstop.com/hackathons/..."
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => { setUrl(e.target.value); setMetadata(null); setAlreadyImported(false); setExistingEvent(null); setFetchError(''); }}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                   disabled={parsing || submitting}
                   required
@@ -149,7 +147,7 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
               </div>
               <button
                 type="submit"
-                disabled={parsing || !url.trim()}
+                disabled={parsing || submitting || !url.trim()}
                 className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-sm transition flex items-center gap-2 shadow-sm shrink-0"
               >
                 {parsing ? (
@@ -179,6 +177,8 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
               ))}
             </div>
           </form>
+
+          {fetchError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{fetchError} No event was created.</p>}
 
           {/* Already Imported Warning */}
           {alreadyImported && existingEvent && (
@@ -211,6 +211,21 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
                   {metadata.platform}
                 </span>
+              </div>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Review the source details before listing. Complete blank fields from the original event page.
+              </p>
+              <a href={metadata.externalUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 inline-flex items-center gap-1">
+                Open source event <FiExternalLink size={14} />
+              </a>
+
+              <div>
+                <label htmlFor="import-category" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Category</label>
+                <select id="import-category" value={metadata.category || ''} onChange={(e) => handleFieldChange('category', e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm">
+                  <option value="">Select category</option>
+                  {['Hackathon', 'Workshop', 'Seminar', 'Tournament', 'Meetup', 'Project', 'Game', 'Sport'].map(category => <option key={category} value={category}>{category}</option>)}
+                </select>
               </div>
 
               {/* Banner Image Preview */}
@@ -283,10 +298,10 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
                   </label>
                   <input
                     type="text"
-                    value={metadata.location || 'Online'}
+                    value={metadata.location || ''}
                     onChange={(e) => handleFieldChange('location', e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs outline-none"
-                    placeholder="Online"
+                    placeholder="Enter source location or mode"
                   />
                 </div>
 
@@ -295,17 +310,23 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
                     <FiUsers size={12} /> Max Squad Size
                   </label>
                   <select
-                    value={metadata.maxTeamSize || 4}
+                    value={metadata.maxTeamSize || ''}
                     onChange={(e) => handleFieldChange('maxTeamSize', Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs outline-none cursor-pointer"
                   >
-                    {[2, 3, 4, 5, 6].map(num => (
+                    <option value="">Select size</option>
+                    {Array.from({ length: 50 }, (_, i) => i + 1).map(num => (
                       <option key={num} value={num}>
                         {num} Members
                       </option>
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="import-min-team" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Minimum squad size</label>
+                <input id="import-min-team" type="number" min="1" max={metadata.maxTeamSize || 50} value={metadata.minTeamSize} onChange={(e) => handleFieldChange('minTeamSize', Number(e.target.value))} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" />
               </div>
 
               {/* Action Buttons */}
@@ -320,7 +341,7 @@ export default function ImportExternalEventModal({ isOpen, onClose, onImported }
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || parsing}
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {submitting ? (
