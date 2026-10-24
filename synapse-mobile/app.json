@@ -4,7 +4,7 @@
     "slug": "synapse",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/brand-icon.png",
     "userInterfaceStyle": "light",
     "platforms": [
       "android",
@@ -12,22 +12,51 @@
       "web"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "in.fuseon.synapse",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/brand-adaptive.png",
+        "monochromeImage": "./assets/brand-adaptive.png"
+      },
+      "package": "in.fuseon.synapse",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/icon.png"
+      "favicon": "./assets/brand-icon.png"
     },
     "plugins": [
-      "expo-image"
-    ]
+      "expo-image",
+      "expo-router",
+      "expo-web-browser",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand-splash.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7FAFF"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/brand-notification.png",
+          "color": "#1877F2",
+          "defaultChannel": "community"
+        }
+      ]
+    ],
+    "scheme": "synapse"
   }
 }

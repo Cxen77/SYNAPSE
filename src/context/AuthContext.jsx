@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebaseClient';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import AuthPromptModal from '../components/common/AuthPromptModal';
+import { detachNativeDevice, nativeApp } from '../lib/nativeBridge';
 
 const AuthContext = createContext();
 
@@ -94,8 +95,9 @@ export const AuthProvider = ({ children }) => {
 
     // Logout current session
     const logout = async () => {
+        await detachNativeDevice(api);
         try {
-            await api.post('/auth/logout');
+            await api.post('/auth/logout', { deviceId: nativeApp()?.deviceId });
         } catch (error) {
             // Ignore logout errors
         }
@@ -105,6 +107,7 @@ export const AuthProvider = ({ children }) => {
 
     // Logout all sessions
     const logoutAll = async () => {
+        await detachNativeDevice(api);
         try {
             await api.post('/auth/logout-all');
         } catch (error) {

@@ -1,5 +1,25 @@
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import PushDevice from '../models/PushDevice.js';
+import { validDeviceId, validExpoToken } from '../services/pushService.js';
+
+export const registerPushDevice = async (req, res, next) => {
+    const { token, deviceId, platform } = req.body;
+    if (!validExpoToken(token) || !validDeviceId(deviceId) || !['ios', 'android'].includes(platform)) return res.status(400).json({ message: 'A valid push token, installation ID and mobile platform are required.' });
+    try {
+        await PushDevice.deleteMany({ deviceId, token: { $ne: token } });
+        await PushDevice.findOneAndUpdate({ token }, { $set: { user: req.user._id, token, deviceId, platform, lastSeenAt: new Date() } }, { upsert: true, new: true, runValidators: true });
+        res.json({ registered: true });
+    } catch (error) { next(error); }
+};
+
+export const unregisterPushDevice = async (req, res, next) => {
+    if (!validDeviceId(req.body.deviceId)) return res.status(400).json({ message: 'A valid installation ID is required.' });
+    try {
+        await PushDevice.deleteMany({ user: req.user._id, deviceId: req.body.deviceId });
+        res.json({ registered: false });
+    } catch (error) { next(error); }
+};
 
 // @desc    Update User Push Token
 // @route   PUT /api/users/pushtoken

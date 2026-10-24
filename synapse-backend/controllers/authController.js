@@ -1,5 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
+import PushDevice from '../models/PushDevice.js';
+import { validDeviceId } from '../services/pushService.js';
 import Session from '../models/Session.js';
 import { generateAccessToken, generateRefreshToken, hashRefreshToken } from '../utils/generateToken.js';
 import { createSession, clearSessionCookie, setRefreshCookie } from '../utils/sessionHelpers.js';
@@ -388,7 +390,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     if (token) {
         const hashedToken = hashRefreshToken(token);
-        await Session.findOneAndDelete({ refreshTokenHash: hashedToken });
+        const session = await Session.findOneAndDelete({ refreshTokenHash: hashedToken });
+        if (session && validDeviceId(req.body?.deviceId)) await PushDevice.deleteMany({ user: session.userId, deviceId: req.body.deviceId });
     }
 
     clearSessionCookie(res);
@@ -400,6 +403,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 // @access  Private (requires access token)
 const logoutAllSessions = asyncHandler(async (req, res) => {
     await Session.deleteMany({ userId: req.user._id });
+    await PushDevice.deleteMany({ user: req.user._id });
     clearSessionCookie(res);
     res.status(200).json({ message: 'All sessions logged out successfully' });
 });

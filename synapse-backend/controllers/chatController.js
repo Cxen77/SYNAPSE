@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Team from '../models/Team.js';
 import { getIO, isUserOnline } from '../socket/socketServer.js';
 import { admin } from '../config/firebaseAdmin.js';
+import { queuePushNotification } from '../services/pushService.js';
 
 // @desc    Get all chats for current user
 // @route   GET /api/chat
@@ -260,6 +261,12 @@ export const sendMessage = async (req, res) => {
 
             // PUSH NOTIFICATION LOGIC
             if (partIdStr !== req.user._id.toString()) {
+                try {
+                    await queuePushNotification(participantId, {
+                        title: req.user.name || 'New message', body: text.length > 100 ? text.substring(0, 100) + '…' : text || 'Sent an attachment',
+                        data: { type: 'MESSAGE', url: `/chat/${chat._id}`, chatId: String(chat._id) },
+                    });
+                } catch (error) { console.error('[Chat push queue]', error.message); }
                 const isOnline = isUserOnline(partIdStr);
 
                 // Fetch full participant to get pushToken

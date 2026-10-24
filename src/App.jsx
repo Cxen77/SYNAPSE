@@ -41,6 +41,7 @@ import ProfileSkeleton from './components/Profile_page/ProfileSkeleton';
 import InAppNotification from './components/common/InAppNotification';
 import FeatureGate from './components/common/FeatureGate';
 import GuestBanner from './components/common/GuestBanner';
+import NativeAppBridge from './components/common/NativeAppBridge';
 
 // Loading Fallback with Skeleton Layout
 const PageLoader = () => (
@@ -184,6 +185,7 @@ function App() {
 
   return (
     <div className="min-h-[100dvh] bg-gray-50 text-gray-900">
+      <NativeAppBridge />
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} containerStyle={{ zIndex: 99999 }} />
       {!isAuthPage && !isDashboardPage && (
         <div className={isChatPage ? "hidden md:block" : ""}>

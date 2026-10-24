@@ -35,11 +35,13 @@ import hpp from 'hpp';
 import { globalLimiter } from './middleware/rateLimiters.js';
 import passport from './config/passport.js';
 import mongoose from 'mongoose';
+import { startPushWorker } from './services/pushService.js';
 
 // ==========================
 // INITIALIZE SERVICES
 // ==========================
 connectDB();
+mongoose.connection.once('open', startPushWorker);
 initDirectories();
 initializeFirebase();
 

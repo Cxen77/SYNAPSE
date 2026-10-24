@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
+import PushDevice from '../models/PushDevice.js';
 import Notification from '../models/Notification.js';
 import { getOnlineUserIds } from '../socket/socketServer.js';
 import cloudinary from '../config/cloudinary.js';
@@ -188,6 +189,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     user.deletedAt = new Date();
     user.bio = '';
     user.pushToken = '';
+    await PushDevice.deleteMany({ user: user._id });
     user.githubAccessToken = undefined;
     user.name = `[Deleted User]`;
     await user.save();
